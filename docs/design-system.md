@@ -35,6 +35,7 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `ChoiceChips` | Accessible radio group with arrow-key support |
 | `ScreenHeader` | Squared back button, optional small label, heading and one calm subtitle |
 | `AuthScreen` | The frame every sign-in screen shares: full height, content on top, footer line at the bottom, a corner of beads |
+| `OptionCards` | Big tappable single-choice cards for onboarding questions: a title, one calm line, a tick when chosen |
 | `Keypad`, `PinPad`, `CodeBoxes` | Number pad; PIN pad (digits shown as dots); one-time code boxes (digits shown) |
 | `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
 | `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
@@ -61,7 +62,8 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 | Welcome | Built (`/`) |
 | Sign up, confirm email, sign in, password recovery | Built (`/sign-up`, `/check-email`, `/verify-email`, `/sign-in`, `/forgot-password`, `/reset-password`) |
 | Verify it's you (authenticator code or recovery code) | Built (`/sign-in/verify`); turning the second factor on from the app comes with the Me screen |
-| Onboarding, KYC, wallet | Phase 1, next |
+| Onboarding (country, goal, transaction PIN) | Built (`/onboarding`); Today sends anyone who hasn't finished it there |
+| KYC, wallet | Phase 1, next |
 | Solo savings, referrals, groups | Phases 2 to 4 |
 
 ## Where the build departs from the reference, and why

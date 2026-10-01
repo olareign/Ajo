@@ -17,7 +17,7 @@ export async function callApi(
   fetchFn: Fetch,
   request: Readonly<{
     path: string;
-    method?: "GET" | "POST";
+    method?: "GET" | "POST" | "PUT";
     body?: object;
     accessToken?: string;
     /** Wait for a cold start instead of giving up after 10 seconds. */

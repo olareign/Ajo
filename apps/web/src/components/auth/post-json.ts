@@ -3,10 +3,14 @@ export type PostResult = Readonly<{ ok: boolean; status: number; data: Record<st
 export const OFFLINE = "We couldn't reach Àjọ. Check your connection and try again.";
 
 /** POSTs JSON to our own server (the BFF). Never throws; a network failure is a result. */
-export async function postJson(path: string, body: object): Promise<PostResult> {
+export async function postJson(
+  path: string,
+  body: object,
+  method: "POST" | "PUT" = "POST",
+): Promise<PostResult> {
   try {
     const res = await fetch(path, {
-      method: "POST",
+      method,
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
