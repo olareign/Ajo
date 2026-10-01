@@ -1,28 +1,117 @@
 @import "tailwindcss";
 
 /*
- * Design tokens inferred from the Figma file "Alo App (Saving App Design Template)".
- * Brand green is sampled from the splash screen and primary buttons.
+ * Àjọ design system (https://claude.ai/artifact/LGah4kFbokongxR4BziDYA).
+ * Adire indigo and aṣọ-òkè gold; the circle as the interface. Values here mirror its
+ * tokens.json; change them there first.
  */
-@theme {
-  --font-sans: "Montserrat Variable", ui-sans-serif, system-ui, sans-serif;
+:root {
+  --surface: #f5f6fb;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eaedf6;
+  --line: #d3d8ea;
+  --line-strong: #7c84a8;
+  --ink: #11163a;
+  --ink-muted: #4e5578;
+  --adire: #222f78;
+  --adire-deep: #141c52;
+  --adire-tint: #e3e7f8;
+  --on-adire: #ffffff;
+  --oro: #d99a1e;
+  --oro-tint: #fbefd2;
+  --on-oro: #1c1405;
+  --oro-ink: #7a5306;
+  --leaf: #1d7346;
+  --leaf-tint: #dff2e6;
+  --danger: #b3361d;
+  --danger-tint: #fbe5df;
+  --focus: #2f4ad6;
+  --shadow-lift: 0 1px 2px rgba(17, 22, 58, 0.06), 0 8px 24px rgba(17, 22, 58, 0.08);
+  color-scheme: light;
+}
 
-  --color-brand-50: #f2fbf6; /* tinted info panels ("Benefits", plan summary) */
-  --color-brand-100: #e3f5ea; /* "Active" / "Member" pills */
-  --color-brand-200: #c2e1d1; /* disabled Proceed button */
-  --color-brand-600: #038641; /* primary: buttons, eyebrow text, selected chips */
-  --color-brand-700: #026b34; /* pressed */
-  --color-brand-800: #14532d;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #0d1130;
+    --surface-raised: #161b42;
+    --surface-sunken: #090c24;
+    --line: #2b3268;
+    --line-strong: #7a83bd;
+    --ink: #eef0fb;
+    --ink-muted: #a8aed0;
+    --adire: #9aa7f5;
+    --adire-deep: #c5ccfa;
+    --adire-tint: #1d2459;
+    --on-adire: #0d1130;
+    --oro: #f2bb4c;
+    --oro-tint: #3a2c0e;
+    --on-oro: #1c1405;
+    --oro-ink: #f2bb4c;
+    --leaf: #62cf92;
+    --leaf-tint: #10301f;
+    --danger: #ff8f73;
+    --danger-tint: #3d1710;
+    --focus: #f2bb4c;
+    --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
 
-  --color-ink: #111111; /* headings */
-  --color-ink-muted: #6b7280; /* secondary labels ("Next due date:") */
-  --color-line: #d9d9d9; /* chip and input borders */
-  --color-surface: #ffffff;
-  --color-surface-muted: #f7f8f9; /* cards, auth inputs */
-  --color-danger: #e53935; /* "2/7 remaining" */
+:root[data-theme="dark"] {
+  --surface: #0d1130;
+  --surface-raised: #161b42;
+  --surface-sunken: #090c24;
+  --line: #2b3268;
+  --line-strong: #7a83bd;
+  --ink: #eef0fb;
+  --ink-muted: #a8aed0;
+  --adire: #9aa7f5;
+  --adire-deep: #c5ccfa;
+  --adire-tint: #1d2459;
+  --on-adire: #0d1130;
+  --oro: #f2bb4c;
+  --oro-tint: #3a2c0e;
+  --on-oro: #1c1405;
+  --oro-ink: #f2bb4c;
+  --leaf: #62cf92;
+  --leaf-tint: #10301f;
+  --danger: #ff8f73;
+  --danger-tint: #3d1710;
+  --focus: #f2bb4c;
+  --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
 
-  --radius-field: 0.5rem;
-  --radius-card: 0.25rem;
+@theme inline {
+  --font-display: "Bricolage Grotesque Variable", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Menlo, monospace;
+
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-adire: var(--adire);
+  --color-adire-deep: var(--adire-deep);
+  --color-adire-tint: var(--adire-tint);
+  --color-on-adire: var(--on-adire);
+  --color-oro: var(--oro);
+  --color-oro-tint: var(--oro-tint);
+  --color-on-oro: var(--on-oro);
+  --color-oro-ink: var(--oro-ink);
+  --color-leaf: var(--leaf);
+  --color-leaf-tint: var(--leaf-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-focus: var(--focus);
+  --shadow-lift: var(--shadow-lift);
+
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 20px;
 }
 
 html {
@@ -30,7 +119,22 @@ html {
 }
 
 body {
-  background: var(--color-surface);
-  color: var(--color-ink);
+  background: var(--surface);
+  color: var(--ink);
   font-family: var(--font-sans);
+}
+
+/* One visible focus ring everywhere (3:1 or more on every surface, both themes). */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

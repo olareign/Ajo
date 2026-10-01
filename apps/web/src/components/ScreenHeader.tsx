@@ -9,9 +9,9 @@ type Props = Readonly<{
 }>;
 
 const backClass =
-  "-ml-2 mb-4 inline-flex size-10 items-center justify-center rounded-full text-ink hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-brand-600";
+  "-ml-2 mb-4 inline-flex size-11 items-center justify-center rounded-full text-ink hover:bg-adire-tint";
 
-/** Back chevron, green eyebrow ("Lets Go!") and bold question, as on every wizard screen. */
+/** Back chevron, a short label for where the person is, and the screen's question as its title. */
 export function ScreenHeader({ title, eyebrow, onBack, backHref }: Props) {
   return (
     <header className="mb-6">
@@ -25,8 +25,10 @@ export function ScreenHeader({ title, eyebrow, onBack, backHref }: Props) {
           <ChevronLeft aria-hidden className="size-6" />
         </Link>
       )}
-      {eyebrow && <p className="mb-2 text-brand-600">{eyebrow}</p>}
-      <h1 className="text-xl font-bold text-ink">{title}</h1>
+      {eyebrow && <p className="mb-2 text-[13px] font-semibold tracking-[0.01em] text-adire">{eyebrow}</p>}
+      <h1 className="font-display text-[32px] leading-9 font-bold tracking-[-0.015em] text-balance text-ink">
+        {title}
+      </h1>
     </header>
   );
 }

@@ -1,26 +1,47 @@
 import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "outline";
+type Variant = "primary" | "money" | "quiet" | "danger";
+type Size = "md" | "lg";
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-700 disabled:bg-brand-200 disabled:text-white",
-  outline:
-    "border border-brand-600 text-brand-600 bg-transparent hover:bg-brand-50 disabled:border-brand-200 disabled:text-brand-200",
+  primary: "bg-adire text-on-adire hover:bg-adire-deep",
+  // Gold is reserved for actions that move money.
+  money: "bg-oro text-on-oro hover:brightness-95",
+  quiet: "bg-transparent text-adire shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-adire-tint",
+  danger: "bg-transparent text-danger shadow-[inset_0_0_0_1.5px_var(--danger)]",
 };
 
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant };
+const sizes: Record<Size, string> = {
+  md: "min-h-11 px-4 text-[15px]",
+  lg: "min-h-14 px-6 text-base",
+};
 
-export function Button({ variant = "primary", type = "button", className, ...props }: ButtonProps) {
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  size?: Size;
+  block?: boolean;
+};
+
+export function Button({
+  variant = "primary",
+  size = "md",
+  block = false,
+  type = "button",
+  className,
+  ...props
+}: ButtonProps) {
   return (
     <button
       type={type}
       data-variant={variant}
+      data-size={size}
       className={cn(
-        "inline-flex h-12 w-full items-center justify-center rounded-field px-6 text-base font-medium transition-colors",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 rounded-m font-semibold transition-[background-color,transform] duration-150 ease-out active:translate-y-px",
+        "disabled:cursor-not-allowed disabled:opacity-45 disabled:active:translate-y-0",
         variants[variant],
+        sizes[size],
+        block && "w-full",
         className,
       )}
       {...props}

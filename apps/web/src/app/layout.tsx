@@ -1,4 +1,8 @@
-import "@fontsource-variable/montserrat";
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource/be-vietnam-pro/400.css";
+import "@fontsource/be-vietnam-pro/500.css";
+import "@fontsource/be-vietnam-pro/600.css";
+import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -13,7 +17,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#038641",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f6fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d1130" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
