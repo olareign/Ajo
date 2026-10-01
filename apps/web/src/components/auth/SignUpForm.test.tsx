@@ -10,8 +10,9 @@ afterEach(() => {
   push.mockReset();
 });
 
-async function fill(email: string, password: string) {
+async function fill(email: string, password: string, name = "Ada") {
   const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Your name"), name);
   await user.type(screen.getByLabelText("Email"), email);
   await user.type(screen.getByLabelText("Password"), password);
   await user.click(screen.getByRole("button", { name: "Create account" }));
@@ -28,6 +29,37 @@ describe("SignUpForm", () => {
       "/api/auth/sign-up",
       expect.objectContaining({ method: "POST", credentials: "same-origin" }),
     );
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
+    );
+    expect(body).toEqual({
+      email: "ada@example.com",
+      password: "correct horse battery",
+      displayName: "Ada",
+    });
+  });
+
+  it("asks what to call the person and will not send without a name", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SignUpForm />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Email"), "ada@example.com");
+    await user.type(screen.getByLabelText("Password"), "correct horse battery");
+    expect(screen.getByRole("button", { name: "Create account" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Your name"), "   ");
+    expect(screen.getByRole("button", { name: "Create account" })).toBeDisabled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("shows a plain message when the API lists validation problems", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ message: ["email must be an email"] }, { status: 400 })),
+    );
+    render(<SignUpForm />);
+    await fill("not-an-email", "correct horse battery");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Check what you entered");
   });
 
   it("shows the API's message next to the form and stays put", async () => {

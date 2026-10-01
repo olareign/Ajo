@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
+    "test:e2e:fullstack": "playwright test -c playwright.fullstack.config.ts",
     "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {

@@ -46,6 +46,7 @@ export async function handleSignUp(request: Request, { env, fetchFn }: Deps): Pr
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
     path: "/auth/sign-up",
+    patient: true,
     body: pick(body, ["email", "password", "displayName"]),
   });
   return json(result.status, result.data);
@@ -60,6 +61,7 @@ export async function handleVerifyEmail(
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
     path: "/auth/email/verify",
+    patient: true,
     body: pick(body, ["token"]),
   });
   return json(result.status, result.data);
@@ -71,6 +73,7 @@ export async function handleSignIn(request: Request, { env, fetchFn }: Deps): Pr
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
     path: "/auth/login",
+    patient: true,
     body: pick(body, ["email", "password"]),
   });
 

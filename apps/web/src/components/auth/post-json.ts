@@ -20,7 +20,9 @@ export async function postJson(path: string, body: object): Promise<PostResult> 
 }
 
 export function messageOf(result: PostResult): string {
-  return typeof result.data.message === "string"
-    ? result.data.message
-    : "Something went wrong. Please try again.";
+  const message = result.data.message;
+  if (typeof message === "string") return message;
+  // The API lists validation problems as an array of developer-facing text; never show that.
+  if (Array.isArray(message)) return "Check what you entered and try again.";
+  return "Something went wrong. Please try again.";
 }

@@ -31,7 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html lang="en">
       <body>
         {/* Mobile-first: phones get the full width, larger screens a phone-sized column. */}
-        <main className="mx-auto min-h-dvh max-w-md bg-surface">{children}</main>
+        <div className="mx-auto min-h-dvh max-w-md bg-surface">{children}</div>
       </body>
     </html>
   );

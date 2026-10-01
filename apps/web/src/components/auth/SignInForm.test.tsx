@@ -51,4 +51,17 @@ describe("SignInForm", () => {
     await submit();
     expect(await screen.findByRole("alert")).toHaveTextContent("Email or password is incorrect.");
   });
+
+  it("tells the person to wait while a slow server wakes up, and blocks double sends", async () => {
+    let finish: (r: Response) => void = () => {};
+    const fetchMock = vi.fn(() => new Promise<Response>((resolve) => (finish = resolve)));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SignInForm />);
+    await submit();
+    const busy = await screen.findByRole("button", { name: "One moment…" });
+    expect(busy).toBeDisabled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    finish(Response.json({ signedIn: true }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/today"));
+  });
 });
