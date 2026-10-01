@@ -3,7 +3,9 @@ import { Stitches } from "./Stitches";
 
 describe("Stitches", () => {
   it("reports progress through steps to assistive technology", () => {
-    render(<Stitches total={5} done={2} label="Verify your identity" caption="Step 3 of 5 · Selfie" />);
+    render(
+      <Stitches total={5} done={2} label="Verify your identity" caption="Step 3 of 5 · Selfie" />,
+    );
     const bar = screen.getByRole("progressbar", { name: "Verify your identity" });
     expect(bar).toHaveAttribute("aria-valuenow", "2");
     expect(bar).toHaveAttribute("aria-valuemax", "5");

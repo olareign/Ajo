@@ -3,7 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { PinPad } from "./PinPad";
 
-function Harness({ length = 4, onChange = () => {} }: { length?: number; onChange?: (v: string) => void }) {
+function Harness({
+  length = 4,
+  onChange = () => {},
+}: {
+  length?: number;
+  onChange?: (v: string) => void;
+}) {
   const [value, setValue] = useState("");
   return (
     <PinPad

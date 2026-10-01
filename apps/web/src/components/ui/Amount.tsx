@@ -2,7 +2,12 @@ import { cn } from "@/lib/cn";
 import { formatMoney, type MoneyDto } from "@/lib/money-format";
 
 type Props = MoneyDto &
-  Readonly<{ locale?: string; size?: "xl" | "m" | "s"; tone?: "oro" | "muted"; className?: string }>;
+  Readonly<{
+    locale?: string;
+    size?: "xl" | "m" | "s";
+    tone?: "oro" | "muted";
+    className?: string;
+  }>;
 
 const sizes = {
   xl: "text-[48px] leading-[52px] font-bold tracking-[-0.02em]",

@@ -34,9 +34,15 @@ describe("Button", () => {
         <Button variant="danger">Leave circle</Button>
       </>,
     );
-    expect(screen.getByRole("button", { name: "Pay ₦10,000" })).toHaveAttribute("data-variant", "money");
+    expect(screen.getByRole("button", { name: "Pay ₦10,000" })).toHaveAttribute(
+      "data-variant",
+      "money",
+    );
     expect(screen.getByRole("button", { name: "Invite" })).toHaveAttribute("data-variant", "quiet");
-    expect(screen.getByRole("button", { name: "Leave circle" })).toHaveAttribute("data-variant", "danger");
+    expect(screen.getByRole("button", { name: "Leave circle" })).toHaveAttribute(
+      "data-variant",
+      "danger",
+    );
   });
 
   it("comes in a large, full-width size for bottom-of-screen actions", () => {

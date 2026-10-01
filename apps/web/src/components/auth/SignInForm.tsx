@@ -27,28 +27,32 @@ export function SignInForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-5">
-      <TextField
-        label="Email"
-        type="email"
-        autoComplete="email"
-        inputMode="email"
-        value={email}
-        onChange={setEmail}
-        required
-      />
-      <TextField
-        label="Password"
-        type="password"
-        autoComplete="current-password"
-        value={password}
-        onChange={setPassword}
-        error={error}
-        required
-      />
-      <Button type="submit" size="lg" block disabled={busy || !email || !password}>
-        Sign in
-      </Button>
+    <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col">
+      <div className="grid gap-5">
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          value={email}
+          onChange={setEmail}
+          required
+        />
+        <TextField
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={setPassword}
+          error={error}
+          required
+        />
+      </div>
+      <div className="mt-auto pt-8">
+        <Button type="submit" size="lg" block disabled={busy || !email || !password}>
+          {busy ? "One moment…" : "Sign in"}
+        </Button>
+      </div>
     </form>
   );
 }

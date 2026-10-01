@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default function SignInPage() {
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-10">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <ScreenHeader backHref="/" eyebrow="Welcome back" title="Sign in" />
       <SignInForm />
       <p className="mt-6 text-center text-[15px] text-ink-muted">
