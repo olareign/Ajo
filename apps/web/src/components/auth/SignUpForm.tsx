@@ -42,6 +42,7 @@ export function SignUpForm() {
       <div className="grid gap-5">
         <TextField
           label="Your name"
+          placeholder="e.g. Adébáyọ̀ Ola"
           autoComplete="given-name"
           value={name}
           onChange={setName}
@@ -51,6 +52,7 @@ export function SignUpForm() {
         />
         <TextField
           label="Email"
+          placeholder="name@example.com"
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -60,6 +62,7 @@ export function SignUpForm() {
         />
         <TextField
           label="Password"
+          placeholder="At least 12 characters"
           type="password"
           autoComplete="new-password"
           value={password}

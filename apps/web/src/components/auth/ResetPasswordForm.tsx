@@ -58,6 +58,7 @@ export function ResetPasswordForm({ token }: Readonly<{ token: string }>) {
       <div className="grid gap-4">
         <TextField
           label="New password"
+          placeholder="Choose a new password"
           type="password"
           autoComplete="new-password"
           value={password}

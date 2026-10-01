@@ -69,4 +69,12 @@ describe("ResetPasswordForm", () => {
       "/forgot-password",
     );
   });
+
+  it("says what to type in the new password field", () => {
+    render(<ResetPasswordForm token={TOKEN} />);
+    expect(screen.getByLabelText("New password")).toHaveAttribute(
+      "placeholder",
+      "Choose a new password",
+    );
+  });
 });

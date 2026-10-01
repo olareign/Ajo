@@ -54,6 +54,7 @@ export function MfaForm() {
         {useRecovery ? (
           <TextField
             label="Recovery code"
+            placeholder="xxxxx-xxxxx"
             autoComplete="off"
             autoCapitalize="none"
             spellCheck={false}

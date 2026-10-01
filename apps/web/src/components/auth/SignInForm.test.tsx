@@ -72,4 +72,10 @@ describe("SignInForm", () => {
       "/forgot-password",
     );
   });
+
+  it("shows an example in each field", () => {
+    render(<SignInForm />);
+    expect(screen.getByLabelText("Email")).toHaveAttribute("placeholder", "name@example.com");
+    expect(screen.getByLabelText("Password")).toHaveAttribute("placeholder", "Enter your password");
+  });
 });
