@@ -25,7 +25,9 @@ export function ScreenHeader({ title, eyebrow, onBack, backHref }: Props) {
           <ChevronLeft aria-hidden className="size-6" />
         </Link>
       )}
-      {eyebrow && <p className="mb-2 text-[13px] font-semibold tracking-[0.01em] text-adire">{eyebrow}</p>}
+      {eyebrow && (
+        <p className="mb-2 text-[13px] font-semibold tracking-[0.01em] text-adire">{eyebrow}</p>
+      )}
       <h1 className="font-display text-[32px] leading-9 font-bold tracking-[-0.015em] text-balance text-ink">
         {title}
       </h1>

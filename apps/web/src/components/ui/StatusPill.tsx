@@ -13,7 +13,10 @@ const STATUS: Record<Status, { word: string; Icon: LucideIcon; tone: string }> =
 };
 
 /** A status is always a word, an icon and a colour, so it reads without colour vision. */
-export function StatusPill({ status, children }: Readonly<{ status: Status; children?: ReactNode }>) {
+export function StatusPill({
+  status,
+  children,
+}: Readonly<{ status: Status; children?: ReactNode }>) {
   const { word, Icon, tone } = STATUS[status];
   return (
     <span

@@ -6,8 +6,15 @@ describe("TabBar", () => {
   it("has four destinations and the gold action in the middle", () => {
     render(<TabBar current="/circles" />);
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
-    expect(screen.getAllByRole("link").map((l) => l.textContent)).toEqual(["Today", "Circles", "Wallet", "Me"]);
-    expect(screen.getByRole("button", { name: "Pay, add money or start a circle" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "Today",
+      "Circles",
+      "Wallet",
+      "Me",
+    ]);
+    expect(
+      screen.getByRole("button", { name: "Pay, add money or start a circle" }),
+    ).toBeInTheDocument();
   });
 
   it("marks the current section, including pages inside it", () => {

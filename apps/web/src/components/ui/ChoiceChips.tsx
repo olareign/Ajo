@@ -31,7 +31,13 @@ export function ChoiceChips({ label, options, value, onChange, hideLabel = false
 
   return (
     <div>
-      <p id={labelId} className={cn("mb-3 font-display text-[21px] leading-7 font-semibold", hideLabel && "sr-only")}>
+      <p
+        id={labelId}
+        className={cn(
+          "mb-3 font-display text-[21px] leading-7 font-semibold",
+          hideLabel && "sr-only",
+        )}
+      >
         {label}
       </p>
       <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-2">

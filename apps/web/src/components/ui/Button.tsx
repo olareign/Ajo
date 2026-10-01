@@ -8,7 +8,8 @@ const variants: Record<Variant, string> = {
   primary: "bg-adire text-on-adire hover:bg-adire-deep",
   // Gold is reserved for actions that move money.
   money: "bg-oro text-on-oro hover:brightness-95",
-  quiet: "bg-transparent text-adire shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-adire-tint",
+  quiet:
+    "bg-transparent text-adire shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-adire-tint",
   danger: "bg-transparent text-danger shadow-[inset_0_0_0_1.5px_var(--danger)]",
 };
 
