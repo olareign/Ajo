@@ -7,7 +7,7 @@
  *      so the test does what a link does in the database). The command gets SQL on standard input:
  *        E2E_PSQL_COMMAND='docker exec -i <postgres> psql -U ajo -d ajo -tA' pnpm test:e2e:fullstack
  */
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { execSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -133,4 +133,98 @@ test("the code screen is only for a sign-in that is waiting for its second step"
 }) => {
   await page.goto("/sign-in/verify");
   await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+/** RFC 6238, what an authenticator app does: HMAC-SHA1 over the 30-second step, 6 digits. */
+function authenticatorCode(base32Secret: string, offsetSteps = 0): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const ch of base32Secret.replace(/=+$/, ""))
+    bits += alphabet.indexOf(ch).toString(2).padStart(5, "0");
+  const key = Buffer.from(bits.match(/.{8}/g)!.map((b) => parseInt(b, 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000) + offsetSteps));
+  const mac = createHmac("sha1", key).update(counter).digest();
+  const offset = mac[mac.length - 1]! & 0xf;
+  const value = (mac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000;
+  return String(value).padStart(6, "0");
+}
+
+const apiUrl = process.env.E2E_API_URL ?? "http://localhost:4000";
+async function api(path: string, init: { method?: string; token?: string; body?: object } = {}) {
+  const res = await fetch(`${apiUrl}/api/v1${path}`, {
+    method: init.method ?? "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init.token ? { Authorization: `Bearer ${init.token}` } : {}),
+    },
+    body: init.body ? JSON.stringify(init.body) : undefined,
+  });
+  return {
+    status: res.status,
+    data: res.status === 204 ? {} : ((await res.json()) as Record<string, any>),
+  };
+}
+
+test("a sign-in with the authenticator app on: the code screen, a wrong code, the right code, then a recovery code", async ({
+  page,
+}) => {
+  // Set the user up the way the app will: account, confirmed email, authenticator app turned on.
+  const email = `e2e+mfa${Date.now()}@example.com`;
+  expect(
+    (await api("/auth/sign-up", { body: { email, password, displayName: "Ada MFA" } })).status,
+  ).toBe(202);
+  confirmEmail(email);
+  const tokens = (await api("/auth/login", { body: { email, password } })).data;
+  const enrol = (await api("/auth/mfa/totp", { token: tokens.accessToken })).data;
+  const confirm = await api("/auth/mfa/totp/confirm", {
+    token: tokens.accessToken,
+    body: { code: authenticatorCode(enrol.secret) },
+  });
+  expect(confirm.status).toBe(200);
+  const recoveryCodes: string[] = confirm.data.recoveryCodes;
+  expect(recoveryCodes).toHaveLength(10);
+
+  // Signing in now leads to the code screen instead of Today.
+  const signIn = async () => {
+    await page.goto("/sign-in");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/sign-in\/verify$/);
+  };
+  await signIn();
+  await expect(page.getByRole("heading", { name: "Verify it's you" })).toBeVisible();
+  const confirmButton = page.getByRole("button", { name: "Confirm" });
+  await expect(confirmButton).toBeDisabled();
+
+  // A wrong code is refused with the API's message and the boxes clear.
+  const type = async (digits: string) => {
+    for (const d of digits) await page.getByRole("button", { name: d, exact: true }).click();
+  };
+  await type("000000");
+  await expect(confirmButton).toBeEnabled();
+  await confirmButton.click();
+  await expect(alert(page)).toContainText("That code is incorrect.");
+  await expect(page).toHaveURL(/\/sign-in\/verify$/);
+
+  // The right code (the next 30-second step, since this step was used to turn it on) signs in.
+  await type(authenticatorCode(enrol.secret, 1));
+  await confirmButton.click();
+  await expect(page).toHaveURL(/\/today/);
+
+  // A fresh sign-in can use a recovery code instead, once.
+  await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
+  await signIn();
+  await page.getByRole("button", { name: "Use a recovery code" }).click();
+  await page.getByLabel("Recovery code").fill(recoveryCodes[0]!.toUpperCase());
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page).toHaveURL(/\/today/);
+
+  await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
+  await signIn();
+  await page.getByRole("button", { name: "Use a recovery code" }).click();
+  await page.getByLabel("Recovery code").fill(recoveryCodes[0]!);
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(alert(page)).toContainText("That code is incorrect.");
 });
