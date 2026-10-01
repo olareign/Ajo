@@ -33,7 +33,9 @@ export function PinPad({ value, onChange, length = 6, label }: Props) {
       <p className="sr-only" aria-live="polite">
         {`${value.length} of ${length} digits entered`}
       </p>
-      <Keypad value={value} onChange={onChange} length={length} labelledBy={labelId} />
+      <div className="w-full">
+        <Keypad value={value} onChange={onChange} length={length} labelledBy={labelId} />
+      </div>
     </div>
   );
 }
