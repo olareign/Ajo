@@ -26,7 +26,7 @@ const BEAD = {
   paid: "fill-leaf stroke-leaf [&+text]:fill-surface-raised",
   pending: "fill-surface-raised stroke-line-strong [&+text]:fill-ink",
   late: "fill-danger stroke-danger [&+text]:fill-surface-raised",
-  covered: "fill-adire stroke-adire [&+text]:fill-on-adire",
+  covered: "fill-tertiary stroke-tertiary [&+text]:fill-on-tertiary",
   recipient: "fill-oro stroke-oro [&+text]:fill-on-oro",
 } as const;
 
@@ -34,7 +34,7 @@ const RING = {
   paid: "stroke-leaf",
   pending: "stroke-line-strong",
   late: "stroke-danger",
-  covered: "stroke-adire",
+  covered: "stroke-tertiary",
   recipient: "stroke-oro",
 } as const;
 
@@ -76,7 +76,7 @@ export function CircleRing({
         aria-label={`${title ? `${title}. ` : ""}${description}`}
         className="block h-auto w-full overflow-visible"
       >
-        <circle cx={C} cy={C} r={R} fill="none" className="stroke-adire-tint" strokeWidth={10} />
+        <circle cx={C} cy={C} r={R} fill="none" className="stroke-primary-tint" strokeWidth={10} />
         {members.map((m, i) => {
           const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
           const x = C + R * Math.cos(angle);

@@ -8,7 +8,7 @@ const STATUS: Record<Status, { word: string; Icon: LucideIcon; tone: string }> =
   paid: { word: "Paid", Icon: Check, tone: "bg-leaf-tint text-leaf" },
   pending: { word: "Pending", Icon: Clock, tone: "bg-surface-sunken text-ink-muted" },
   late: { word: "Late", Icon: TriangleAlert, tone: "bg-danger-tint text-danger" },
-  covered: { word: "Covered", Icon: Shield, tone: "bg-adire-tint text-adire-deep" },
+  covered: { word: "Covered", Icon: Shield, tone: "bg-tertiary-tint text-tertiary" },
   yourTurn: { word: "Your turn", Icon: Coins, tone: "bg-oro text-on-oro" },
 };
 

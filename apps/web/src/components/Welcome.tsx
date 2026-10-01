@@ -29,7 +29,7 @@ export function Welcome({ photos = [] }: Readonly<{ photos?: readonly string[] }
           size={260}
         />
         <div className="grid justify-items-center gap-3 text-center">
-          <span className="grid size-14 place-items-center rounded-full bg-oro text-on-oro shadow-[0_6px_18px_-8px_var(--oro)]">
+          <span className="grid size-14 place-items-center rounded-full bg-tertiary text-on-tertiary shadow-[0_6px_18px_-8px_var(--tertiary)]">
             <PiggyBank aria-hidden className="size-8" strokeWidth={1.75} />
           </span>
           <h1 className="font-display text-[44px] leading-[46px] font-bold tracking-[-0.02em] text-balance">
@@ -41,12 +41,15 @@ export function Welcome({ photos = [] }: Readonly<{ photos?: readonly string[] }
         </div>
       </div>
       <div className="grid gap-3">
-        <Link href="/sign-up" className={`${action} bg-adire text-on-adire hover:bg-adire-deep`}>
+        <Link
+          href="/sign-up"
+          className={`${action} bg-primary text-on-primary hover:bg-primary-deep`}
+        >
           Create account
         </Link>
         <Link
           href="/sign-in"
-          className={`${action} text-adire shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-adire-tint`}
+          className={`${action} text-primary shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-primary-tint`}
         >
           Sign in
         </Link>

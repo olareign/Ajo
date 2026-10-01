@@ -58,8 +58,8 @@ export function ChoiceChips({ label, options, value, onChange, hideLabel = false
               className={cn(
                 "min-h-11 rounded-full border-[1.5px] px-4 text-sm font-semibold transition-colors duration-150",
                 checked
-                  ? "border-adire bg-adire text-on-adire"
-                  : "border-line-strong bg-surface-raised text-ink hover:bg-adire-tint",
+                  ? "border-primary bg-primary text-on-primary"
+                  : "border-line-strong bg-surface-raised text-ink hover:bg-primary-tint",
               )}
             >
               {option.label}

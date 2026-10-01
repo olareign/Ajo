@@ -39,7 +39,7 @@ test("the welcome screen follows the viewer's dark theme", async ({ browser }) =
   const page = await context.newPage();
   await page.goto("/");
   const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(background).toBe("rgb(13, 17, 48)");
+  expect(background).toBe("rgb(10, 20, 16)");
   await page.screenshot({ path: "e2e/screenshots/welcome-dark.png" });
   await context.close();
 });

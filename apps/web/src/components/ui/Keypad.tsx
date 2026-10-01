@@ -54,7 +54,7 @@ export function Keypad({ value, onChange, length, label, labelledBy }: Props) {
             key={i}
             type="button"
             onClick={() => press(key)}
-            className="grid h-14 place-items-center rounded-m bg-surface-raised font-display text-[22px] font-semibold text-ink active:bg-adire-tint"
+            className="grid h-14 place-items-center rounded-m bg-surface-raised font-display text-[22px] font-semibold text-ink active:bg-primary-tint"
           >
             {key}
           </button>

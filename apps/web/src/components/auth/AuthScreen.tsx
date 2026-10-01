@@ -3,12 +3,12 @@ import type { ReactNode } from "react";
 /** A few beads from the circle, cropped by the corner of the screen: decoration, never information. */
 function BeadCorner() {
   const beads = [
-    { cx: 150, cy: 18, r: 9, className: "fill-adire-tint" },
-    { cx: 120, cy: 40, r: 7, className: "fill-adire-tint" },
-    { cx: 168, cy: 58, r: 11, className: "fill-oro" },
-    { cx: 100, cy: 72, r: 5, className: "fill-adire-tint" },
-    { cx: 140, cy: 92, r: 8, className: "fill-adire-tint" },
-    { cx: 176, cy: 112, r: 6, className: "fill-adire-tint" },
+    { cx: 150, cy: 18, r: 9, className: "fill-tertiary-tint" },
+    { cx: 120, cy: 40, r: 7, className: "fill-tertiary" },
+    { cx: 168, cy: 58, r: 11, className: "fill-primary" },
+    { cx: 100, cy: 72, r: 5, className: "fill-tertiary-tint" },
+    { cx: 140, cy: 92, r: 8, className: "fill-primary-tint" },
+    { cx: 176, cy: 112, r: 6, className: "fill-tertiary-tint" },
   ];
   return (
     <svg

@@ -150,6 +150,7 @@ function authenticatorCode(base32Secret: string, offsetSteps = 0): string {
   return String(value).padStart(6, "0");
 }
 
+type ApiJson = { accessToken?: string; secret?: string; recoveryCodes?: string[] };
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:4000";
 async function api(path: string, init: { method?: string; token?: string; body?: object } = {}) {
   const res = await fetch(`${apiUrl}/api/v1${path}`, {
@@ -162,7 +163,7 @@ async function api(path: string, init: { method?: string; token?: string; body?:
   });
   return {
     status: res.status,
-    data: res.status === 204 ? {} : ((await res.json()) as Record<string, any>),
+    data: res.status === 204 ? {} : ((await res.json()) as ApiJson),
   };
 }
 
@@ -176,13 +177,13 @@ test("a sign-in with the authenticator app on: the code screen, a wrong code, th
   ).toBe(202);
   confirmEmail(email);
   const tokens = (await api("/auth/login", { body: { email, password } })).data;
-  const enrol = (await api("/auth/mfa/totp", { token: tokens.accessToken })).data;
+  const enrol = (await api("/auth/mfa/totp", { token: tokens.accessToken! })).data;
   const confirm = await api("/auth/mfa/totp/confirm", {
-    token: tokens.accessToken,
-    body: { code: authenticatorCode(enrol.secret) },
+    token: tokens.accessToken!,
+    body: { code: authenticatorCode(enrol.secret!) },
   });
   expect(confirm.status).toBe(200);
-  const recoveryCodes: string[] = confirm.data.recoveryCodes;
+  const recoveryCodes = confirm.data.recoveryCodes!;
   expect(recoveryCodes).toHaveLength(10);
 
   // Signing in now leads to the code screen instead of Today.
@@ -209,7 +210,7 @@ test("a sign-in with the authenticator app on: the code screen, a wrong code, th
   await expect(page).toHaveURL(/\/sign-in\/verify$/);
 
   // The right code (the next 30-second step, since this step was used to turn it on) signs in.
-  await type(authenticatorCode(enrol.secret, 1));
+  await type(authenticatorCode(enrol.secret!, 1));
   await confirmButton.click();
   await expect(page).toHaveURL(/\/today/);
 

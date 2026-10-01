@@ -36,7 +36,7 @@ export function ResetPasswordForm({ token }: Readonly<{ token: string }>) {
       <div className="flex flex-1 flex-col">
         <div className="grid justify-items-center gap-4 pt-10 text-center">
           <ShieldCheck aria-hidden className="size-10 text-leaf" />
-          <h2 className="font-display text-[26px] leading-8 font-bold text-adire">
+          <h2 className="font-display text-[26px] leading-8 font-bold text-primary">
             Password changed
           </h2>
           <p className="text-[17px] leading-[26px] text-ink-muted">
@@ -45,7 +45,7 @@ export function ResetPasswordForm({ token }: Readonly<{ token: string }>) {
         </div>
         <Link
           href="/sign-in"
-          className="mt-auto flex min-h-14 items-center justify-center rounded-m bg-adire px-6 text-base font-semibold text-on-adire hover:bg-adire-deep"
+          className="mt-auto flex min-h-14 items-center justify-center rounded-m bg-primary px-6 text-base font-semibold text-on-primary hover:bg-primary-deep"
         >
           Sign in
         </Link>
@@ -69,7 +69,7 @@ export function ResetPasswordForm({ token }: Readonly<{ token: string }>) {
         {error && DEAD_LINK.test(error) && (
           <Link
             href="/forgot-password"
-            className="justify-self-start text-[15px] font-semibold text-adire underline-offset-4 hover:underline"
+            className="justify-self-start text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
           >
             Ask for a new link
           </Link>

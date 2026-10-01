@@ -92,6 +92,6 @@ describe("TextField", () => {
     const cls = screen.getByLabelText("Email").className;
     expect(cls).toContain("bg-surface-sunken");
     expect(cls).toContain("border-transparent");
-    expect(cls).toContain("focus:border-adire");
+    expect(cls).toContain("focus:border-primary");
   });
 });
