@@ -32,7 +32,10 @@ test("the PWA manifest is served", async ({ request }) => {
 });
 
 test("the welcome screen follows the viewer's dark theme", async ({ browser }) => {
-  const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 393, height: 851 } });
+  const context = await browser.newContext({
+    colorScheme: "dark",
+    viewport: { width: 393, height: 851 },
+  });
   const page = await context.newPage();
   await page.goto("/");
   const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -49,4 +52,18 @@ test("the welcome links lead to working sign-up and sign-in screens", async ({ p
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   await page.goto("/today");
   await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test("password fields can be shown and hidden with the eye button", async ({ page }) => {
+  for (const path of ["/sign-up", "/sign-in"]) {
+    await page.goto(path);
+    const password = page.getByLabel("Password", { exact: true });
+    await password.fill("a long secret phrase");
+    await expect(password).toHaveAttribute("type", "password");
+    await page.getByRole("button", { name: "Show password" }).click();
+    await expect(password).toHaveAttribute("type", "text");
+    await expect(password).toHaveValue("a long secret phrase");
+    await page.getByRole("button", { name: "Hide password" }).click();
+    await expect(password).toHaveAttribute("type", "password");
+  }
 });
