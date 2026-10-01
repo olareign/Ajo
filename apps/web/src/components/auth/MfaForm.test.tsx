@@ -90,4 +90,10 @@ describe("MfaForm", () => {
     const key = screen.getByRole("button", { name: "1" });
     expect(confirm.compareDocumentPosition(key) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it("shows the shape of a recovery code", async () => {
+    render(<MfaForm />);
+    await userEvent.click(screen.getByRole("button", { name: "Use a recovery code" }));
+    expect(screen.getByLabelText("Recovery code")).toHaveAttribute("placeholder", "xxxxx-xxxxx");
+  });
 });

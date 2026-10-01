@@ -94,4 +94,9 @@ describe("TextField", () => {
     expect(cls).toContain("border-transparent");
     expect(cls).toContain("focus:border-primary");
   });
+
+  it("keeps a placeholder readable, since it is a hint and never replaces the label", () => {
+    render(<TextField label="Email" value="" onChange={() => {}} placeholder="name@example.com" />);
+    expect(screen.getByLabelText("Email").className).toContain("placeholder:text-ink-muted");
+  });
 });

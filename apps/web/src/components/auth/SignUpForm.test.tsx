@@ -95,4 +95,14 @@ describe("SignUpForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("12 characters");
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("shows an example in every field, so people know what goes where", () => {
+    render(<SignUpForm />);
+    expect(screen.getByLabelText("Your name")).toHaveAttribute("placeholder", "e.g. Adébáyọ̀ Ola");
+    expect(screen.getByLabelText("Email")).toHaveAttribute("placeholder", "name@example.com");
+    expect(screen.getByLabelText("Password")).toHaveAttribute(
+      "placeholder",
+      "At least 12 characters",
+    );
+  });
 });

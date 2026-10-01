@@ -61,7 +61,7 @@ test("sign up, get refused until verified, then sign in and out against the real
   confirmEmail(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/today/);
+  await expect(page).toHaveURL(/\/(today|onboarding)/);
   const session = (await context.cookies()).find((c) => c.name === "ajo_session");
   expect(session?.httpOnly).toBe(true);
   expect(session?.sameSite).toBe("Strict");
@@ -118,7 +118,7 @@ test("recover a forgotten password: ask for a link, choose a new password, sign 
   await expect(alert(page)).toContainText("Email or password is incorrect.");
   await page.getByLabel("Password", { exact: true }).fill(fresh);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/today/);
+  await expect(page).toHaveURL(/\/(today|onboarding)/);
 
   // The link works once only.
   await page.goto(`/reset-password?token=${token}`);
@@ -212,7 +212,7 @@ test("a sign-in with the authenticator app on: the code screen, a wrong code, th
   // The right code (the next 30-second step, since this step was used to turn it on) signs in.
   await type(authenticatorCode(enrol.secret!, 1));
   await confirmButton.click();
-  await expect(page).toHaveURL(/\/today/);
+  await expect(page).toHaveURL(/\/(today|onboarding)/);
 
   // A fresh sign-in can use a recovery code instead, once.
   await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
@@ -220,7 +220,7 @@ test("a sign-in with the authenticator app on: the code screen, a wrong code, th
   await page.getByRole("button", { name: "Use a recovery code" }).click();
   await page.getByLabel("Recovery code").fill(recoveryCodes[0]!.toUpperCase());
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page).toHaveURL(/\/today/);
+  await expect(page).toHaveURL(/\/(today|onboarding)/);
 
   await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
   await signIn();
@@ -228,4 +228,48 @@ test("a sign-in with the authenticator app on: the code screen, a wrong code, th
   await page.getByLabel("Recovery code").fill(recoveryCodes[0]!);
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(alert(page)).toContainText("That code is incorrect.");
+});
+
+test("a new person is taken through onboarding and then lands on Today", async ({ page }) => {
+  const email = `e2e+onboard${Date.now()}@example.com`;
+  await signUp(page, email);
+  confirmEmail(email);
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  // Not onboarded yet, so Today sends them to the questions.
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.getByRole("radio", { name: /Nigeria/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio", { name: /Save with a circle/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  const enter = async (digits: string) => {
+    for (const d of digits) await page.getByRole("button", { name: d, exact: true }).click();
+  };
+  // An easy-to-guess PIN is refused by the API, with its reason.
+  await enter("123456");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await enter("123456");
+  await page.getByRole("button", { name: "Finish" }).click();
+  await expect(alert(page)).toContainText("PIN");
+
+  await enter("493817");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await enter("493817");
+  await page.getByRole("button", { name: "Finish" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  await expect(page.getByRole("heading", { name: "Hello, Ada Tester" })).toBeVisible();
+
+  // Onboarding is done: the questions are no longer reachable, and the API holds the answers.
+  await page.goto("/onboarding");
+  await expect(page).toHaveURL(/\/today$/);
+  expect(sql(`select country || goal from users where email = '${email}'`)).toBe("NGcircle");
+  expect(
+    sql(
+      `select pin_hash like '$argon2id$%' from transaction_pins p join users u on u.id = p.user_id where u.email = '${email}'`,
+    ),
+  ).toBe("t");
 });

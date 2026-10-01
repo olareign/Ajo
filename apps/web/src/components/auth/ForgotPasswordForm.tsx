@@ -52,6 +52,7 @@ export function ForgotPasswordForm() {
     <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col">
       <TextField
         label="Email"
+        placeholder="name@example.com"
         type="email"
         autoComplete="email"
         inputMode="email"

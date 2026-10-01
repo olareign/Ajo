@@ -46,4 +46,9 @@ describe("ForgotPasswordForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Too many requests");
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
   });
+
+  it("shows an example email", () => {
+    render(<ForgotPasswordForm />);
+    expect(screen.getByLabelText("Email")).toHaveAttribute("placeholder", "name@example.com");
+  });
 });

@@ -32,6 +32,7 @@ export function SignInForm() {
       <div className="grid gap-5">
         <TextField
           label="Email"
+          placeholder="name@example.com"
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -41,6 +42,7 @@ export function SignInForm() {
         />
         <TextField
           label="Password"
+          placeholder="Enter your password"
           type="password"
           autoComplete="current-password"
           value={password}
