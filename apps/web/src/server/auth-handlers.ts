@@ -2,7 +2,15 @@ import { callApi, type Fetch } from "./api-client";
 import { readCookie, serializeCookie } from "./cookies";
 import type { ServerEnv } from "./env";
 import { isSameOrigin } from "./same-origin";
-import { MFA_TTL_SECONDS, mfaCookie, openSeal, seal, SESSION_TTL_SECONDS, sessionCookie, type Session } from "./session";
+import {
+  MFA_TTL_SECONDS,
+  mfaCookie,
+  openSeal,
+  seal,
+  SESSION_TTL_SECONDS,
+  sessionCookie,
+  type Session,
+} from "./session";
 
 export type Deps = Readonly<{ env: ServerEnv; fetchFn: Fetch }>;
 
@@ -19,7 +27,9 @@ async function readObject(request: Request): Promise<Record<string, unknown> | n
   if (text.length > 10_000) return null;
   try {
     const value: unknown = JSON.parse(text);
-    return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
   } catch {
     return null;
   }
@@ -41,24 +51,48 @@ export async function handleSignUp(request: Request, { env, fetchFn }: Deps): Pr
   return json(result.status, result.data);
 }
 
+export async function handleVerifyEmail(
+  request: Request,
+  { env, fetchFn }: Deps,
+): Promise<Response> {
+  if (!isSameOrigin(request)) return FORBIDDEN();
+  const body = await readObject(request);
+  if (!body) return json(400, { message: "Send the form as JSON." });
+  const result = await callApi(env, fetchFn, {
+    path: "/auth/email/verify",
+    body: pick(body, ["token"]),
+  });
+  return json(result.status, result.data);
+}
+
 export async function handleSignIn(request: Request, { env, fetchFn }: Deps): Promise<Response> {
   if (!isSameOrigin(request)) return FORBIDDEN();
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
-  const result = await callApi(env, fetchFn, { path: "/auth/login", body: pick(body, ["email", "password"]) });
+  const result = await callApi(env, fetchFn, {
+    path: "/auth/login",
+    body: pick(body, ["email", "password"]),
+  });
 
   if (result.status !== 200) return json(result.status, result.data);
 
   if (result.data.mfaRequired === true && typeof result.data.mfaToken === "string") {
     const cookie = mfaCookie(env.production);
-    const sealed = await seal({ mfaToken: result.data.mfaToken }, env.sessionSecret, MFA_TTL_SECONDS);
+    const sealed = await seal(
+      { mfaToken: result.data.mfaToken },
+      env.sessionSecret,
+      MFA_TTL_SECONDS,
+    );
     return json(200, { mfaRequired: true }, [serializeCookie(cookie.name, sealed, cookie.options)]);
   }
   return startSession(env, result.data);
 }
 
 /** Seals the API's tokens into the session cookie; the body says only that it worked. */
-export async function startSession(env: ServerEnv, data: Record<string, unknown>): Promise<Response> {
+export async function startSession(
+  env: ServerEnv,
+  data: Record<string, unknown>,
+): Promise<Response> {
   if (typeof data.accessToken !== "string" || typeof data.refreshToken !== "string") {
     return json(502, { message: "Sign-in did not complete. Please try again." });
   }

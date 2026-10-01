@@ -25,7 +25,8 @@ export async function callApi(
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
-    const data = res.status === 204 ? {} : ((await res.json().catch(() => ({}))) as Record<string, unknown>);
+    const data =
+      res.status === 204 ? {} : ((await res.json().catch(() => ({}))) as Record<string, unknown>);
     return { status: res.status, data };
   } catch {
     return { status: 502, data: { message: UNREACHABLE } };

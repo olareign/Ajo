@@ -9,7 +9,10 @@ describe("loadServerEnv", () => {
   };
 
   it("accepts a valid production configuration", () => {
-    expect(loadServerEnv(prod)).toMatchObject({ apiBaseUrl: "https://api.ajo.example", production: true });
+    expect(loadServerEnv(prod)).toMatchObject({
+      apiBaseUrl: "https://api.ajo.example",
+      production: true,
+    });
   });
 
   it("uses local defaults in development", () => {
@@ -20,14 +23,20 @@ describe("loadServerEnv", () => {
   });
 
   it("requires an https API and a strong session secret in production", () => {
-    expect(() => loadServerEnv({ ...prod, API_BASE_URL: "http://api.ajo.example" })).toThrow(/API_BASE_URL/);
+    expect(() => loadServerEnv({ ...prod, API_BASE_URL: "http://api.ajo.example" })).toThrow(
+      /API_BASE_URL/,
+    );
     expect(() => loadServerEnv({ ...prod, SESSION_SECRET: "short" })).toThrow(/SESSION_SECRET/);
     expect(() => loadServerEnv({ ...prod, SESSION_SECRET: undefined })).toThrow(/SESSION_SECRET/);
   });
 
   it("never echoes the secret in errors", () => {
     try {
-      loadServerEnv({ ...prod, API_BASE_URL: "nope", SESSION_SECRET: "leak-me-please-leak-me-please-123" });
+      loadServerEnv({
+        ...prod,
+        API_BASE_URL: "nope",
+        SESSION_SECRET: "leak-me-please-leak-me-please-123",
+      });
     } catch (error) {
       expect(String(error)).not.toContain("leak-me");
     }

@@ -40,3 +40,13 @@ test("the welcome screen follows the viewer's dark theme", async ({ browser }) =
   await page.screenshot({ path: "e2e/screenshots/welcome-dark.png" });
   await context.close();
 });
+
+test("the welcome links lead to working sign-up and sign-in screens", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Create account" }).click();
+  await expect(page.getByRole("heading", { name: "Let's get you started" })).toBeVisible();
+  await page.goto("/sign-in");
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await page.goto("/today");
+  await expect(page).toHaveURL(/\/sign-in$/);
+});

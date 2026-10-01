@@ -38,6 +38,12 @@ export function sessionCookie(production: boolean, maxAge = SESSION_TTL_SECONDS)
 export function mfaCookie(production: boolean): CookieSpec {
   return {
     name: production ? "__Host-ajo_mfa" : "ajo_mfa",
-    options: { httpOnly: true, secure: production, sameSite: "strict", path: "/", maxAge: MFA_TTL_SECONDS },
+    options: {
+      httpOnly: true,
+      secure: production,
+      sameSite: "strict",
+      path: "/",
+      maxAge: MFA_TTL_SECONDS,
+    },
   };
 }

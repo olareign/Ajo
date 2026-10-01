@@ -1,6 +1,10 @@
 import { randomBytes } from "node:crypto";
 
-export type ServerEnv = Readonly<{ apiBaseUrl: string; sessionSecret: string; production: boolean }>;
+export type ServerEnv = Readonly<{
+  apiBaseUrl: string;
+  sessionSecret: string;
+  production: boolean;
+}>;
 
 const DEV_SECRET = randomBytes(32).toString("base64url");
 
@@ -17,7 +21,8 @@ export function loadServerEnv(source: Record<string, string | undefined>): Serve
   } catch {
     problems.push("API_BASE_URL: must be a URL");
   }
-  if (url && production && url.protocol !== "https:") problems.push("API_BASE_URL: must use https in production");
+  if (url && production && url.protocol !== "https:")
+    problems.push("API_BASE_URL: must use https in production");
   if (sessionSecret.length < 32) problems.push("SESSION_SECRET: must be at least 32 characters");
 
   if (problems.length > 0) throw new Error(`Invalid server configuration: ${problems.join("; ")}`);

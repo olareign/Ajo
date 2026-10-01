@@ -1,8 +1,19 @@
-type Options = Readonly<{ httpOnly: true; secure: boolean; sameSite: "strict"; path: "/"; maxAge?: number }>;
+type Options = Readonly<{
+  httpOnly: true;
+  secure: boolean;
+  sameSite: "strict";
+  path: "/";
+  maxAge?: number;
+}>;
 
 /** Serialises a Set-Cookie header value. */
 export function serializeCookie(name: string, value: string, options: Options): string {
-  const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path}`, "HttpOnly", "SameSite=Strict"];
+  const parts = [
+    `${name}=${encodeURIComponent(value)}`,
+    `Path=${options.path}`,
+    "HttpOnly",
+    "SameSite=Strict",
+  ];
   if (options.secure) parts.push("Secure");
   if (options.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
   return parts.join("; ");

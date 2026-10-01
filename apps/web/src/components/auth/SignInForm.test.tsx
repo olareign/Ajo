@@ -1,0 +1,54 @@
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { SignInForm } from "./SignInForm";
+
+const push = vi.fn();
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  push.mockReset();
+  refresh.mockReset();
+});
+
+async function submit() {
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Email"), "ada@example.com");
+  await user.type(screen.getByLabelText("Password"), "correct horse battery");
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
+}
+
+describe("SignInForm", () => {
+  it("goes to Today after a plain sign-in", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ signedIn: true })),
+    );
+    render(<SignInForm />);
+    await submit();
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/today"));
+  });
+
+  it("goes to the code step when a second factor is needed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ mfaRequired: true })),
+    );
+    render(<SignInForm />);
+    await submit();
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/sign-in/verify"));
+  });
+
+  it("shows a generic message for bad credentials", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({ message: "Email or password is incorrect." }, { status: 401 }),
+      ),
+    );
+    render(<SignInForm />);
+    await submit();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Email or password is incorrect.");
+  });
+});

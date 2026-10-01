@@ -21,7 +21,12 @@ describe("sessionCookie", () => {
   it("is httpOnly, SameSite=strict and host-only in production", () => {
     const cookie = sessionCookie(true);
     expect(cookie.name).toBe("__Host-ajo_session");
-    expect(cookie.options).toMatchObject({ httpOnly: true, secure: true, sameSite: "strict", path: "/" });
+    expect(cookie.options).toMatchObject({
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+    });
     expect(cookie.options).not.toHaveProperty("domain");
   });
 
