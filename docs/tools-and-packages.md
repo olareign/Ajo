@@ -125,6 +125,7 @@ Layout: one NestJS application with one module per bounded context (identity, KY
 | --- | --- | --- |
 | `@nestjs/passport`, `passport-jwt` or `jose` | Short-lived access tokens; rotating, revocable refresh tokens | Both |
 | `argon2` | Hashing passwords and transaction PINs (argon2id) | Both |
+| `otpauth` | Authenticator-app codes (TOTP, RFC 6238) and enrolment QR payloads | Both |
 | Have I Been Pwned Pwned Passwords API (k-anonymity) | Rejects passwords known from breaches without sending the password | Both |
 | Node `crypto` (AES-256-GCM) with a KMS-held key | Field-level encryption of ID numbers, BVN and exact location | Both |
 | `libphonenumber-js` | Phone number validation (E.164) | Both |
@@ -184,22 +185,24 @@ Before real money moves, confirm the chosen host offers: encryption at rest, pri
 
 ## External services
 
-Choose providers per launch country in Phase 0; a global provider plus a regional one often covers both home and diaspora users. Pricing and country coverage have not been checked yet. All are called only from the API.
+Partners selected for Nigeria (NGN) and the United Kingdom (GBP). Contracts, pricing and sandbox access are still to arrange (P0.3); until then each one is an adapter with a tested in-memory stand-in. All are called only from the API.
 
-| Need | Services | Integration |
-| --- | --- | --- |
-| KYC: global ID documents, liveness; NIN and BVN in Nigeria | Sumsub, Onfido, Veriff, Persona (global); Smile ID, Dojah, Prembly (Africa) | Provider REST API and web SDK |
-| AML and sanctions screening | ComplyAdvantage, or the KYC provider's built-in screening | REST API and webhooks |
-| Collections and auto-debit | Stripe, GoCardless for UK, EU, US, Canada and more; Paystack, Flutterwave, Mono for Africa | REST API and webhooks |
-| Payouts to bank accounts | Stripe, Wise Platform, Paystack Transfers, Flutterwave Transfers | REST API and webhooks |
-| Currency exchange and cross-border transfers | Wise Platform, Flutterwave, Thunes, Currencycloud | REST API and webhooks |
-| Open banking (bank-account checks, pay by bank) | Plaid (US, Canada), TrueLayer (UK, EU), Mono (Nigeria) | REST API and web SDK |
-| Licensed fund holding | Licensed banks or e-money institutions per market through banking-as-a-service; non-interest banks for halal products | Partner API |
-| SMS and OTP | Twilio global; Termii, Africa's Talking for Africa (alerts and any second factor) | REST API |
-| WhatsApp messages and OTP | WhatsApp Business Platform (via Twilio or Meta) | REST API |
-| Email | Resend (with `@react-email/components` templates), Postmark | REST API |
-| Push notifications | Web Push (VAPID) now; Firebase Cloud Messaging (`firebase-admin`) for native later | Server SDK |
-| Maps and area names | OpenStreetMap Nominatim, or Google Maps Geocoding | REST API |
+| Need | Nigeria | United Kingdom | Integration |
+| --- | --- | --- | --- |
+| KYC and identity (ID documents, selfie and liveness; NIN and BVN in Nigeria) | Smile ID | Onfido | REST API and web SDK |
+| AML and sanctions screening, ongoing monitoring | ComplyAdvantage | ComplyAdvantage | REST API and webhooks |
+| Collections and auto-debit | Paystack (NIBSS Direct Debit, cards, transfers in) | GoCardless (Bacs Direct Debit) | REST API and webhooks |
+| Payouts to bank accounts | Paystack Transfers | Modulr (Faster Payments from the safeguarded account) | REST API and webhooks |
+| Licensed fund holding | To be chosen with Nigerian legal counsel after the CBN review (P0.2): a partner bank or banking-as-a-service provider | Modulr (FCA e-money institution, safeguarded) at launch; ClearBank (licensed bank, FSCS-protected deposits) when scale requires | Partner API |
+| Currency exchange and cross-border transfers | Wise Platform | Wise Platform | REST API and webhooks |
+| Email (verification, password reset, security alerts) | Resend (with `@react-email/components` templates) | Resend | REST API |
+| SMS and WhatsApp alerts | Termii | Twilio | REST API |
+| Push notifications | Web Push (VAPID); Firebase Cloud Messaging for native later | Same | Server SDK |
+| Error tracking | Sentry | Sentry | SDK |
+| Logs, uptime and status page | Better Stack | Better Stack | Log drain and HTTP checks |
+| Maps and area names (Phase 3) | OpenStreetMap Nominatim | OpenStreetMap Nominatim | REST API |
+
+Considered and not selected: Sumsub, Veriff, Dojah, Prembly (KYC); Stripe, Mono, Flutterwave, TrueLayer (collections); Griffin, Railsr (UK fund holding); Currencycloud, Thunes (FX); Postmark, Amazon SES (email); Africa's Talking (SMS).
 
 ## Team, design and project tools
 
