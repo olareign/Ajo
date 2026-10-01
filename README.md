@@ -11,13 +11,22 @@
 
 ## Status
 
-Planning. No application code yet.
+Phase 0 foundations, built test first (see [CONTRIBUTING.md](CONTRIBUTING.md)):
+
+- `packages/domain`: money in minor units, double-entry ledger, calendar dates, solo plan schedules, and èsúsú rules (early spots, deposits, payout order by join order, verifiable random draw or finger pick, rounds and payouts). 100% test coverage.
+- `apps/web`: Next.js PWA with the Figma design tokens and components, onboarding, the solo savings plan wizard, and the groups list (sample data). There is no backend yet.
+
+```sh
+pnpm install && pnpm test && pnpm dev
+```
 
 ## Documents
 
-| Document | What it covers |
-| --- | --- |
-| [Product spec](docs/product-spec.md) | What the app does, group rules, decisions and open questions |
-| [Solution architecture](docs/solution-architecture.md) | System design, data model, API, integrations, security |
-| [Project plan](docs/project-plan.md) | Phases, epics and features with acceptance criteria, risks, go-live checklist |
-| [Tools and packages](docs/tools-and-packages.md) | Every tool, package and service from development to production |
+| Document                                               | What it covers                                                                                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| [Product spec](docs/product-spec.md)                   | What the app does, group rules, decisions and open questions                                            |
+| [Solution architecture](docs/solution-architecture.md) | System design, data model, API, integrations, security                                                  |
+| [Project plan](docs/project-plan.md)                   | Phases, epics and features with acceptance criteria, risks, go-live checklist                           |
+| [Tools and packages](docs/tools-and-packages.md)       | Every tool, package and service from development to production                                          |
+| [Design system](docs/design-system.md)                 | Tokens and components from Figma, build status per screen, and where the build departs from the designs |
+| [Contributing](CONTRIBUTING.md)                        | Setup, commands and the TDD workflow                                                                    |

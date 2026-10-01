@@ -1,0 +1,58 @@
+# Àjọ — Design System (from Figma)
+
+Oct 1, 2026 · @olareign
+
+Inferred from the Figma file *Alo App (Saving App Design Template)*. Tokens live in `apps/web/src/app/globals.css` (Tailwind `@theme`); components live in `apps/web/src/components`.
+
+## Tokens
+
+| Token | Value | Used for |
+| --- | --- | --- |
+| `brand-600` | `#038641` | Primary buttons, selected chips and tabs, eyebrow text ("Lets Go!"), payout amounts, splash screen |
+| `brand-700` | `#026B34` | Pressed or hover state of primary |
+| `brand-200` | `#C2E1D1` | Disabled Proceed button |
+| `brand-100` | `#E3F5EA` | "Active", "Member" and "Admin" pills |
+| `brand-50` | `#F2FBF6` | Tinted panels ("Benefits", plan summary), bottom nav |
+| `ink` / `ink-muted` | `#111111` / `#6B7280` | Headings / secondary labels |
+| `line` | `#D9D9D9` | Chip and input borders |
+| `surface-muted` | `#F7F8F9` | Cards, auth inputs, tab track |
+| `danger` | `#E53935` | "2/7 remaining", errors |
+| Font | Montserrat (variable, self-hosted) | All text; the auth screens in Figma use Inter or Roboto, which are unified here |
+| Radius | 8px fields and buttons; full pills for chips | |
+
+## Components
+
+| Component | Figma source | Notes |
+| --- | --- | --- |
+| `Button` | Proceed, Get Started, Chat Room, Cancel | Full width, 48px tall; `primary` and `outline` |
+| `ChoiceChips` | Amount, How Often?, Duration pills | An accessible radio group with arrow-key support |
+| `TextField` | Plan Name, Group Name, No of People ("Max 12") | Label above; hint inside on the right; error below |
+| `ScreenHeader` | Back chevron, green eyebrow, bold question | Used by every wizard screen |
+| `GroupCard` | Groups list cards | Avatars (+N), status pill, payout, due date, amount per frequency, fill bar, "x/y remaining" |
+| `ProgressBar` | Card fill bar | |
+| `BottomNav` | Home, Groups, Wallet, More | |
+
+## Screens in Figma and build status
+
+| Flow | Figma frames | Status |
+| --- | --- | --- |
+| Splash and onboarding | Splash, Onboarding 1–2 | Onboarding built (`/`) |
+| Sign in, sign up, OTP, password reset | Screens 4–12 | Not built yet; see differences below |
+| Solo savings | SELECT SAVINGS, Your selections, success | Built (`/savings/new`) |
+| Group type, private group setup, success | Groupss | Next: needs the èsúsú API |
+| Groups list | Groups / Your Groups | Built with sample data (`/groups`) |
+| Group info, share link, chat room | Invites, Group Info, Linkshare | Not built |
+| Wallet, referral, account, notifications | Wallets, Refferal, Account, Notification Page | Not built |
+
+## Where the build departs from Figma, and why
+
+| Figma | Built | Reason |
+| --- | --- | --- |
+| "Earn Interest", "Interest Rate 7.5 pa", "Invest group savings to earn more interest" | No interest anywhere; the estimate equals what the user pays in | Product spec: no interest, rewards must be Sharia-compatible |
+| Brand name "Alajo" | "Àjọ" | Name used in the repo docs; the app name is still an open question in the spec |
+| Sign in and sign up with email and password, plus Google and Apple | Not built yet | Spec E1: phone number and OTP plus a transaction PIN. Needs a decision before the auth screens are built |
+| "Specify Interval" | Daily, weekly or monthly only | Spec and data model support only these three frequencies |
+| Both onboarding slides say "Get Started" | "Next" on slide 1, "Get Started" on the last | Clearer progression; Skip still jumps ahead |
+| Date "Jan 19" | Dates formatted for the user's locale ("19 Jan" in en-NG) | Spec E11.7 |
+| No of People "Max 12" | Group size 2–12 (`DEFAULT_RULES.maxGroupSize`) | Taken from the design; change in one place if needed |
+| Photo avatars | Initials | No profile photos until KYC and profiles exist |
