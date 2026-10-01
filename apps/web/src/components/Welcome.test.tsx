@@ -26,4 +26,9 @@ describe("Welcome", () => {
     render(<Welcome />);
     expect(screen.queryByText(/interest|earn|returns/i)).not.toBeInTheDocument();
   });
+
+  it("shows the piggy bank beside the name", () => {
+    const { container } = render(<Welcome />);
+    expect(container.querySelector("svg.lucide-piggy-bank")).toBeInTheDocument();
+  });
 });

@@ -1,3 +1,4 @@
+import { PiggyBank } from "lucide-react";
 import Link from "next/link";
 import { CircleRing } from "./CircleRing";
 
@@ -18,7 +19,7 @@ const action =
 /** First screen: the circle, one promise, and the two ways in. */
 export function Welcome() {
   return (
-    <div className="flex min-h-dvh flex-col px-4 pt-10 pb-8">
+    <main className="flex min-h-dvh flex-col px-4 pt-10 pb-8">
       <div className="flex flex-1 flex-col items-center justify-center gap-10">
         <CircleRing
           members={SAMPLE_CIRCLE}
@@ -27,9 +28,16 @@ export function Welcome() {
           center={{ label: "THIS ROUND", value: "₦80,000" }}
           size={260}
         />
-        <div className="grid gap-3 text-center">
-          <h1 className="font-display text-[44px] leading-[46px] font-bold tracking-[-0.02em] text-balance">Àjọ</h1>
-          <p className="text-[17px] leading-[26px] text-ink-muted">Save together, with people you trust.</p>
+        <div className="grid justify-items-center gap-3 text-center">
+          <span className="grid size-14 place-items-center rounded-full bg-oro text-on-oro shadow-[0_6px_18px_-8px_var(--oro)]">
+            <PiggyBank aria-hidden className="size-8" strokeWidth={1.75} />
+          </span>
+          <h1 className="font-display text-[44px] leading-[46px] font-bold tracking-[-0.02em] text-balance">
+            Àjọ
+          </h1>
+          <p className="text-[17px] leading-[26px] text-ink-muted">
+            Save together, with people you trust.
+          </p>
         </div>
       </div>
       <div className="grid gap-3">
@@ -43,6 +51,6 @@ export function Welcome() {
           Sign in
         </Link>
       </div>
-    </div>
+    </main>
   );
 }
