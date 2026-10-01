@@ -134,11 +134,12 @@ Eleven epics cover version 1. Priority uses Must, Should and Could; every Must f
 
 | ID | Feature | Acceptance criteria | Depends on | Priority |
 | --- | --- | --- | --- | --- |
-| E1.1 | Sign up with email and password | Account created with a verified email (single-use link that expires); password of 12+ characters checked against known breaches; hashed with argon2id; sign-up rate-limited and bot-protected; the response never reveals whether an email is already registered | P0.3 (SMS) | Must |
+| E1.1 | Sign up with email and password | Account created with a verified email (single-use link that expires); password of 12+ characters checked against known breaches; hashed with argon2id; sign-up rate-limited and bot-protected; the response never reveals whether an email is already registered | P0.3 (email) | Must |
 | E1.2 | Profile basics | Name, email, username saved; email verified by link | E1.1 | Must |
 | E1.3 | Transaction PIN | User sets a PIN; PIN required for money actions; lockout after repeated failures | E1.1 | Must |
 | E1.4 | Login and sessions | Email and password login with rate limits and lockout; sessions expire; refresh tokens rotate; logout from all devices; new-device login alert | E1.1 | Must |
-| E1.5 | Device binding | New device requires OTP and notifies the user | E1.4 | Should |
+| E1.5 | Device binding | Login from a new device needs the authenticator code and notifies the user by email | E1.4 | Should |
+| E1.8 | Authenticator-app second factor (TOTP) | User enrols with a QR code and confirms a code; secret encrypted at rest; 10 single-use recovery codes shown once and stored hashed; a code is required at login once enrolled and before any money movement; enrolment required before the first money action | E1.4 | Must |
 | E1.6 | Onboarding screens | First-time user sees how solo and èsúsú work, then is led to KYC | E1.1 | Should |
 | E1.7 | Install as app (PWA) | App installs to home screen on Android and iOS with icon and splash | P0.8 | Must |
 
@@ -305,9 +306,9 @@ The biggest risks are regulatory approval and members defaulting after collectin
 | Low KYC completion (users drop off) | Medium | High | Short steps, save progress, clear reasons, support | Designer |
 | Partner and exchange costs higher than fee revenue | Medium | Medium | Model unit costs per country in Phase 0; adjust fees | Product owner |
 | Shariah concerns about fees or rewards | Medium | Low | Fee as a service charge, not interest; non-interest partner for rewards | Product owner |
-| Account takeover (credential stuffing, phished password or PIN) | High | High | Breached-password check, rate limits and lockout, PIN on every money action, new-device alerts, step-up checks on new devices and payout-account changes, cooling-off period on new payout accounts; second factor under decision | Security lead |
+| Account takeover (credential stuffing, phished password or PIN) | High | High | Breached-password check, rate limits and lockout, authenticator-app second factor, PIN on every money action, new-device alerts, step-up checks on payout-account changes, cooling-off period on new payout accounts | Security lead |
 | Render does not meet a partner's or regulator's requirements | High | Medium | Check encryption, private networking, backups, access logs and a data processing agreement before real money; keep the API as a portable Docker image ready to move to AWS | DevOps |
-| Ledger rules enforced only in application code (plain TypeORM, by decision) | High | Low | Ledger code fully tested, including concurrency tests on real Postgres; postings in one database transaction; daily reconciliation against partners; revisit database-level constraints if a mismatch ever appears | Tech lead |
+| Ledger bug posts unbalanced or altered entries | High | Low | Database-level safeguards (positive amounts, append-only entries, balance check per transaction), serializable posting transactions, full test coverage including concurrency on real Postgres, daily reconciliation | Tech lead |
 | Public web repository leaks sensitive detail | Medium | Low | No secrets, internal hostnames, partner details or fraud thresholds in the web repository; Gitleaks and review on every pull request | Security lead |
 
 ## Go-live checklist

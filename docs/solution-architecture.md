@@ -142,6 +142,7 @@ Every money action is a durable job with an idempotency key, recorded as balance
 - System accounts per currency: group pot (one per active group), fees, currency exchange, partner settlement, suspense (unmatched money).
 - Each transaction posts at least two entries whose debits equal credits in each currency; entries are never edited or deleted. Corrections are new reversing entries.
 - All amounts are integers in the currency's smallest unit (kobo, pence, cents), never decimals.
+- The database enforces these rules too, not only the application: amounts are `bigint` with a `CHECK (amount > 0)`; a trigger rejects any `UPDATE` or `DELETE` on entries; a deferred constraint trigger rejects a transaction whose debits and credits differ in any currency; entry currency must match its account; postings run in `SERIALIZABLE` transactions with retry.
 
 ### Èsúsú round engine
 
@@ -261,7 +262,7 @@ The assets worth attacking are customer money, identity documents and accounts. 
 
 | Threat | Example | Main controls |
 | --- | --- | --- |
-| Account takeover | Credential stuffing, phished password or PIN, email account compromise | Breached-password check, login rate limits and lockout, PIN for every money action, device binding with alerts, step-up checks on new devices and payout-account changes |
+| Account takeover | Credential stuffing, phished password or PIN, email account compromise | Breached-password check, login rate limits and lockout, authenticator-app second factor (TOTP), PIN for every money action, device binding with alerts, step-up checks on new devices and payout-account changes |
 | Session theft | XSS steals a token | Tokens never reach browser JavaScript (BFF with httpOnly cookies), strict nonce-based CSP, short-lived access tokens, refresh-token rotation with reuse detection |
 | Broken access control | Reading another member's group or KYC file | Ownership checks in every query (scoped repositories), deny-by-default guards, tests that try to access other users' records |
 | Double spend and replay | Repeating a payout or debit request | Idempotency keys, unique constraints on provider references, ledger postings in one database transaction |
@@ -275,7 +276,7 @@ The assets worth attacking are customer money, identity documents and accounts. 
 
 | Area | Controls |
 | --- | --- |
-| Authentication | Email and password: passwords of 12+ characters, checked against known breaches (k-anonymity range query), hashed with argon2id; verified email; reset links single-use, short-lived and invalidating all sessions; login responses never reveal whether an account exists. 4–6 digit transaction PIN hashed with argon2id, lockout after repeated failures, device binding, access tokens of 15 minutes or less, rotating refresh tokens with reuse detection, logout everywhere |
+| Authentication | Email and password: passwords of 12+ characters, checked against known breaches (k-anonymity range query), hashed with argon2id; verified email; reset links single-use, short-lived and invalidating all sessions; login responses never reveal whether an account exists. Authenticator-app second factor (TOTP, RFC 6238) with the secret encrypted at rest and single-use hashed recovery codes, required at login once enrolled and before money movement. 4–6 digit transaction PIN hashed with argon2id, lockout after repeated failures, device binding, access tokens of 15 minutes or less, rotating refresh tokens with reuse detection, logout everywhere |
 | Web session | BFF holds tokens in sealed httpOnly, Secure, SameSite=strict cookies; CSRF protection on every state-changing BFF route (SameSite plus an origin check); the browser never calls the API directly |
 | Authorisation | Users can only read and act on their own records and groups they belong to; guards deny by default; admin roles (support, KYC reviewer, finance, super admin) with least privilege |
 | Input and output | Global validation pipe rejects unknown fields; parameterised queries only (TypeORM query builder, never string-built SQL); errors never leak stack traces or internal IDs |

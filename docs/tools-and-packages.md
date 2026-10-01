@@ -125,6 +125,7 @@ Layout: one NestJS application with one module per bounded context (identity, KY
 | --- | --- | --- |
 | `@nestjs/passport`, `passport-jwt` or `jose` | Short-lived access tokens; rotating, revocable refresh tokens | Both |
 | `argon2` | Hashing passwords and transaction PINs (argon2id) | Both |
+| `otpauth` | Authenticator-app codes (TOTP, RFC 6238) and enrolment QR payloads | Both |
 | Have I Been Pwned Pwned Passwords API (k-anonymity) | Rejects passwords known from breaches without sending the password | Both |
 | Node `crypto` (AES-256-GCM) with a KMS-held key | Field-level encryption of ID numbers, BVN and exact location | Both |
 | `libphonenumber-js` | Phone number validation (E.164) | Both |

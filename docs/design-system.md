@@ -55,7 +55,7 @@ Screens are built in the phase that delivers their feature; Phase 0 ships the de
 | --- | --- | --- |
 | "Earn Interest", "Interest Rate 7.5 pa", "Invest group savings to earn more interest" | No interest anywhere; the estimate equals what the user pays in | Product spec: no interest, rewards must be Sharia-compatible |
 | Brand name "Alajo" | "Àjọ" | Name used in the repo docs; the app name is still an open question in the spec |
-| Sign in and sign up with email and password, plus Google and Apple | Email and password chosen (Phase 1); Google and Apple buttons pending a decision | The spec now follows the designs for sign-in; a transaction PIN still guards money actions |
+| Sign in and sign up with email and password, plus Google and Apple | Email and password with an authenticator-app second factor (Phase 1); Google and Apple sign-in after launch, so their buttons are hidden until then | The spec now follows the designs for sign-in; a transaction PIN still guards money actions |
 | "Specify Interval" | Daily, weekly or monthly only | Spec and data model support only these three frequencies |
 | Both onboarding slides say "Get Started" | "Next" on slide 1, "Get Started" on the last | Clearer progression; Skip still jumps ahead |
 | Date "Jan 19" | Dates formatted for the user's locale ("19 Jan" in en-NG) | Spec E11.7 |

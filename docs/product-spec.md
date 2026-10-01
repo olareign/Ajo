@@ -26,7 +26,9 @@ Decided so far:
 | Market | Global: users at home and in the diaspora; launch country by country through licensed partners |
 | Platform | Next.js mobile-first web app (PWA) for screens only; NestJS API in a separate private repository for all business logic; native mobile app later on the same API |
 | Currencies | Multi-currency; each solo plan and each group has one currency; members paying from another currency get an exchange-rate quote |
-| Sign-in | Email and password; a transaction PIN is still required for every money action |
+| Sign-in | Email and password with an authenticator-app second factor (TOTP, recovery codes); a transaction PIN for every money action; Google and Apple sign-in after launch |
+| Launch markets | Nigeria (NGN) and the United Kingdom (GBP) first |
+| Partners in development | Adapter interfaces with tested in-memory stand-ins until partners are signed; real sandboxes plug in without changing business logic |
 | Hosting | Web app on Vercel; API, worker, Postgres and Redis on Render |
 | KYC | Required before any saving: government ID for the user's country, face capture, proof of address, location, bank details; national checks such as BVN (Nigeria) optional where available |
 | Payout order | Group creator picks one method: random draw at setup, members pick spots ("finger pick"), or order of joining |
@@ -38,7 +40,7 @@ Decided so far:
 
 Open questions:
 
-- [ ] Which countries launch first? Proposed: Nigeria plus one or two diaspora markets (e.g. UK, US or Canada).
+- [x] Which countries launch first? Nigeria (NGN) and the United Kingdom (GBP), built together from Phase 1; legal review and partners per country still to complete (P0.2, P0.3).
 - [ ] Can one group mix members paying in different currencies? This spec proposes yes, with an exchange-rate quote.
 - [ ] Does the recipient get paid in the group currency or their own?
 - [ ] Is there a third mode (group saving toward a goal, each member gets their own money back), or only solo and èsúsú? This spec assumes two.
