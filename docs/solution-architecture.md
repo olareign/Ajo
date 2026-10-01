@@ -4,71 +4,78 @@ Oct 1, 2026 · @olareign
 
 ## Architecture at a glance
 
-Àjọ is one Next.js codebase with a versioned API, PostgreSQL as the source of truth, and licensed partners in each market holding customer funds, serving users at home and in the diaspora.
+Àjọ is two codebases: a Next.js PWA that only renders screens, and a NestJS API that owns every business rule. PostgreSQL is the source of truth, and licensed partners in each market hold customer funds, serving users at home and in the diaspora.
 
 ```mermaid
 flowchart TD
-  subgraph Clients
-    PWA["Web app (PWA)<br/>Next.js, mobile-first"]
-    ADM["Admin dashboard<br/>KYC review, support, finance"]
-    MOB["Mobile app (later)<br/>React Native (Expo)"]
+  subgraph Web["olareign/Ajo (public)"]
+    PWA["PWA screens<br/>Next.js, mobile-first"]
+    BFF["BFF route handlers<br/>httpOnly session cookie"]
+    ADM["Admin app (later)<br/>same BFF pattern"]
   end
-  API["API /api/v1<br/>auth, PIN, validation, rate limits, idempotency"]
-  subgraph Monolith["Modular monolith: one codebase, clear modules"]
-    M1[Identity] ~~~ M2[KYC] ~~~ M3[Social] ~~~ M4[Discovery] ~~~ M5[Notifications]
-    M6["Wallet, ledger"] ~~~ M7[Payments] ~~~ M8[Solo savings] ~~~ M9["Èsúsú engine"] ~~~ M10["Trust, defaults"]
-    JOBS["Background jobs: debits, retries, payouts, reminders, reconciliation"]
+  MOB["Mobile app (Phase 6)<br/>React Native, bearer tokens"]
+  subgraph Api["olareign/ajo-api (private)"]
+    GW["NestJS API /api/v1<br/>guards, validation, rate limits, idempotency"]
+    MODS["Modules: identity, KYC, social, discovery,<br/>wallet and ledger, payments, solo, èsúsú,<br/>trust, defaults, notifications, admin"]
+    WRK["Worker (BullMQ)<br/>debits, retries, payouts, reminders, reconciliation"]
   end
   PG[("PostgreSQL + PostGIS<br/>ledger and all records")]
-  RD[("Redis<br/>cache, rate limits, queues")]
+  RD[("Redis<br/>queues, rate limits, cache")]
   S3[("Object storage<br/>KYC files, private")]
   subgraph Partners["External partners, chosen per country"]
-    P1["KYC provider<br/>global ID, liveness"]
-    P2["Payments<br/>debits, payouts, FX"]
-    P3["Licensed partners<br/>hold funds per market"]
-    P4["SMS, email, push<br/>OTP, reminders"]
+    P1["KYC provider"]
+    P2["Payments, payouts, FX"]
+    P3["Licensed fund holders"]
+    P4["SMS, email, push"]
   end
-  PWA --> API
-  ADM --> API
-  MOB -.-> API
-  API --> Monolith
-  Monolith --> PG
-  Monolith --> RD
-  Monolith --> S3
-  Monolith -- via adapters --> Partners
+  PWA --> BFF
+  ADM --> BFF
+  BFF -- "server-side, TLS" --> GW
+  MOB -.-> GW
+  GW --> MODS
+  MODS --> PG
+  MODS --> RD
+  WRK --> PG
+  WRK --> RD
+  MODS --> S3
+  MODS -- via adapters --> Partners
+  WRK -- via adapters --> Partners
 ```
 
-Every client talks only to the API; modules call partners only through adapters, so providers can be swapped without changing business logic.
+The browser talks only to the web app's own origin. The BFF keeps the API tokens in a sealed httpOnly cookie and calls the API from the server, so no token is ever readable by JavaScript in the browser. The mobile app calls the same API with bearer tokens kept in the device's secure storage. Inside the API, modules call partners only through adapters, so providers can be swapped without changing business logic.
 
 ## Key architecture decisions
 
-Àjọ starts as a modular monolith in one TypeScript codebase: one deployable app, split into clear modules, so it can be split into services later if load requires it.
+The API is a modular monolith in one NestJS codebase: one deployable image, run as an API process and a worker process, split into modules so it can be divided into services later if load requires it.
 
 | # | Decision | Why | Revisit when |
 | --- | --- | --- | --- |
-| 1 | Next.js PWA, mobile-first | One codebase, installable on phones, fast to test with real users | Native app phase |
-| 2 | Modular monolith, not microservices | A small team ships faster; module boundaries keep a later split cheap | A module needs to scale or deploy on its own |
-| 3 | All business logic behind a versioned API (`/api/v1`) | The future mobile app reuses the same backend | Never; this is permanent |
-| 4 | PostgreSQL as the single source of truth, with PostGIS | Transactions for money; PostGIS for nearby people and groups | Read load outgrows one primary (add read replicas) |
-| 5 | Double-entry ledger; balances derived from entries | Every transaction is traceable; no silent balance drift | Never |
-| 6 | Multi-currency from day one: every account and amount carries a currency; amounts in the currency's smallest unit | Diaspora users save in GBP, USD, EUR, CAD and NGN; retrofitting currency later is expensive | Never |
-| 7 | Currency conversion only through explicit, quoted conversion transactions | Users see the rate and fee first; the ledger never mixes currencies | Never |
-| 8 | Licensed partners hold funds in each market; Àjọ is the technology layer | Money rules differ by country (e.g. CBN, FCA, US state regulators, EU) | Àjọ gets its own licences |
-| 9 | Country configuration (currencies, ID types, providers, limits, features) as data, switched on per country | New markets launch by configuration, not code rewrites | Never |
-| 10 | Times stored in UTC; schedules run in each group's time zone | Members span many time zones | Never |
-| 11 | Durable background jobs for every scheduled or external money action | Debits, retries and payouts must survive crashes and redeploys | Never |
-| 12 | Idempotency keys on every money operation and webhook | Prevents double debits and double payouts | Never |
-| 13 | Provider adapters for KYC, payments, currency exchange and SMS, routed by country | Different providers per market; swap without touching business logic | Never |
-| 14 | One primary cloud region at launch; data residency reviewed per market | Simple to run; some markets may require local data storage | A market requires local data |
-| 15 | Coarse location only (area, not coordinates) shown to other users | Safety in a money app | Never |
+| 1 | Next.js PWA, mobile-first, with no business logic | Installable on phones, fast to test with real users; all rules live in one place (the API) | Native app phase |
+| 2 | Separate repositories: `olareign/Ajo` (web, docs) and `olareign/ajo-api` (backend, private) | Independent deploys and access control; backend code and infrastructure details stay private | Never |
+| 3 | NestJS modular monolith, not microservices | A small team ships faster; module boundaries keep a later split cheap | A module needs to scale or deploy on its own |
+| 4 | All business logic behind a versioned API (`/api/v1`), described by OpenAPI | Web and mobile reuse the same backend; clients are generated, never hand-written | Never |
+| 5 | Web session through a BFF: tokens in sealed httpOnly, Secure, SameSite=strict cookies; API also accepts bearer tokens for mobile | Stolen-token XSS is impossible on the web; mobile uses secure device storage | Never |
+| 6 | PostgreSQL as the single source of truth, with PostGIS, accessed through TypeORM | Transactions for money; PostGIS for nearby people and groups | Read load outgrows one primary (add read replicas) |
+| 7 | Double-entry ledger; balances derived from entries | Every transaction is traceable; no silent balance drift | Never |
+| 8 | Multi-currency from day one: every amount carries a currency; amounts are integers in the smallest unit, sent in JSON as strings | Diaspora users save in GBP, USD, EUR, CAD and NGN; strings keep large amounts exact in every client | Never |
+| 9 | Currency conversion only through explicit, quoted conversion transactions | Users see the rate and fee first; the ledger never mixes currencies | Never |
+| 10 | Licensed partners hold funds in each market; Àjọ is the technology layer | Money rules differ by country (e.g. CBN, FCA, US state regulators, EU) | Àjọ gets its own licences |
+| 11 | Country configuration (currencies, ID types, providers, limits, features) as data, switched on per country | New markets launch by configuration, not code rewrites | Never |
+| 12 | Times stored in UTC; schedules run in each group's time zone | Members span many time zones | Never |
+| 13 | Durable background jobs (BullMQ on Redis) for every scheduled or external money action | Debits, retries and payouts must survive crashes and redeploys | Job volume needs a workflow engine (e.g. Temporal) |
+| 14 | Idempotency keys on every money operation and webhook | Prevents double debits and double payouts | Never |
+| 15 | Provider adapters for KYC, payments, currency exchange and SMS, routed by country | Different providers per market; swap without touching business logic | Never |
+| 16 | One primary region on a managed container host (Render, Railway or Fly.io); data residency reviewed per market | Fast to start; same Docker image can move to AWS if compliance requires | A market requires local data, or the host fails the pre-launch compliance check |
+| 17 | Coarse location only (area, not coordinates) shown to other users | Safety in a money app | Never |
+| 18 | Security first: deny by default, least privilege, every control tested | A money app is a target from day one | Never |
 
 ## Service modules
 
-Each module owns its tables and exposes functions to other modules; no module writes another module's tables directly.
+Each NestJS module owns its tables and exposes services to other modules; no module writes another module's tables directly.
 
 | Module | Owns | Key responsibilities |
 | --- | --- | --- |
-| Identity | users, sessions, devices, PINs | Sign-up, OTP login, PIN, device binding, session management |
+| Identity | users, sessions, refresh\_tokens, devices, PINs | Sign-up, OTP login, PIN, device binding, token rotation and revocation |
 | KYC | kyc\_records, kyc\_documents | Collect country-specific ID, selfie, address proof, location, bank; national checks such as BVN where available; route to the right provider per country; tiering; manual review queue |
 | Social | friendships, friend\_suggestions, blocks | Friend requests, friend list, mutual friends, nearby people, blocking and reporting |
 | Discovery | group\_search\_index | Recommend groups by friends in them, mutual friends, area, and group fit (amount, frequency) |
@@ -246,41 +253,66 @@ Each integration sits behind an adapter interface, so a second provider can be a
 
 ## Security, privacy and compliance
 
-Treat Àjọ as a financial system from day one: encrypted personal data, strong login, full audit trail, and regulatory review before launch.
+Treat Àjọ as a financial system from day one: deny by default, least privilege, encrypted personal data, strong login, a full audit trail, and regulatory review before launch. Every control below gets an automated test where one is possible.
+
+### Threat model
+
+The assets worth attacking are customer money, identity documents and accounts. The main threats and how each is handled:
+
+| Threat | Example | Main controls |
+| --- | --- | --- |
+| Account takeover | SIM swap, stolen OTP, phished PIN | OTP rate limits and expiry, PIN for every money action, device binding with alerts, step-up checks on new devices and payout-account changes |
+| Session theft | XSS steals a token | Tokens never reach browser JavaScript (BFF with httpOnly cookies), strict nonce-based CSP, short-lived access tokens, refresh-token rotation with reuse detection |
+| Broken access control | Reading another member's group or KYC file | Ownership checks in every query (scoped repositories), deny-by-default guards, tests that try to access other users' records |
+| Double spend and replay | Repeating a payout or debit request | Idempotency keys, unique constraints on provider references, ledger postings in one database transaction |
+| Forged webhooks | Fake "payment succeeded" event | Signature verification, timestamp tolerance, event de-duplication in the webhook inbox, amounts re-checked against the provider |
+| Insider misuse | Staff adjusts a balance | No balance edits, only reversing entries; two-person approval; admin actions in an append-only audit log; least-privilege roles with hardware-key 2FA |
+| Data breach | Database or bucket exposed | Field-level encryption, private buckets with short-lived signed links, private networking, encrypted backups, no personal data in logs |
+| Supply chain | Malicious package or GitHub Action | Lockfile installs, dependency audit and review on every PR, Actions pinned to commit SHAs, Dependabot, CodeQL |
+| Abuse and scraping | Enumerating users, OTP pumping (SMS fraud) | Rate limits per IP, phone and device; bot protection on sign-up; search returns only KYC-approved users with coarse data |
+
+### Controls
 
 | Area | Controls |
 | --- | --- |
-| Authentication | Phone OTP, 4–6 digit transaction PIN, device binding, short-lived access tokens with rotating refresh tokens, lockout after failed attempts |
-| Authorisation | Users can only read and act on their own records and groups they belong to; admin roles (support, KYC reviewer, finance, super admin) with least privilege |
-| Data protection | TLS everywhere; ID numbers, BVN and exact location encrypted at field level; KYC files in a private bucket with short-lived signed URLs |
-| Money safety | PIN and idempotency key on every money action; limits per KYC tier; velocity checks; two-person approval for manual admin adjustments |
-| Fraud and abuse | Rate limits, duplicate-identity checks, device fingerprinting, flags for many accounts on one device, reports and blocks |
+| Authentication | Phone OTP (hashed, single-use, 5-minute expiry, rate-limited), 4–6 digit transaction PIN hashed with argon2id, lockout after repeated failures, device binding, access tokens of 15 minutes or less, rotating refresh tokens with reuse detection, logout everywhere |
+| Web session | BFF holds tokens in sealed httpOnly, Secure, SameSite=strict cookies; CSRF protection on every state-changing BFF route (SameSite plus an origin check); the browser never calls the API directly |
+| Authorisation | Users can only read and act on their own records and groups they belong to; guards deny by default; admin roles (support, KYC reviewer, finance, super admin) with least privilege |
+| Input and output | Global validation pipe rejects unknown fields; parameterised queries only (TypeORM query builder, never string-built SQL); errors never leak stack traces or internal IDs |
+| Data protection | TLS everywhere (HSTS); ID numbers, BVN and exact location encrypted at field level (AES-256-GCM, key held outside the database); KYC files in a private bucket with short-lived signed URLs; image metadata stripped on upload |
+| Money safety | PIN and idempotency key on every money action; limits per KYC tier and country; velocity checks; ledger postings balanced inside one transaction; two-person approval for manual adjustments; daily reconciliation |
+| Fraud and abuse | Rate limits, bot protection, duplicate-identity checks, device fingerprinting, flags for many accounts on one device, reports and blocks |
 | Audit | Every admin action, draw, rule change and money action written to an append-only audit log |
-| Secrets | Stored in the hosting platform's secret manager; never in code; rotated on staff changes |
-| App security | Input validation on every endpoint, CSRF protection, security headers (CSP), dependency scanning, yearly penetration test before and after launch |
+| Secrets | In the host's secret store or Doppler/Infisical; never in code, images, logs or CI output; separate per environment; rotated on staff changes and on any suspected leak |
+| Browser security | Nonce-based CSP with `strict-dynamic`, no `unsafe-eval` in production; HSTS with preload; frame denial; strict referrer and permissions policies |
+| Supply chain and CI | Frozen lockfile installs; `pnpm audit` and dependency review fail on high or critical issues; Gitleaks; CodeQL `security-extended`; Actions pinned to SHAs with least-privilege tokens; Dependabot |
+| Testing | Security tests in the normal suite (headers, guards, access to others' data, rate limits); OWASP ZAP on staging; penetration test before launch and yearly |
 | Compliance | Data protection law in every market: GDPR (EU), UK GDPR, Nigeria Data Protection Act 2023, US state laws such as CCPA; money rules through licensed partners per market (e.g. CBN, FCA, FinCEN and state regulators); AML checks and sanctions screening on users and cross-border transfers; PCI DSS handled by the payment provider (no card data stored) |
 | Data retention | KYC and transaction records kept for the period each market's regulator and partner require; cross-border data transfers covered by approved legal mechanisms; account deletion removes profile and social data |
+| Disclosure | `SECURITY.md` in each repository; private vulnerability reporting enabled on GitHub |
+
+The public web repository must never contain secrets, internal hostnames, partner account details or fraud-rule thresholds; those live in the private API repository or the secret store.
 
 ## Environments, CI/CD and deployment
 
-Four environments; code moves forward only through pull requests and automated checks.
+Four environments; code moves forward only through pull requests and automated checks. Each phase is delivered as one branch and pull request per repository, in phase order (`phase-0/foundations`, `phase-1/identity-and-wallet`, …).
 
-| Environment | Purpose | Data | Providers |
-| --- | --- | --- | --- |
-| Local | Developer machines | Seed data, Docker Postgres | Provider sandboxes or mocks |
-| Preview | One per pull request | Seed data on a database branch | Sandboxes |
-| Staging | Full end-to-end testing, pilot rehearsals | Anonymised or test data | Sandboxes |
-| Production | Live users | Real data, backups | Live keys |
+| Environment | Web (Vercel) | API (Render, Railway or Fly.io) | Data | Providers |
+| --- | --- | --- | --- | --- |
+| Local | `pnpm dev` | Docker Compose: API, worker, Postgres, Redis, Mailpit | Seed data | Sandboxes or mocks |
+| Preview | One per pull request | Shared preview API | Seed data | Sandboxes |
+| Staging | Staging deploy | Staging API and worker | Anonymised or test data | Sandboxes |
+| Production | Production deploy | Production API and worker | Real data, encrypted backups | Live keys |
 
-Pipeline on every pull request:
+Pipeline on every pull request, in both repositories:
 
-1. Install, type-check, lint, format check
-2. Unit and integration tests (with a test database)
-3. Build
-4. Dependency and secret scanning
-5. Preview deploy and end-to-end tests against it
+1. Install from the lockfile, dependency audit, format check, lint, type-check
+2. Unit tests; API integration tests against real Postgres and Redis (Testcontainers)
+3. Build (and for the API, the Docker image)
+4. Secret scanning, CodeQL, dependency review
+5. End-to-end tests on a phone-sized browser; for the API, a contract check that the committed OpenAPI spec matches the code, and in the web repo that the generated client matches the spec
 
-On merge to `main`: deploy to staging, run database migrations, run smoke tests. Production deploys are a manual promotion of a tested staging build. Migrations are backwards-compatible so a deploy can be rolled back without a database rollback.
+On merge to `main`: deploy to staging, run database migrations, run smoke tests. Production deploys are a manual promotion of a tested staging build, approved by a second person. Migrations are backwards-compatible so a deploy can be rolled back without a database rollback; TypeORM `synchronize` is never enabled outside a developer's machine.
 
 ## Observability, reliability and scaling
 
@@ -301,8 +333,8 @@ The system must never lose or duplicate money, even if it is slow or partly down
 
 The mobile app is a new client on the same API; no backend rewrite is needed.
 
-1. Keep shared code (API schemas, types, validation, formatting helpers) in a shared package from the start.
-2. Use a monorepo: `apps/web` (Next.js), `apps/admin`, later `apps/mobile` (Expo), and `packages/*` for shared code.
-3. Auth uses tokens that work outside the browser (not cookie-only), so mobile can use the same endpoints.
-4. Swap Web Push for Firebase Cloud Messaging and Apple push; add native camera for KYC selfies and biometrics for PIN.
+1. Generate the mobile API client from the same OpenAPI spec as the web app.
+2. The API already accepts bearer tokens, so mobile uses the same endpoints; tokens live in the device's secure storage (Keychain, Keystore), never in plain storage.
+3. Swap Web Push for Firebase Cloud Messaging and Apple push; add native camera for KYC selfies and biometrics for PIN entry.
+4. Add certificate pinning for the API host and jailbreak or root detection for money actions.
 5. Run the PWA and native app side by side until native reaches feature parity.

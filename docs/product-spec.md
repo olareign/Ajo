@@ -24,7 +24,7 @@ Decided so far:
 | Topic | Decision |
 | --- | --- |
 | Market | Global: users at home and in the diaspora; launch country by country through licensed partners |
-| Platform | Next.js, mobile-first web app (PWA); native mobile app later |
+| Platform | Next.js mobile-first web app (PWA) for screens only; NestJS API in a separate private repository for all business logic; native mobile app later on the same API |
 | Currencies | Multi-currency; each solo plan and each group has one currency; members paying from another currency get an exchange-rate quote |
 | KYC | Required before any saving: government ID for the user's country, face capture, proof of address, location, bank details; national checks such as BVN (Nigeria) optional where available |
 | Payout order | Group creator picks one method: random draw at setup, members pick spots ("finger pick"), or order of joining |
@@ -170,17 +170,17 @@ Money is tracked in a double-entry ledger: every money movement is a pair of ent
 
 ## Tech approach and partners
 
-Build a Next.js PWA with all business logic behind an API layer, so a later React Native (Expo) app can reuse the same backend.
+Build a Next.js PWA for the screens and a separate NestJS API for all business logic, so a later React Native (Expo) app reuses the same backend. Security comes first throughout (see the Solution Architecture threat model).
 
 | Layer | Proposed choice | Why |
 | --- | --- | --- |
 | Frontend | Next.js (App Router), TypeScript, Tailwind, installable PWA | Mobile-first now, home-screen install, push notifications |
-| API | Next.js route handlers or a separate Node service, typed with a shared schema (e.g. Zod) | The same API serves the future mobile app |
-| Database | PostgreSQL with Prisma or Drizzle | Transactions and constraints for the ledger |
-| Background jobs | A job queue (e.g. Inngest, Trigger.dev or BullMQ) | Scheduled debits, retries, payouts, reminders |
-| Auth | Phone OTP plus PIN (e.g. Better Auth or a custom setup) | Phone-first users |
+| API | NestJS in its own private repository (`olareign/ajo-api`), described by OpenAPI; the web app calls it through a server-side BFF | One home for every rule; the same API serves the future mobile app |
+| Database | PostgreSQL (with PostGIS) through TypeORM, schema changed only by migrations | Transactions and constraints for the ledger |
+| Background jobs | BullMQ on Redis, run by a worker process from the API image | Scheduled debits, retries, payouts, reminders, inside our own infrastructure |
+| Auth | Phone OTP plus transaction PIN, built in the NestJS identity module; web sessions in httpOnly cookies via the BFF, bearer tokens for mobile | Phone-first users; no token readable by browser JavaScript |
 | File storage | S3-compatible storage | ID documents, selfies, address proofs |
-| Hosting | Vercel for the app, managed Postgres (e.g. Neon or Supabase) | Fast to start |
+| Hosting | Vercel for the web app; Render, Railway or Fly.io for the API, worker, Postgres and Redis (chosen in Phase 0) | Fast to start; the API image can move to AWS if a market or partner requires it |
 
 Third-party partners to evaluate (prices and availability not yet checked):
 
@@ -201,7 +201,7 @@ Build in seven phases (0 to 6), matching the Project Plan. Each one ends with so
 
 | Phase | What ships | Done when |
 | --- | --- | --- |
-| 0. Foundations | Choose launch countries; partners per market (KYC, payments, licensed fund holders, currency exchange); legal check per market; project setup; design system | Partners signed; Next.js PWA skeleton deployed |
+| 0. Foundations | Choose launch countries; partners per market (KYC, payments, licensed fund holders, currency exchange); legal check per market; project setup; design system | Engineering foundations merged in both repositories and deployed to staging; business items (partners, legal, brand) tracked to completion before go-live |
 | 1. Identity and wallet | Auth, KYC flow, wallet, ledger, auto-debit mandate, withdrawals | A verified user can fund and withdraw with matching ledger records |
 | 2. Solo savings | Plans, scheduled debits, retries, reminders, end-of-plan payout | A pilot group of users completes a short plan (e.g. 4 weeks) |
 | 3. Friends and discovery | Friend list, search, invites, mutual-friend and nearby suggestions, group discovery | Users build friend lists from suggestions; nearby is opt-in and area-only |

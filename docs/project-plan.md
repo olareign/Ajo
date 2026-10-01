@@ -28,6 +28,19 @@ The plan runs in phases. Each phase holds epics, each epic holds features, and a
 - **Epic:** a large area of work (e.g. E6, Payout order).
 - **Feature:** a user-visible piece of work with acceptance criteria, small enough for one developer to finish and test.
 
+### Repositories, branches and pull requests
+
+| Repository | Visibility | Contents |
+| --- | --- | --- |
+| `olareign/Ajo` | Public | Next.js PWA and its BFF, admin app later, and these planning docs |
+| `olareign/ajo-api` | Private | NestJS API, worker, database migrations, partner adapters |
+
+- Work is delivered **phase by phase, in order**: one branch and one pull request per phase in each repository that the phase touches, named `phase-N/<slug>` (e.g. `phase-0/foundations`, `phase-1/identity-and-wallet`).
+- A phase's branch starts from `main` only after the previous phase's pull request has merged, so history reads in phase order.
+- Every pull request uses the template's security checklist and needs green CI (audit, lint, type-check, tests, build, secret scan, CodeQL, dependency review).
+- Code is written test first (red, green, refactor); see `CONTRIBUTING.md`.
+- Commits are authored by the human owner of the work.
+
 ### Definition of Ready (before work starts on a feature)
 
 - [ ] User story and acceptance criteria written
@@ -43,6 +56,8 @@ The plan runs in phases. Each phase holds epics, each epic holds features, and a
 - [ ] Errors are logged; key events are tracked
 - [ ] Tested on staging by someone other than the developer
 - [ ] Docs updated (API, runbook if relevant)
+- [ ] Pull request security checklist complete; threat model updated if the feature moves money, changes auth or handles personal data
+- [ ] Authorisation tested: a user cannot read or change another user's records through the new endpoints
 
 ## Roles and responsibilities
 
@@ -57,7 +72,11 @@ One person can hold several roles in a small team; each role still needs a named
 | Backend engineer(s) | API, ledger, jobs, integrations | Backend features |
 | Product designer | User flows, mobile layouts, design system | Designs before build |
 | QA engineer | Test plans, end-to-end tests, regression, pilot testing | Feature acceptance on staging |
+| Security lead (application security) | Threat model, security requirements per epic, secure code review of auth and money paths, pen-test scope and fixes | Security sign-off on each phase gate |
+| DevOps / platform engineer | Environments, CI/CD, secrets, backups, monitoring, incident response tooling | Production readiness of infrastructure |
 | Compliance / legal advisor | Money and data rules in each launch market, AML, partner contracts, terms and privacy policy | Legal readiness for launch |
+| Money Laundering Reporting Officer (MLRO) | AML policy, sanctions screening rules, suspicious activity reports | AML readiness for each market |
+| Data protection officer | Data protection impact assessment, records of processing, data subject requests, breach notification | Data protection readiness for each market |
 | Operations and support | KYC review, user support, default follow-up, reconciliation checks | Operational readiness |
 
 ## Release path
@@ -66,14 +85,14 @@ Seven phases run in order, and the public launch is the Phase 5 gate. Friends an
 
 ```mermaid
 flowchart TD
-  P0["Phase 0 · Foundations<br/>launch countries, legal, partners, design"]
+  P0["Phase 0 · Foundations<br/>repos, CI, security baseline, design; legal and partners tracked"]
   P1["Phase 1 · Identity and wallet<br/>E1 Auth, E2 KYC, E3 Wallet and payments"]
   P2["Phase 2 · Solo savings<br/>E4 Solo savings"]
   P3["Phase 3 · Friends and discovery<br/>E5 Friends, mutual friends, nearby"]
   P4["Phase 4 · Èsúsú groups<br/>E6 Groups, E7 Trust and defaults"]
   P5["Phase 5 · Launch readiness<br/>E10 Security, load test, pilot, support"]
   P6["Phase 6 · Mobile and new countries<br/>React Native (Expo) on the same API"]
-  P0 -- "Gate: countries chosen, partners and legal in place" --> P1
+  P0 -- "Gate: engineering foundations merged and on staging; business items tracked" --> P1
   P1 -- "Gate: a verified user funds and withdraws; ledger matches partner" --> P2
   P2 -- "Gate: pilot users finish a short solo plan" --> P3
   P3 -- "Gate: users build friend lists; nearby is opt-in, area only" --> P4
@@ -86,21 +105,26 @@ Notifications (E8) and the admin back office (E9) are built alongside each phase
 
 ## Phase 0: planning and foundations
 
-Phase 0 settles the business, legal and technical groundwork; no user-facing features ship here.
+Phase 0 settles the business, legal and technical groundwork; no user-facing features ship here. Its gate is split:
 
-| ID | Work item | Done when |
-| --- | --- | --- |
-| P0.1 | Finalise product spec and open questions (deposit size, trust rule, payout fee, early-spot rule) | All open questions in the product spec have answers |
-| P0.2 | Choose launch countries, then a legal and regulatory review for each (money rules, data protection, AML) | Launch countries agreed; written advice per country on operating with licensed partners |
-| P0.3 | Choose and sign partners per launch country: KYC, payments and auto-debit, licensed fund holders, currency exchange and cross-border transfers, SMS | Sandbox keys for each partner; contracts in progress |
-| P0.4 | Brand: name, logo, colours, tone | Brand kit approved |
-| P0.5 | UX: user flows and mobile wireframes for every feature in Phase 1–3 | Clickable prototype tested with 5+ target users |
-| P0.6 | Design system (colours, type, components) | Component library in the design tool |
-| P0.7 | Repository, monorepo structure, coding standards | Repo created; README and contribution guide |
-| P0.8 | CI/CD pipeline and environments (local, preview, staging, production) | A hello-world PWA deploys to staging through CI |
-| P0.9 | Database, migrations, seed data | Schema for Phase 1 migrated on staging |
-| P0.10 | Observability baseline (logging, error tracking, uptime) | Errors from staging appear in the error tracker |
-| P0.11 | Terms of service and privacy policy drafts | Drafts reviewed by legal |
+- **Engineering gate** (P0.6–P0.10, P0.12, P0.13): must be met before Phase 1 starts.
+- **Business gate** (P0.1–P0.5, P0.11): tracked here and must be met before any real money moves (the Phase 5 go-live checklist). Phase 1 may build against partner sandboxes and mocks meanwhile.
+
+| ID | Work item | Done when | Gate | Owner | Status |
+| --- | --- | --- | --- | --- | --- |
+| P0.1 | Finalise product spec and open questions (deposit size, trust rule, payout fee, early-spot rule, app name) | All open questions in the product spec have answers | Business | Product owner | Open: all questions unanswered |
+| P0.2 | Choose launch countries, then a legal and regulatory review for each (money rules, data protection, AML) | Launch countries agreed; written advice per country on operating with licensed partners | Business | Product owner, legal | Open |
+| P0.3 | Choose and sign partners per launch country: KYC, payments and auto-debit, licensed fund holders, currency exchange and cross-border transfers, SMS | Sandbox keys for each partner; contracts in progress | Business | Product owner | Open |
+| P0.4 | Brand: name, logo, colours, tone | Brand kit approved | Business | Designer | In progress: colours and font taken from Figma; name ("Alajo" in Figma, "Àjọ" in docs) undecided |
+| P0.5 | UX: user flows and mobile wireframes for every feature in Phase 1–3 | Clickable prototype tested with 5+ target users | Business | Designer | In progress: Figma covers sign-in, sign-up, OTP, solo savings and groups; KYC, wallet funding and withdrawal, and friends are missing; no user testing yet |
+| P0.6 | Design system (colours, type, components) | Component library in the design tool; tokens and core components in code | Engineering | Designer, frontend | In progress: tokens and core components in code (`docs/design-system.md`); Figma component library to confirm |
+| P0.7 | Repositories, structure, coding standards | Both repositories created with README, contribution guide, lint and format rules | Engineering | Tech lead | Web repository done; API repository (`olareign/ajo-api`) to be created |
+| P0.8 | CI/CD pipeline and environments (local, preview, staging, production) | A hello-world PWA and a health-checked API deploy to staging through CI | Engineering | DevOps | In progress: web CI ready; staging hosting (Vercel for web, Render, Railway or Fly.io for the API) to set up |
+| P0.9 | Database, migrations, seed data | TypeORM migrations run in CI and on staging; seed data for local development | Engineering | Backend | Not started (API repository) |
+| P0.10 | Observability baseline (logging, error tracking, uptime) | Errors from staging appear in the error tracker; logs carry request IDs with personal data redacted | Engineering | DevOps | Not started |
+| P0.11 | Terms of service and privacy policy drafts | Drafts reviewed by legal | Business | Legal | Open |
+| P0.12 | Security baseline | Threat model written; security headers and CSP; secret, dependency and code scanning in CI; pinned Actions; `SECURITY.md`; branch protection on `main` in both repositories | Engineering | Security lead | Web repository done; API repository and branch protection to do |
+| P0.13 | API skeleton | NestJS app and worker with config validation, health checks, OpenAPI spec, Helmet, rate limiting, structured logs, Docker Compose and CI | Engineering | Backend | Not started (waiting for the repository) |
 
 ## Feature backlog by epic
 
@@ -252,12 +276,13 @@ Money logic gets the most testing: every ledger posting, round and payout path i
 
 | Test type | What it covers | When it runs |
 | --- | --- | --- |
-| Unit | Ledger rules, trust score, payout order, fee maths, date schedules | Every commit |
-| Integration | API endpoints with a real test database; provider adapters against mocks | Every pull request |
+| Unit | API (Jest): ledger rules, trust score, payout order, fee maths, date schedules. Web (Vitest and Testing Library): components and screens by role and label | Every commit |
+| Integration | API endpoints through HTTP (supertest) against real Postgres and Redis (Testcontainers); provider adapters against mocks; web BFF routes against a mocked API (MSW) | Every pull request |
+| Contract | The committed OpenAPI spec matches the API code; the web client is regenerated from it | Every pull request |
 | End-to-end | Key journeys on a phone-sized browser: sign-up to KYC, create plan, create group to payout | Every pull request (preview) and before release |
 | Simulation | A full èsúsú group run with fast-forwarded time, including missed payments and defaults | Before each release touching groups |
 | Provider sandbox | KYC, debits and payouts against partner sandboxes | Staging, before release |
-| Security | Dependency scans, secret scans, penetration test | Continuous, plus before launch |
+| Security | Automated: headers and CSP, guards and access to other users' data, rate limits, input validation; dependency audit, secret scan, CodeQL on every pull request; OWASP ZAP on staging; external penetration test | Continuous, plus before launch and yearly |
 | Performance | Load on debit, payout and discovery endpoints | Before launch and before big marketing pushes |
 | Usability | Real users in each launch country, including low-end Android phones and slow networks | Phase 0 prototype and each phase gate |
 | Pilot | Real money with a small invited group | Phase 5 |
@@ -280,6 +305,10 @@ The biggest risks are regulatory approval and members defaulting after collectin
 | Low KYC completion (users drop off) | Medium | High | Short steps, save progress, clear reasons, support | Designer |
 | Partner and exchange costs higher than fee revenue | Medium | Medium | Model unit costs per country in Phase 0; adjust fees | Product owner |
 | Shariah concerns about fees or rewards | Medium | Low | Fee as a service charge, not interest; non-interest partner for rewards | Product owner |
+| Account takeover (SIM swap, phished OTP or PIN) | High | Medium | PIN on every money action, device binding with alerts, step-up checks on new devices and payout-account changes, cooling-off period on new payout accounts | Security lead |
+| Managed container host (Render, Railway or Fly.io) does not meet a partner's or regulator's requirements | High | Medium | Check encryption, private networking, backups, access logs and a data processing agreement before real money; keep the API as a portable Docker image ready to move to AWS | DevOps |
+| Ledger rules enforced only in application code (plain TypeORM, by decision) | High | Low | Ledger code fully tested, including concurrency tests on real Postgres; postings in one database transaction; daily reconciliation against partners; revisit database-level constraints if a mismatch ever appears | Tech lead |
+| Public web repository leaks sensitive detail | Medium | Low | No secrets, internal hostnames, partner details or fraud thresholds in the web repository; Gitleaks and review on every pull request | Security lead |
 
 ## Go-live checklist
 

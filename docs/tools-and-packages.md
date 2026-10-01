@@ -2,161 +2,202 @@
 
 Oct 1, 2026 · @olareign
 
-Everything needed to build, test, ship and run Àjọ, from the first commit to production. Package names are npm names; pin the latest stable version when the project is set up. Where two options are listed, the first is the recommendation.
+Everything needed to build, test, ship and run Àjọ, from the first commit to production. Package names are npm names; pin the latest stable version when a package is added. Where two options are listed, the first is the recommendation.
 
-## Core app
+The system is split into two repositories with separate responsibilities:
+
+| Repository | Visibility | Owns |
+| --- | --- | --- |
+| `olareign/Ajo` | Public | Next.js PWA (UI only), its backend-for-frontend (BFF) layer, the admin app later, and the shared project docs |
+| `olareign/ajo-api` | Private | NestJS API: every business rule, the ledger, payments, KYC, èsúsú engine, background jobs, partner adapters, database |
+
+The web app holds no business logic and never talks to partners or the database. It calls the API only from its server side (the BFF), using a client generated from the API's OpenAPI spec.
+
+## Shared across both repositories
 
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| Node.js (LTS) | JavaScript runtime | Both |
-| pnpm | Package manager with workspaces for the monorepo | Dev |
-| Turborepo (`turbo`) | Runs builds, tests and lint across apps and packages with caching | Dev, CI |
-| TypeScript (`typescript`) | Typed code everywhere | Both |
-| Next.js (`next`, `react`, `react-dom`) | Web app, admin app and API route handlers | Both |
-| Docker and Docker Compose | Local Postgres, Redis and mail catcher | Dev |
+| Node.js (LTS, 22+) | JavaScript runtime | Both |
+| pnpm | Package manager | Dev |
+| TypeScript (`typescript`, strict mode) | Typed code everywhere | Both |
+| Docker and Docker Compose | Local Postgres (with PostGIS), Redis and Mailpit for the API | Dev |
+| ESLint, Prettier | Linting and formatting | Dev, CI |
+| GitHub Actions | CI: audit, lint, typecheck, tests, build, scans | CI |
+| GitHub Dependabot | Dependency and GitHub Actions updates | CI |
+| GitHub CodeQL (`security-extended`) | Static security analysis | CI |
+| Gitleaks | Blocks committed secrets | CI |
+| GitHub dependency review | Blocks pull requests adding vulnerable or disallowed-licence packages | CI |
 
-Monorepo layout: `apps/web`, `apps/admin`, `packages/api-contracts` (shared schemas and types), `packages/db`, `packages/ui`, `packages/config`.
+## Web repository (`olareign/Ajo`)
 
-## UI, styling and PWA
+Layout: a pnpm and Turborepo workspace with `apps/web` (the PWA) and, later, `apps/admin` (back office) and `packages/ui` when a second app needs shared components.
+
+### Framework, UI and PWA
 
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| Tailwind CSS (`tailwindcss`) | Mobile-first styling | Both |
-| shadcn/ui (with Radix UI primitives) | Accessible components copied into `packages/ui` | Both |
+| Next.js (`next`, `react`, `react-dom`) | PWA screens and the BFF (route handlers that call the API server-side) | Both |
+| Turborepo (`turbo`) | Runs tasks across apps with caching | Dev, CI |
+| Tailwind CSS (`tailwindcss`, `@tailwindcss/postcss`) | Mobile-first styling with the Figma tokens | Both |
+| `@fontsource-variable/montserrat` | Self-hosted brand font (no third-party font requests, strict CSP) | Both |
+| shadcn/ui (with Radix UI primitives) | Accessible components when screens need dialogs, sheets and menus | Both |
 | `lucide-react` | Icons | Both |
-| `class-variance-authority`, `clsx`, `tailwind-merge` | Component variants and class handling | Both |
-| `next-themes` | Light and dark mode | Both |
+| `clsx` | Class handling | Both |
 | `sonner` | Toast messages | Both |
 | `vaul` | Bottom sheets (native-feeling on phones) | Both |
-| `motion` (Framer Motion) | Animations, e.g. the live payout draw | Both |
+| `motion` | Animations, e.g. the live payout draw | Both |
 | `recharts` | Savings progress and admin charts | Both |
-| `date-fns` | Date maths for schedules and display | Both |
-| `@serwist/next` | Service worker, offline shell and installable PWA | Both |
-| `web-push` | Sending Web Push notifications (server side) | Both |
+| `@serwist/next` | Service worker and offline shell (never caches API responses holding personal data) | Both |
 | `react-webcam` | Selfie capture during KYC (if the KYC provider has no web SDK) | Both |
 | `qrcode.react` | Invite and friend QR codes | Both |
 
-## Forms, validation, data fetching and state
+### Forms, data and state
 
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| `zod` | Schemas for every API request and response, shared by server and client | Both |
-| `react-hook-form`, `@hookform/resolvers` | Forms (sign-up, KYC steps, group creation) with zod validation | Both |
-| `@tanstack/react-query` | Server data fetching, caching and retries on slow networks | Both |
-| `zustand` | Small client state (KYC wizard progress, UI state) | Both |
+| `openapi-typescript`, `openapi-fetch` | Typed API client generated from the API's OpenAPI spec; CI fails if it is out of date | Both |
+| `zod` | Validates form input and the BFF's own request bodies before they reach the API | Both |
+| `react-hook-form`, `@hookform/resolvers` | Forms (sign-up, KYC steps, group creation) | Both |
+| `@tanstack/react-query` | Data fetching, caching and retries on slow networks (calls the BFF) | Both |
+| `zustand` | Small client state (KYC wizard progress) | Both |
 | `nuqs` | Filters and tabs kept in the URL | Both |
-| `libphonenumber-js` | International phone number parsing, validation and formatting | Both |
-| `dinero.js` | Multi-currency money maths and formatting with integer amounts (no floating point) | Both |
-| `next-intl` | Translations and locale-aware routing; English first, more languages later | Both |
-| `Intl` (built into JavaScript) | Formatting currencies, numbers and dates for each locale | Both |
-| `@date-fns/tz` | Time-zone-aware schedules (collection dates in the group's time zone) | Both |
-| `i18n-iso-countries`, `currency-codes` | Country and currency lists and names | Both |
-| Crowdin or Lokalise | Managing translations with translators | Dev |
+| `libphonenumber-js` | International phone number input and formatting | Both |
+| `Intl` (built in) | Formatting money, numbers and dates for each locale; money arrives as integer-minor-unit strings | Both |
+| `next-intl` | Translations; English first | Both |
+| `@date-fns/tz`, `date-fns` | Showing schedules in the user's own time zone | Both |
+| `@t3-oss/env-nextjs` | Type-checked environment variables; the build fails on a missing or malformed value | Both |
 
-## Backend
+### Session and security (web)
 
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| PostgreSQL with PostGIS | Main database; distance queries for nearby people and groups | Both |
-| Neon or Supabase (managed Postgres) | Hosted database with branching for preview environments and point-in-time recovery | Prod, Preview |
-| Drizzle ORM (`drizzle-orm`, `drizzle-kit`) or Prisma (`prisma`, `@prisma/client`) | Typed queries and migrations | Both |
-| `pg` | Postgres driver | Both |
-| Better Auth (`better-auth`) | Phone OTP, sessions, device management; works for web and mobile | Both |
-| `argon2` | Hashing transaction PINs | Both |
-| `jose` | Signing and verifying tokens | Both |
-| Inngest (`inngest`) or Trigger.dev (`@trigger.dev/sdk`) | Durable scheduled jobs: debits, retries, payouts, reminders, reconciliation | Both |
-| Redis via Upstash (`@upstash/redis`) | Cache for suggestions, sessions | Both |
-| `@upstash/ratelimit` | Rate limits on OTP, search and money endpoints | Both |
-| S3-compatible storage: Cloudflare R2 or AWS S3 (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) | Private KYC files with short-lived signed links | Both |
-| `sharp` | Compress and strip metadata from uploaded images | Both |
-| Server-sent events, or Pusher / Ably | Live updates for spot picking and round status | Both |
-| `ngeohash` | Coarse location cells for discovery privacy | Both |
-| `pino` | Structured logging | Both |
-| `nanoid` or `uuid` | IDs and idempotency keys | Both |
+| Next.js proxy (`src/proxy.ts`) | Per-request nonce-based Content Security Policy | Both |
+| `next.config.ts` headers | HSTS, nosniff, frame denial, referrer and permissions policies | Both |
+| `iron-session` or `jose` | Sealed httpOnly, Secure, SameSite=strict session cookies holding the API tokens; JavaScript never sees a token | Both |
+| Cloudflare Turnstile | Bot protection on sign-up and OTP requests | Prod |
 
-## External services
-
-Choose providers per launch country in Phase 0; a global provider plus a regional one often covers both home and diaspora users. Pricing and country coverage have not been checked yet.
-
-| Need | Services | Integration |
-| --- | --- | --- |
-| KYC: global ID documents, liveness; NIN and BVN in Nigeria | Sumsub, Onfido, Veriff, Persona (global); Smile ID, Dojah, Prembly (Africa) | Provider REST API and web SDK |
-| AML and sanctions screening | ComplyAdvantage, or the KYC provider's built-in screening | REST API and webhooks |
-| Collections and auto-debit | Stripe (`stripe`), GoCardless (`gocardless-nodejs`) for UK, EU, US, Canada and more; Paystack, Flutterwave, Mono for Africa | REST API and webhooks |
-| Payouts to bank accounts | Stripe, Wise Platform, Paystack Transfers, Flutterwave Transfers | REST API and webhooks |
-| Currency exchange and cross-border transfers | Wise Platform, Flutterwave, Thunes, Currencycloud | REST API and webhooks |
-| Open banking (bank-account checks, pay by bank) | Plaid (US, Canada), TrueLayer (UK, EU), Mono (Nigeria) | REST API and web SDK |
-| Licensed fund holding | Licensed banks or e-money institutions per market through banking-as-a-service; non-interest banks for halal products | Partner API |
-| SMS and OTP | Twilio (`twilio`) global; Termii, Africa's Talking for Africa | REST API |
-| WhatsApp messages and OTP | WhatsApp Business Platform (via Twilio or Meta) | REST API |
-| Email | Resend (`resend`, `@react-email/components` for templates), Postmark | REST API |
-| Push notifications | Web Push (VAPID) now; Firebase Cloud Messaging (`firebase-admin`) for native later | Server SDK |
-| Maps and area names | OpenStreetMap Nominatim, or Google Maps Geocoding | REST API |
-
-## Testing
+### Testing (web)
 
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| Vitest (`vitest`) | Unit and integration tests | Dev, CI |
-| Testing Library (`@testing-library/react`, `@testing-library/user-event`) | Component tests | Dev, CI |
-| Playwright (`@playwright/test`) | End-to-end tests on phone-sized browsers | Dev, CI |
-| MSW (`msw`) | Mock KYC, payment and SMS providers in tests | Dev, CI |
-| Testcontainers (`testcontainers`) | Real Postgres in integration tests | CI |
-| `@faker-js/faker` | Test and seed data | Dev |
-| k6 | Load tests for debit, payout and discovery | Pre-launch |
-| Mailpit | Catch emails locally | Dev |
-| Provider sandboxes | Paystack, Flutterwave and KYC test modes | Staging |
+| Vitest (`vitest`, `@vitejs/plugin-react`, `jsdom`) | Unit and component tests | Dev, CI |
+| Testing Library (`@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`) | Component tests by role and label | Dev, CI |
+| Playwright (`@playwright/test`) | Journeys on phone-sized browsers; fails on CSP violations and console errors | Dev, CI |
+| MSW (`msw`) | Mock the API in component and BFF tests | Dev, CI |
 | Lighthouse CI | PWA, performance and accessibility scores | CI |
 
-## Code quality and developer workflow
+### Hosting (web)
+
+| Service | Purpose | Stage |
+| --- | --- | --- |
+| Vercel | Web and admin hosting; preview deploy per pull request | Preview, Staging, Prod |
+| Cloudflare | DNS, WAF, DDoS protection | Prod |
+
+## API repository (`olareign/ajo-api`)
+
+Layout: one NestJS application with one module per bounded context (identity, KYC, social, discovery, wallet and ledger, payments, solo savings, èsúsú, trust, defaults, notifications, admin) and a separate worker entry point for background jobs, deployed from the same image.
+
+### Framework and API
 
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| Git and GitHub | Source control, pull requests, code review | Dev |
-| ESLint (`eslint`, `eslint-config-next`) or Biome (`@biomejs/biome`) | Linting | Dev, CI |
-| Prettier (`prettier`, `prettier-plugin-tailwindcss`) | Formatting (skip if using Biome) | Dev, CI |
-| Husky (`husky`) and `lint-staged` | Run lint and format before each commit | Dev |
-| Commitlint (`@commitlint/cli`, `@commitlint/config-conventional`) | Consistent commit messages | Dev |
-| Changesets (`@changesets/cli`) | Versioning and changelogs | Dev |
-| `@t3-oss/env-nextjs` | Type-checked environment variables | Both |
-| OpenAPI generator (`zod-openapi` or `@asteasolutions/zod-to-openapi`) | API docs generated from zod schemas | Dev |
-| Scalar or Swagger UI | Browsable API docs for the team | Dev |
-| Drizzle Studio or Prisma Studio | Inspect local and staging data | Dev |
-| VS Code with ESLint, Prettier, Tailwind CSS IntelliSense extensions | Editor setup | Dev |
-| Claude Code | AI pair-programming and code review | Dev |
+| NestJS (`@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express`) | API framework, modules, dependency injection | Both |
+| `@nestjs/config` with `zod` | Configuration validated at startup; the app refuses to boot on a missing or bad value | Both |
+| `class-validator`, `class-transformer` | DTO validation with a global `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`, `transform`) | Both |
+| `@nestjs/swagger` | OpenAPI spec generated from DTOs; source of the web client | Both |
+| `@nestjs/terminus` | Liveness and readiness health checks | Both |
+| `helmet` | Security headers on every API response | Both |
+| `@nestjs/throttler` with Redis storage | Rate limits on OTP, login, PIN, search and money endpoints | Both |
+| `nestjs-pino`, `pino` | Structured JSON logs with request IDs; personal data and secrets redacted | Both |
 
-## CI/CD, hosting and infrastructure
+### Data
 
-| Tool or service | Purpose | Stage |
+| Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| GitHub Actions | CI pipeline: type-check, lint, tests, build, scans | CI |
-| Vercel | Hosting for web and admin apps; preview deploy per pull request | Preview, Staging, Prod |
-| Neon or Supabase | Managed Postgres with branches per preview, backups, point-in-time recovery | Preview, Staging, Prod |
-| Upstash | Managed Redis | Staging, Prod |
-| Cloudflare R2 or AWS S3 | File storage for KYC documents | Staging, Prod |
-| Inngest Cloud or Trigger.dev Cloud | Hosted job runner | Staging, Prod |
-| Cloudflare | DNS, domain, DDoS protection, web application firewall | Prod |
-| Vercel environment variables, or Doppler / Infisical | Secret management per environment | All |
-| GitHub Dependabot or Renovate | Automatic dependency updates | CI |
+| PostgreSQL 16+ with PostGIS | Main database; distance queries for nearby people and groups | Both |
+| TypeORM (`typeorm`, `@nestjs/typeorm`, `pg`) | Entities, repositories, transactions and migrations | Both |
+| TypeORM CLI migrations | Every schema change is a reviewed migration | Both |
+| `ngeohash` | Coarse location cells for discovery privacy | Both |
 
-If the team later needs more control or lower cost at scale, the same app can move to AWS (ECS or App Runner, RDS Postgres, ElastiCache) using Docker images.
+### Identity, auth and crypto
+
+| Tool or package | Purpose | Stage |
+| --- | --- | --- |
+| `@nestjs/passport`, `passport-jwt` or `jose` | Short-lived access tokens; rotating, revocable refresh tokens | Both |
+| `argon2` | Hashing transaction PINs (argon2id) | Both |
+| Node `crypto` (AES-256-GCM) with a KMS-held key | Field-level encryption of ID numbers, BVN and exact location | Both |
+| `libphonenumber-js` | Phone number validation (E.164) | Both |
+
+### Jobs, cache and real time
+
+| Tool or package | Purpose | Stage |
+| --- | --- | --- |
+| BullMQ (`bullmq`, `@nestjs/bullmq`) | Scheduled debits, retries with backoff, payouts, reminders, reconciliation; failed jobs kept for review | Both |
+| Redis (`ioredis`) | BullMQ queues, rate limits, cache | Both |
+| Server-sent events (NestJS `@Sse`) | Live spot picking and round status board | Both |
+
+### Integrations
+
+| Tool or package | Purpose | Stage |
+| --- | --- | --- |
+| `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | Private KYC files (S3 or Cloudflare R2) with short-lived signed links | Both |
+| `sharp` | Compress uploads and strip image metadata (e.g. GPS) | Both |
+| Provider SDKs (`stripe`, `gocardless-nodejs`, `twilio`, `resend`, KYC SDKs) | Called only from adapters, routed by country | Both |
+| `web-push` | Web Push notifications | Both |
+
+### Testing (API)
+
+| Tool or package | Purpose | Stage |
+| --- | --- | --- |
+| Jest (`jest`, `ts-jest`, `@nestjs/testing`) | Unit and module tests (NestJS default runner) | Dev, CI |
+| `supertest` | HTTP-level tests of controllers, guards and pipes | Dev, CI |
+| Testcontainers (`@testcontainers/postgresql`, `@testcontainers/redis`) | Integration tests against real Postgres and Redis | CI |
+| `nock` or MSW | Mock partner APIs in adapter tests | Dev, CI |
+| `@faker-js/faker` | Test and seed data | Dev |
+| k6 | Load tests for debit, payout and discovery | Pre-launch |
+
+### Hosting (API)
+
+| Service | Purpose | Stage |
+| --- | --- | --- |
+| Render, Railway or Fly.io (one chosen in P0.8) | API and worker containers, managed Postgres and Redis, private networking | Staging, Prod |
+| Doppler or Infisical (or the host's secret store) | Secrets per environment, never in code or images | All |
+| Cloudflare R2 or AWS S3 | KYC document storage | Staging, Prod |
+
+Before real money moves, confirm the chosen host offers: encryption at rest, private networking between API, database and Redis, point-in-time recovery, audit logs of console access, and a data processing agreement. If it cannot, move to AWS (ECS Fargate, RDS, ElastiCache) using the same Docker image.
 
 ## Monitoring, security and analytics
 
 | Tool or service | Purpose | Stage |
 | --- | --- | --- |
-| Sentry (`@sentry/nextjs`) | Error tracking and performance traces | Staging, Prod |
+| Sentry (`@sentry/nextjs`, `@sentry/nestjs`) | Error tracking and traces; personal data scrubbed | Staging, Prod |
+| OpenTelemetry (`@opentelemetry/sdk-node`) | Traces across BFF, API and jobs | Staging, Prod |
 | Better Stack (Logtail) or Axiom | Log storage and search | Staging, Prod |
 | Better Stack Uptime or UptimeRobot | Uptime checks and public status page | Prod |
-| OpenTelemetry (`@vercel/otel`) | Traces across API and jobs | Staging, Prod |
-| PostHog (`posthog-js`, `posthog-node`) | Product analytics, funnels, feature flags | Staging, Prod |
+| PostHog (`posthog-js`, `posthog-node`) | Product analytics and funnels; no personal data in events | Staging, Prod |
 | Slack or similar | Alerts channel for on-call | Prod |
-| Snyk or GitHub code scanning (CodeQL) | Code and dependency vulnerability scanning | CI |
-| Gitleaks or GitHub secret scanning | Stop secrets being committed | CI |
 | OWASP ZAP | Automated security scan of staging | Pre-launch |
 | External penetration testing firm | Independent security test | Pre-launch, then regularly |
-| Cloudflare Turnstile | Bot protection on sign-up and OTP | Prod |
 | FingerprintJS | Device fingerprinting for fraud checks | Prod (optional) |
+
+## External services
+
+Choose providers per launch country in Phase 0; a global provider plus a regional one often covers both home and diaspora users. Pricing and country coverage have not been checked yet. All are called only from the API.
+
+| Need | Services | Integration |
+| --- | --- | --- |
+| KYC: global ID documents, liveness; NIN and BVN in Nigeria | Sumsub, Onfido, Veriff, Persona (global); Smile ID, Dojah, Prembly (Africa) | Provider REST API and web SDK |
+| AML and sanctions screening | ComplyAdvantage, or the KYC provider's built-in screening | REST API and webhooks |
+| Collections and auto-debit | Stripe, GoCardless for UK, EU, US, Canada and more; Paystack, Flutterwave, Mono for Africa | REST API and webhooks |
+| Payouts to bank accounts | Stripe, Wise Platform, Paystack Transfers, Flutterwave Transfers | REST API and webhooks |
+| Currency exchange and cross-border transfers | Wise Platform, Flutterwave, Thunes, Currencycloud | REST API and webhooks |
+| Open banking (bank-account checks, pay by bank) | Plaid (US, Canada), TrueLayer (UK, EU), Mono (Nigeria) | REST API and web SDK |
+| Licensed fund holding | Licensed banks or e-money institutions per market through banking-as-a-service; non-interest banks for halal products | Partner API |
+| SMS and OTP | Twilio global; Termii, Africa's Talking for Africa | REST API |
+| WhatsApp messages and OTP | WhatsApp Business Platform (via Twilio or Meta) | REST API |
+| Email | Resend (with `@react-email/components` templates), Postmark | REST API |
+| Push notifications | Web Push (VAPID) now; Firebase Cloud Messaging (`firebase-admin`) for native later | Server SDK |
+| Maps and area names | OpenStreetMap Nominatim, or Google Maps Geocoding | REST API |
 
 ## Team, design and project tools
 
@@ -168,13 +209,13 @@ If the team later needs more control or lower cost at scale, the same app can mo
 | Excalidraw or FigJam | Architecture and flow diagrams |
 | Slack or WhatsApp group | Team communication and alerts |
 | Google Workspace | Email, shared files, calendar |
-| 1Password or Bitwarden | Shared team passwords and recovery codes |
+| 1Password or Bitwarden | Shared team passwords and recovery codes; hardware keys for admin accounts |
 | Freshdesk, Intercom or Crisp | Customer support inbox and help centre (from Phase 5) |
 | Postman or Bruno | Trying APIs and provider sandboxes |
 
 ## Native mobile phase
 
-Added only in Phase 6; the API, database and jobs stay the same.
+Added only in Phase 6; the API, database and jobs stay the same. The app calls the API directly with bearer tokens.
 
 | Tool or package | Purpose |
 | --- | --- |
@@ -184,9 +225,9 @@ Added only in Phase 6; the API, database and jobs stay the same.
 | `expo-camera`, `expo-image-picker` | KYC selfie and document capture |
 | `expo-location` | Location for KYC and nearby discovery |
 | `expo-local-authentication` | Fingerprint or Face ID instead of typing the PIN |
-| `expo-secure-store` | Secure token storage on the device |
+| `expo-secure-store` | Secure token storage on the device (Keychain, Keystore) |
 | `expo-notifications` with Firebase Cloud Messaging and Apple Push | Push notifications |
 | `expo-contacts` | Opt-in contact matching |
 | EAS Build and EAS Submit | Build and publish to Google Play and the App Store |
 | Sentry (`@sentry/react-native`) | Mobile error tracking |
-| Shared packages: `@tanstack/react-query`, `zod`, `zustand`, `date-fns` | Same libraries as the web app |
+| `openapi-fetch`, `@tanstack/react-query`, `zustand`, `date-fns` | Same client libraries as the web app, generated from the same OpenAPI spec |
