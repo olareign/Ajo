@@ -186,16 +186,18 @@ Build a Next.js PWA for the screens and a separate NestJS API for all business l
 | File storage | S3-compatible storage | ID documents, selfies, address proofs |
 | Hosting | Vercel for the web app; Render for the API, worker, Postgres and Key Value (Redis), defined in `ajo-api/render.yaml` | Fast to start; the API image can move to AWS if a market or partner requires it |
 
-Third-party partners to evaluate (prices and availability not yet checked):
+Selected partners (contracts and pricing still to arrange in P0.3):
 
-| Need | Options |
-| --- | --- |
-| KYC (global ID documents, liveness; national checks such as NIN and BVN) | Sumsub, Onfido, Veriff, Persona (global); Smile ID, Dojah, Prembly (Africa) |
-| Collections and auto-debit | Stripe and GoCardless (UK, EU, US, Canada and others); Paystack, Flutterwave, Mono (Africa) |
-| Cross-border transfers and currency exchange | Wise Platform, Flutterwave, Thunes, Currencycloud |
-| Holding funds (licensed) | Licensed banks or e-money institutions per market through banking-as-a-service; non-interest banks for halal rewards |
-| SMS and OTP | Twilio (global), Termii and Africa's Talking (Africa) |
-| AML and sanctions screening | ComplyAdvantage, or the KYC provider's built-in screening |
+| Need | Nigeria | United Kingdom |
+| --- | --- | --- |
+| KYC and identity | Smile ID | Onfido |
+| AML and sanctions screening | ComplyAdvantage | ComplyAdvantage |
+| Collections and auto-debit | Paystack | GoCardless |
+| Payouts to bank | Paystack Transfers | Modulr |
+| Holding funds (licensed) | Chosen with legal counsel after the CBN review | Modulr at launch, ClearBank later |
+| Currency exchange and cross-border | Wise Platform | Wise Platform |
+| Email | Resend | Resend |
+| SMS and WhatsApp alerts | Termii | Twilio |
 
 Regulation: holding and moving customer money is licensed in every market (e.g. CBN in Nigeria, FCA in the UK, FinCEN and state regulators in the US, central banks under PSD2 in the EU). Àjọ should operate as the technology layer, with licensed partners holding the money in each market, and launch only in countries where that is in place. Confirm with fintech lawyers in each launch market.
 

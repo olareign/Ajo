@@ -237,20 +237,20 @@ Real-time updates (spot picking, round status board) use server-sent events or a
 
 ## Third-party integrations
 
-Each integration sits behind an adapter interface, so a second provider can be added as a fallback. Pricing and availability have not been checked yet.
+Each integration sits behind an adapter interface, routed by the user's country, so a second provider can be added as a fallback. Until a partner's sandbox is connected, an in-memory stand-in implements the same interface; stand-ins refuse to run in production.
 
-| Need | Candidates | Adapter interface |
-| --- | --- | --- |
-| Identity checks (global ID documents, liveness; NIN and BVN in Nigeria) | Sumsub, Onfido, Veriff, Persona (global); Smile ID, Dojah, Prembly (Africa) | `verifyId`, `verifySelfie`, `verifyNationalCheck`, `verifyAddress` |
-| AML and sanctions screening | ComplyAdvantage, or the KYC provider's built-in screening | `screenPerson`, `monitorPerson` |
-| Collections and auto-debit | Stripe, GoCardless (UK, EU, US, Canada and more); Paystack, Flutterwave, Mono (Africa) | `createMandate`, `chargeMandate`, `verifyWebhook` |
-| Payouts to bank | Stripe, Wise Platform, Paystack Transfers, Flutterwave Transfers | `resolveAccount`, `transfer`, `getTransferStatus` |
-| Currency exchange and cross-border transfers | Wise Platform, Flutterwave, Thunes, Currencycloud | `quote`, `convert`, `getSettlementReport` |
-| Fund holding (licensed, per market) | Licensed banks or e-money institutions via banking-as-a-service; non-interest banks for halal rewards | `createAccount`, `getBalance`, `getSettlementReport` |
-| SMS and OTP | Twilio (global); Termii, Africa's Talking (Africa) | `sendOtp`, `sendSms` |
-| Email | Resend, Postmark | `sendEmail` |
-| Push | Web Push (VAPID) now; Firebase Cloud Messaging for native | `sendPush` |
-| Maps and areas | OpenStreetMap or Google Maps geocoding | `reverseGeocode` (coordinates to area name) |
+| Need | Nigeria | United Kingdom | Adapter interface |
+| --- | --- | --- | --- |
+| Identity checks (documents, selfie and liveness; NIN and BVN) | Smile ID | Onfido | `verifyId`, `verifySelfie`, `verifyNationalCheck`, `verifyAddress` |
+| AML and sanctions screening | ComplyAdvantage | ComplyAdvantage | `screenPerson`, `monitorPerson` |
+| Collections and auto-debit | Paystack | GoCardless | `createMandate`, `chargeMandate`, `verifyWebhook` |
+| Payouts to bank | Paystack Transfers | Modulr | `resolveAccount`, `transfer`, `getTransferStatus` |
+| Currency exchange and cross-border | Wise Platform | Wise Platform | `quote`, `convert`, `getSettlementReport` |
+| Fund holding (licensed) | Chosen with legal counsel | Modulr, later ClearBank | `createAccount`, `getBalance`, `getSettlementReport` |
+| SMS and WhatsApp | Termii | Twilio | `sendSms` |
+| Email | Resend | Resend | `sendEmail` |
+| Push | Web Push (VAPID) now; Firebase Cloud Messaging for native | Same | `sendPush` |
+| Maps and areas | OpenStreetMap Nominatim | Same | `reverseGeocode` (coordinates to area name) |
 
 ## Security, privacy and compliance
 
