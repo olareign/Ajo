@@ -67,3 +67,13 @@ test("password fields can be shown and hidden with the eye button", async ({ pag
     await expect(password).toHaveAttribute("type", "password");
   }
 });
+
+test("the recovery and code screens load, and the code screen guards itself", async ({ page }) => {
+  await page.goto("/sign-in");
+  await page.getByRole("link", { name: "Forgot password?" }).click();
+  await expect(page.getByRole("heading", { name: "Password recovery" })).toBeVisible();
+  await page.goto("/reset-password");
+  await expect(page.getByText("This link is incomplete")).toBeVisible();
+  await page.goto("/sign-in/verify");
+  await expect(page).toHaveURL(/\/sign-in$/);
+});

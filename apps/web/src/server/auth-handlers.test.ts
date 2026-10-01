@@ -1,6 +1,14 @@
 // @vitest-environment node
 import type { Fetch } from "./api-client";
-import { handleSignIn, handleSignOut, handleSignUp, handleVerifyEmail } from "./auth-handlers";
+import {
+  handleForgotPassword,
+  handleMfaSignIn,
+  handleResetPassword,
+  handleSignIn,
+  handleSignOut,
+  handleSignUp,
+  handleVerifyEmail,
+} from "./auth-handlers";
 import { loadServerEnv } from "./env";
 import { openSeal, seal } from "./session";
 
@@ -218,6 +226,132 @@ describe("handleVerifyEmail", () => {
       },
     );
     expect(res.status).toBe(403);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("handleMfaSignIn", () => {
+  async function withChallenge(body: unknown, mfaToken = "m".repeat(43)) {
+    const sealed = await seal({ mfaToken }, env.sessionSecret, 60);
+    return new Request(`${base}/api/auth/mfa`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Sec-Fetch-Site": "same-origin",
+        Cookie: `__Host-ajo_mfa=${encodeURIComponent(sealed)}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("finishes the sign-in with the code and the challenge from the cookie, then starts the session", async () => {
+    const fetchFn = apiReturning(200, { accessToken: "acc", refreshToken: "ref" });
+    const res = await handleMfaSignIn(await withChallenge({ code: "123456", extra: 1 }), {
+      env,
+      fetchFn,
+    });
+    expect(res.status).toBe(200);
+    const [url, init] = fetchFn.mock.calls[0]!;
+    expect(url).toBe("https://api.ajo.example/api/v1/auth/login/mfa");
+    expect(JSON.parse(init!.body as string)).toEqual({ mfaToken: "m".repeat(43), code: "123456" });
+    expect(await openSeal(cookieValue(res, "__Host-ajo_session"), env.sessionSecret)).toEqual({
+      accessToken: "acc",
+      refreshToken: "ref",
+    });
+    expect(res.headers.getSetCookie().find((c) => c.startsWith("__Host-ajo_mfa="))).toMatch(
+      /Max-Age=0/,
+    );
+  });
+
+  it("accepts a recovery code instead of an authenticator code", async () => {
+    const fetchFn = apiReturning(200, { accessToken: "a", refreshToken: "r" });
+    await handleMfaSignIn(await withChallenge({ recoveryCode: "abcde-fghjk" }), { env, fetchFn });
+    expect(JSON.parse(fetchFn.mock.calls[0]![1]!.body as string)).toEqual({
+      mfaToken: "m".repeat(43),
+      recoveryCode: "abcde-fghjk",
+    });
+  });
+
+  it("relays a wrong code without starting a session", async () => {
+    const fetchFn = apiReturning(401, { message: "That code is incorrect." });
+    const res = await handleMfaSignIn(await withChallenge({ code: "000000" }), { env, fetchFn });
+    expect(res.status).toBe(401);
+    expect(cookieValue(res, "__Host-ajo_session")).toBeUndefined();
+  });
+
+  it("asks the person to start again when there is no challenge, without calling the API", async () => {
+    const fetchFn = apiReturning(200, {});
+    const res = await handleMfaSignIn(post("/api/auth/mfa", { code: "123456" }), { env, fetchFn });
+    expect(res.status).toBe(401);
+    expect(((await res.json()) as { message: string }).message).toMatch(/start again/i);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("refuses cross-site requests", async () => {
+    const fetchFn = apiReturning(200, {});
+    const res = await handleMfaSignIn(
+      post("/api/auth/mfa", { code: "1" }, { "Sec-Fetch-Site": "cross-site" }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(403);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("password recovery", () => {
+  it("asks the API for a reset link, sending only the email", async () => {
+    const fetchFn = apiReturning(202, { message: "If that email has an account, we sent a link." });
+    const res = await handleForgotPassword(
+      post("/api/auth/forgot-password", { email: "ada@example.com", extra: 1 }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(202);
+    const [url, init] = fetchFn.mock.calls[0]!;
+    expect(url).toBe("https://api.ajo.example/api/v1/auth/password/forgot");
+    expect(JSON.parse(init!.body as string)).toEqual({ email: "ada@example.com" });
+  });
+
+  it("sends the link's token with the new password, and nothing else", async () => {
+    const fetchFn = apiReturning(200, { message: "Your password has been changed." });
+    const res = await handleResetPassword(
+      post("/api/auth/reset-password", {
+        token: "t".repeat(43),
+        password: "Lagos-Mango-Drum-4721",
+        extra: 1,
+      }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(200);
+    const [url, init] = fetchFn.mock.calls[0]!;
+    expect(url).toBe("https://api.ajo.example/api/v1/auth/password/reset");
+    expect(JSON.parse(init!.body as string)).toEqual({
+      token: "t".repeat(43),
+      password: "Lagos-Mango-Drum-4721",
+    });
+  });
+
+  it("never starts a session, even if the API answers with tokens", async () => {
+    const res = await handleResetPassword(
+      post("/api/auth/reset-password", { token: "t".repeat(43), password: "x" }),
+      { env, fetchFn: apiReturning(200, { accessToken: "a", refreshToken: "r" }) },
+    );
+    expect(res.headers.getSetCookie()).toEqual([]);
+  });
+
+  it("refuses cross-site requests for both", async () => {
+    const fetchFn = apiReturning(200, {});
+    const cross = { "Sec-Fetch-Site": "cross-site" };
+    expect(
+      (await handleForgotPassword(post("/x", { email: "a@b.co" }, cross), { env, fetchFn })).status,
+    ).toBe(403);
+    expect(
+      (
+        await handleResetPassword(post("/x", { token: "t", password: "p" }, cross), {
+          env,
+          fetchFn,
+        })
+      ).status,
+    ).toBe(403);
     expect(fetchFn).not.toHaveBeenCalled();
   });
 });

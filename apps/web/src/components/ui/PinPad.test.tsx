@@ -56,4 +56,12 @@ describe("PinPad", () => {
     await userEvent.keyboard("42{Backspace}");
     expect(onChange.mock.calls.map((c) => c[0])).toEqual(["4", "42", "4"]);
   });
+
+  it("can be driven by the keyboard too", async () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    screen.getByRole("group", { name: "Enter your PIN" }).focus();
+    await userEvent.keyboard("42{Backspace}");
+    expect(onChange).toHaveBeenLastCalledWith("4");
+  });
 });

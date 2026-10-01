@@ -9,6 +9,7 @@ import {
   seal,
   SESSION_TTL_SECONDS,
   sessionCookie,
+  type MfaChallenge,
   type Session,
 } from "./session";
 
@@ -67,6 +68,37 @@ export async function handleVerifyEmail(
   return json(result.status, result.data);
 }
 
+export async function handleForgotPassword(
+  request: Request,
+  { env, fetchFn }: Deps,
+): Promise<Response> {
+  if (!isSameOrigin(request)) return FORBIDDEN();
+  const body = await readObject(request);
+  if (!body) return json(400, { message: "Send the form as JSON." });
+  const result = await callApi(env, fetchFn, {
+    path: "/auth/password/forgot",
+    patient: true,
+    body: pick(body, ["email"]),
+  });
+  return json(result.status, result.data);
+}
+
+/** Changing a password never signs anyone in; the person signs in again with the new one. */
+export async function handleResetPassword(
+  request: Request,
+  { env, fetchFn }: Deps,
+): Promise<Response> {
+  if (!isSameOrigin(request)) return FORBIDDEN();
+  const body = await readObject(request);
+  if (!body) return json(400, { message: "Send the form as JSON." });
+  const result = await callApi(env, fetchFn, {
+    path: "/auth/password/reset",
+    patient: true,
+    body: pick(body, ["token", "password"]),
+  });
+  return json(result.status, result.data);
+}
+
 export async function handleSignIn(request: Request, { env, fetchFn }: Deps): Promise<Response> {
   if (!isSameOrigin(request)) return FORBIDDEN();
   const body = await readObject(request);
@@ -88,6 +120,26 @@ export async function handleSignIn(request: Request, { env, fetchFn }: Deps): Pr
     );
     return json(200, { mfaRequired: true }, [serializeCookie(cookie.name, sealed, cookie.options)]);
   }
+  return startSession(env, result.data);
+}
+
+/** Second step of a sign-in that needs a code: the challenge lives in a short-lived sealed cookie. */
+export async function handleMfaSignIn(request: Request, { env, fetchFn }: Deps): Promise<Response> {
+  if (!isSameOrigin(request)) return FORBIDDEN();
+  const body = await readObject(request);
+  if (!body) return json(400, { message: "Send the form as JSON." });
+  const cookie = mfaCookie(env.production);
+  const challenge = await openSeal<MfaChallenge>(
+    readCookie(request, cookie.name),
+    env.sessionSecret,
+  );
+  if (!challenge) return json(401, { message: "That sign-in took too long. Please start again." });
+  const result = await callApi(env, fetchFn, {
+    path: "/auth/login/mfa",
+    patient: true,
+    body: { mfaToken: challenge.mfaToken, ...pick(body, ["code", "recoveryCode"]) },
+  });
+  if (result.status !== 200) return json(result.status, result.data);
   return startSession(env, result.data);
 }
 
