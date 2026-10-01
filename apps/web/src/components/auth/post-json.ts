@@ -19,7 +19,19 @@ export async function postJson(path: string, body: object): Promise<PostResult> 
   }
 }
 
+const PASSWORD_PROBLEMS: Record<string, string> = {
+  too_short: "Use at least 12 characters. A few words strung together works well.",
+  too_long: "That's longer than 128 characters. Try a shorter phrase.",
+  contains_email: "Your password shouldn't contain the first part of your email.",
+  breached: "That password has appeared in a data breach. Choose a different one.",
+};
+
 export function messageOf(result: PostResult): string {
+  const problems = (result.data.details as { password?: unknown } | undefined)?.password;
+  if (Array.isArray(problems)) {
+    const known = problems.map((p) => PASSWORD_PROBLEMS[String(p)]).find(Boolean);
+    if (known) return known;
+  }
   const message = result.data.message;
   if (typeof message === "string") return message;
   // The API lists validation problems as an array of developer-facing text; never show that.

@@ -52,10 +52,10 @@ export function TextField({
             ? { autoCapitalize: "none", spellCheck: false, autoCorrect: "off" }
             : {})}
           className={cn(
-            "min-h-[52px] w-full rounded-m border-[1.5px] bg-surface-raised px-4 text-base text-ink transition-colors placeholder:text-ink-muted",
-            "focus:border-adire focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+            "min-h-14 w-full rounded-m border-[1.5px] bg-surface-sunken px-4 text-base text-ink transition-colors placeholder:text-ink-muted",
+            "focus:border-adire focus:bg-surface-raised focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
             isPassword && "pr-14",
-            error ? "border-danger" : "border-line-strong",
+            error ? "border-danger" : "border-transparent",
           )}
           {...props}
         />

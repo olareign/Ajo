@@ -22,4 +22,16 @@ describe("ScreenHeader", () => {
     render(<ScreenHeader title="Groups" backHref="/" />);
     expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", "/");
   });
+
+  it("says what the screen is for, under the heading", () => {
+    render(<ScreenHeader title="Hi there" subtitle="Welcome back. Sign in to your account." />);
+    expect(screen.getByText("Welcome back. Sign in to your account.")).toBeInTheDocument();
+  });
+
+  it("draws the back control as a squared button you can see against the page", () => {
+    render(<ScreenHeader title="Groups" backHref="/" />);
+    const back = screen.getByRole("link", { name: "Back" });
+    expect(back.className).toContain("rounded-m");
+    expect(back.className).toContain("border");
+  });
 });
