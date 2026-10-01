@@ -11,7 +11,7 @@ type Props = Readonly<{
 }>;
 
 const backClass =
-  "mb-8 inline-flex size-11 items-center justify-center rounded-m border border-line bg-surface-raised text-ink hover:bg-adire-tint";
+  "mb-8 inline-flex size-11 items-center justify-center rounded-m border border-line bg-surface-raised text-ink hover:bg-primary-tint";
 
 /** Back chevron, a short label for where the person is, and the screen's question as its title. */
 export function ScreenHeader({ title, eyebrow, subtitle, onBack, backHref }: Props) {
@@ -28,9 +28,9 @@ export function ScreenHeader({ title, eyebrow, subtitle, onBack, backHref }: Pro
         </Link>
       )}
       {eyebrow && (
-        <p className="mb-2 text-[13px] font-semibold tracking-[0.01em] text-adire">{eyebrow}</p>
+        <p className="mb-2 text-[13px] font-semibold tracking-[0.01em] text-tertiary">{eyebrow}</p>
       )}
-      <h1 className="font-display text-[32px] leading-9 font-bold tracking-[-0.015em] text-balance text-adire">
+      <h1 className="font-display text-[32px] leading-9 font-bold tracking-[-0.015em] text-balance text-primary">
         {title}
       </h1>
       {subtitle && <p className="mt-3 text-[17px] leading-[26px] text-ink-muted">{subtitle}</p>}

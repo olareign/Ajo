@@ -29,8 +29,8 @@ export function ForgotPasswordForm() {
     return (
       <div className="flex flex-1 flex-col">
         <div className="grid justify-items-center gap-4 pt-10 text-center">
-          <MailCheck aria-hidden className="size-10 text-adire" />
-          <h2 className="font-display text-[26px] leading-8 font-bold text-adire">
+          <MailCheck aria-hidden className="size-10 text-primary" />
+          <h2 className="font-display text-[26px] leading-8 font-bold text-primary">
             Check your email
           </h2>
           <p className="text-[17px] leading-[26px] text-ink-muted">
@@ -40,7 +40,7 @@ export function ForgotPasswordForm() {
         </div>
         <Link
           href="/sign-in"
-          className="mt-auto flex min-h-14 items-center justify-center rounded-m bg-adire px-6 text-base font-semibold text-on-adire hover:bg-adire-deep"
+          className="mt-auto flex min-h-14 items-center justify-center rounded-m bg-primary px-6 text-base font-semibold text-on-primary hover:bg-primary-deep"
         >
           Back to sign in
         </Link>

@@ -36,8 +36,8 @@ export function CodeBoxes({ value, length = 6, label, error }: Props) {
               data-active={active ? "" : undefined}
               aria-hidden
               className={cn(
-                "grid h-16 min-w-0 flex-1 place-items-center rounded-m border-[1.5px] bg-surface-sunken font-display text-[26px] font-semibold text-adire tabular-nums transition-colors",
-                active ? "border-adire bg-surface-raised" : "border-transparent",
+                "grid h-16 min-w-0 flex-1 place-items-center rounded-m border-[1.5px] bg-surface-sunken font-display text-[26px] font-semibold text-tertiary tabular-nums transition-colors",
+                active ? "border-primary bg-surface-raised" : "border-transparent",
                 error && "border-danger",
               )}
             >

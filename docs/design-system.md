@@ -1,63 +1,65 @@
-# Àjọ — Design System (from Figma)
+# Àjọ — Design System
 
 Oct 1, 2026 · @olareign
 
-Inferred from the Figma file *Alo App (Saving App Design Template)*. Tokens live in `apps/web/src/app/globals.css` (Tailwind `@theme`); components live in `apps/web/src/components`.
+Green and white lead; the original indigo is kept as a quiet tertiary accent; gold is reserved for money. The circle (the group's members drawn as beads) is the motif. Tokens live in `apps/web/src/app/globals.css` (Tailwind `@theme`); components live in `apps/web/src/components`. The layout patterns for the auth screens come from the UI reference supplied by the product owner, re-coloured and re-composed for Àjọ rather than copied.
 
-## Tokens
+## Colour
 
-| Token | Value | Used for |
-| --- | --- | --- |
-| `brand-600` | `#038641` | Primary buttons, selected chips and tabs, eyebrow text ("Lets Go!"), payout amounts, splash screen |
-| `brand-700` | `#026B34` | Pressed or hover state of primary |
-| `brand-200` | `#C2E1D1` | Disabled Proceed button |
-| `brand-100` | `#E3F5EA` | "Active", "Member" and "Admin" pills |
-| `brand-50` | `#F2FBF6` | Tinted panels ("Benefits", plan summary), bottom nav |
-| `ink` / `ink-muted` | `#111111` / `#6B7280` | Headings / secondary labels |
-| `line` | `#D9D9D9` | Chip and input borders |
-| `surface-muted` | `#F7F8F9` | Cards, auth inputs, tab track |
-| `danger` | `#E53935` | "2/7 remaining", errors |
-| Font | Montserrat (variable, self-hosted) | All text; the auth screens in Figma use Inter or Roboto, which are unified here |
-| Radius | 8px fields and buttons; full pills for chips | |
+| Role | Token | Light | Dark | Used for |
+| --- | --- | --- | --- | --- |
+| Primary | `primary` / `primary-deep` / `primary-tint` | `#057A3F` / `#035E30` / `#E3F5EB` | `#4CCB84` / `#7FE0A8` / `#12301F` | Buttons, links, headings, selected chips and tabs, the app icon |
+| Tertiary | `tertiary` / `tertiary-tint` | `#222F78` / `#E8EAF8` | `#9AA7F5` / `#1C2250` | Small labels above headings, bead decorations, one-time code digits, the piggy-bank badge, a member who is "covered" |
+| Money | `oro` / `oro-tint` | `#D99A1E` / `#FBEFD2` | `#F2BB4C` / `#3A2C0E` | Only where money moves: the round's recipient, the Add money action |
+| Surface | `surface` / `surface-raised` / `surface-sunken` | `#FFFFFF` / `#FFFFFF` / `#F3F5F7` | `#0A1410` / `#101C16` / `#070F0B` | Page, cards, and filled fields and keypads |
+| Text | `ink` / `ink-muted` | `#0F1F17` / `#4A5750` | `#EDF6F0` / `#A3B5AA` | Body and secondary text |
+| Lines | `line` / `line-strong` | `#E2E6EA` / `#7C8794` | `#22342A` / `#6F8B7B` | Dividers; outlines of controls (3:1 or more) |
+| Status | `leaf`, `danger` | `#1D7346`, `#B3361D` | `#62CF92`, `#FF8F73` | Paid; errors |
+| Focus | `focus` | `#2F4AD6` | `#F2BB4C` | One visible ring on every control |
+
+Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:1, in both themes. Dark mode follows the viewer's setting (`prefers-color-scheme`) and can be forced with `data-theme`.
+
+## Type, shape and layout
+
+- **Fonts:** Bricolage Grotesque (display), Be Vietnam Pro (text), JetBrains Mono (numbers), all self-hosted through `@fontsource` because the content security policy allows only `font-src 'self'`.
+- **Radius:** 6 / 12 / 20px. Fields and buttons are 12px; keypads and sheets 20px.
+- **Touch targets:** 44px minimum; main buttons 56px; keypad keys 56px.
+- **Phone first:** every screen is built for a small Android phone. The main action sits at the bottom, where the thumb is, with the "switch screen" line under it.
 
 ## Components
 
-| Component | Figma source | Notes |
+| Component | Notes |
+| --- | --- |
+| `Button` | `primary`, `money` (gold, for moving money), `quiet`, `danger`; 44 or 56px; `block` for full width |
+| `TextField` | Soft filled field that takes an outline when focused; hint below, error replaces the hint; password fields get a show/hide eye |
+| `ChoiceChips` | Accessible radio group with arrow-key support |
+| `ScreenHeader` | Squared back button, optional small label, heading and one calm subtitle |
+| `AuthScreen` | The frame every sign-in screen shares: full height, content on top, footer line at the bottom, a corner of beads |
+| `Keypad`, `PinPad`, `CodeBoxes` | Number pad; PIN pad (digits shown as dots); one-time code boxes (digits shown) |
+| `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
+| `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
+| `TabBar` | Today, Circles, Wallet, Me, with the gold action in the centre |
+| `Welcome`, `RecoveryBadge` | The first screen; the lock badge on password recovery |
+
+## Screens and build status
+
+| Flow | Status |
+| --- | --- |
+| Welcome | Built (`/`) |
+| Sign up, confirm email, sign in, password recovery | Built (`/sign-up`, `/check-email`, `/verify-email`, `/sign-in`, `/forgot-password`, `/reset-password`) |
+| Verify it's you (authenticator code or recovery code) | Built (`/sign-in/verify`); turning the second factor on from the app comes with the Me screen |
+| Onboarding, KYC, wallet | Phase 1, next |
+| Solo savings, referrals, groups | Phases 2 to 4 |
+
+## Where the build departs from the reference, and why
+
+| Reference | Built | Reason |
 | --- | --- | --- |
-| `Button` | Proceed, Get Started, Chat Room, Cancel | Full width, 48px tall; `primary` and `outline` |
-| `ChoiceChips` | Amount, How Often?, Duration pills | An accessible radio group with arrow-key support |
-| `TextField` | Plan Name, Group Name, No of People ("Max 12") | Label above; hint inside on the right; error below |
-| `ScreenHeader` | Back chevron, green eyebrow, bold question | Used by every wizard screen |
-| `GroupCard` | Groups list cards | Phase 4: avatars (+N), status pill, payout, due date, amount per frequency, fill bar, "x/y remaining" |
-| `ProgressBar` | Card fill bar | |
-| `BottomNav` | Home, Groups, Wallet, More | |
-
-## Screens in Figma and build status
-
-Screens are built in the phase that delivers their feature; Phase 0 ships the design tokens, core components and the splash screen.
-
-| Flow | Figma frames | Phase |
-| --- | --- | --- |
-| Splash | Splash | Phase 0: built (`/`) |
-| Onboarding | Onboarding 1–2 | Phase 1 (E1.6) |
-| Sign in, sign up, verification code, password reset | Screens 4–12 | Phase 1 (E1) |
-| Wallet | Wallets | Phase 1 (E3) |
-| Solo savings | SELECT SAVINGS, Your selections, success | Phase 2 (E4) |
-| Referral and invites | Refferal, Linkshare | Phase 3 (E5.9) |
-| Group type, private group setup, success | Groupss | Phase 4 (E6.1) |
-| Groups list | Groups / Your Groups | Phase 4 (E6.3) |
-| Group info, share link, chat room | Invites, Group Info, Linkshare | Phase 4 (E6.2, E6.3); group chat is out of scope for version 1 |
-| Account, notifications | Account, Notification Page | Phase 1 (profile) and E8.3 |
-
-## Where the build departs from Figma, and why
-
-| Figma | Built | Reason |
-| --- | --- | --- |
-| "Earn Interest", "Interest Rate 7.5 pa", "Invest group savings to earn more interest" | No interest anywhere; the estimate equals what the user pays in | Product spec: no interest, rewards must be Sharia-compatible |
-| Brand name "Alajo" | "Àjọ" | Name used in the repo docs; the app name is still an open question in the spec |
-| Sign in and sign up with email and password, plus Google and Apple | Email and password with an authenticator-app second factor (Phase 1); Google and Apple sign-in after launch, so their buttons are hidden until then | The spec now follows the designs for sign-in; a transaction PIN still guards money actions |
-| "Specify Interval" | Daily, weekly or monthly only | Spec and data model support only these three frequencies |
-| Both onboarding slides say "Get Started" | "Next" on slide 1, "Get Started" on the last | Clearer progression; Skip still jumps ahead |
-| Date "Jan 19" | Dates formatted for the user's locale ("19 Jan" in en-NG) | Spec E11.7 |
-| No of People "Max 12" | Group size 2–12 (`DEFAULT_RULES.maxGroupSize`) | Taken from the design; change in one place if needed |
-| Photo avatars | Initials | No profile photos until KYC and profiles exist |
+| Google and Apple sign-in buttons | Not shown | Social sign-in comes after launch; buttons that do nothing would mislead |
+| "Resend code" on the code screen | "Use a recovery code" | The code comes from an authenticator app and cannot be resent |
+| Green on white with a flat white top | Same palette, with a corner of beads and the indigo as a tertiary accent | Keeps the circle motif and the original brand colour |
+| "Earn Interest", "Interest Rate 7.5 pa" | No interest anywhere | Product spec: no interest, rewards must be Sharia-compatible |
+| "Alajo" | "Àjọ" | Name used in the repo docs; the app name is still an open question in the spec |
+| Password recovery typo ("Passsword") | "Password recovery" | Corrected |
+| Photo avatars | Initials, until photos are added to `public/people/` | Photos need licensed images; see `public/people/CREDITS.md` |
+| Date "Jan 19" | Dates formatted for the user's locale | Spec E11.7 |

@@ -25,7 +25,7 @@ export function PinPad({ value, onChange, length = 6, label }: Props) {
             key={i}
             className={cn(
               "size-3.5 rounded-full transition-colors duration-150",
-              i < value.length ? "bg-adire" : "shadow-[inset_0_0_0_2px_var(--line-strong)]",
+              i < value.length ? "bg-primary" : "shadow-[inset_0_0_0_2px_var(--line-strong)]",
             )}
           />
         ))}

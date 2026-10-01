@@ -68,7 +68,7 @@ export function MfaForm() {
         {error && EXPIRED.test(error) && (
           <Link
             href="/sign-in"
-            className="justify-self-start text-[15px] font-semibold text-adire underline-offset-4 hover:underline"
+            className="justify-self-start text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
           >
             Back to sign in
           </Link>
@@ -76,7 +76,7 @@ export function MfaForm() {
         <button
           type="button"
           onClick={() => switchTo(!useRecovery)}
-          className="justify-self-center rounded-s px-2 py-2 text-[15px] font-semibold text-adire underline-offset-4 hover:underline"
+          className="justify-self-center rounded-s px-2 py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
         >
           {useRecovery ? "Use my authenticator app" : "Use a recovery code"}
         </button>

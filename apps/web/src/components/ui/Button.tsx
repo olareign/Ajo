@@ -5,11 +5,11 @@ type Variant = "primary" | "money" | "quiet" | "danger";
 type Size = "md" | "lg";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-adire text-on-adire hover:bg-adire-deep",
+  primary: "bg-primary text-on-primary hover:bg-primary-deep",
   // Gold is reserved for actions that move money.
   money: "bg-oro text-on-oro hover:brightness-95",
   quiet:
-    "bg-transparent text-adire shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-adire-tint",
+    "bg-transparent text-primary shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-primary-tint",
   danger: "bg-transparent text-danger shadow-[inset_0_0_0_1.5px_var(--danger)]",
 };
 

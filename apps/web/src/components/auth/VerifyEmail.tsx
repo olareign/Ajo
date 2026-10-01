@@ -30,7 +30,7 @@ export function VerifyEmail({ token }: Readonly<{ token: string }>) {
         </p>
         <Link
           href="/sign-in"
-          className="flex min-h-14 items-center justify-center rounded-m bg-adire px-6 text-base font-semibold text-on-adire hover:bg-adire-deep"
+          className="flex min-h-14 items-center justify-center rounded-m bg-primary px-6 text-base font-semibold text-on-primary hover:bg-primary-deep"
         >
           Sign in
         </Link>

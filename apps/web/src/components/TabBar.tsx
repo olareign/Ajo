@@ -26,7 +26,7 @@ export function TabBar({ current, onAction }: Props) {
         aria-current={active ? "page" : undefined}
         className={cn(
           "grid min-h-12 justify-items-center gap-0.5 rounded-m pt-1 text-[11px] font-semibold leading-[14px]",
-          active ? "text-adire" : "text-ink-muted",
+          active ? "text-primary" : "text-ink-muted",
         )}
       >
         <Icon aria-hidden className="size-6" strokeWidth={1.75} />

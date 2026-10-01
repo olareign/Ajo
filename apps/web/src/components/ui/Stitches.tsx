@@ -22,9 +22,9 @@ export function Stitches({ total, done, label, caption }: Props) {
             data-stitch={i < complete ? "done" : i === complete ? "now" : "todo"}
             className={cn(
               "h-1.5 flex-1 rounded-full",
-              i < complete && "bg-adire",
+              i < complete && "bg-primary",
               i === complete &&
-                "bg-[repeating-linear-gradient(90deg,var(--adire)_0_6px,transparent_6px_10px)] shadow-[inset_0_0_0_1px_var(--adire)]",
+                "bg-[repeating-linear-gradient(90deg,var(--primary)_0_6px,transparent_6px_10px)] shadow-[inset_0_0_0_1px_var(--primary)]",
               i > complete && "bg-surface-sunken shadow-[inset_0_0_0_1px_var(--line)]",
             )}
           />

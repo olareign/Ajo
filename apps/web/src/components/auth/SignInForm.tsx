@@ -50,7 +50,7 @@ export function SignInForm() {
         />
         <Link
           href="/forgot-password"
-          className="-mt-2 justify-self-end rounded-s px-1 py-2 text-[15px] font-semibold text-adire underline-offset-4 hover:underline"
+          className="-mt-2 justify-self-end rounded-s px-1 py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
         >
           Forgot password?
         </Link>

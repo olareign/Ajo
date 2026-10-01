@@ -1,22 +1,25 @@
 @import "tailwindcss";
 
 /*
- * Àjọ design system (https://claude.ai/artifact/LGah4kFbokongxR4BziDYA).
- * Adire indigo and aṣọ-òkè gold; the circle as the interface. Values here mirror its
- * tokens.json; change them there first.
+ * Àjọ design system. Green and white lead; the original indigo is kept as the tertiary accent;
+ * gold (aṣọ-òkè) is reserved for money. Values mirror the system's tokens.json; change them there
+ * first. Contrast is checked for every text pair in both themes (4.5:1 text, 3:1 lines and focus).
  */
 :root {
-  --surface: #f5f6fb;
+  --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-sunken: #eaedf6;
-  --line: #d3d8ea;
-  --line-strong: #7c84a8;
-  --ink: #11163a;
-  --ink-muted: #4e5578;
-  --adire: #222f78;
-  --adire-deep: #141c52;
-  --adire-tint: #e3e7f8;
-  --on-adire: #ffffff;
+  --surface-sunken: #f3f5f7;
+  --line: #e2e6ea;
+  --line-strong: #7c8794;
+  --ink: #0f1f17;
+  --ink-muted: #4a5750;
+  --primary: #057a3f;
+  --primary-deep: #035e30;
+  --primary-tint: #e3f5eb;
+  --on-primary: #ffffff;
+  --tertiary: #222f78;
+  --tertiary-tint: #e8eaf8;
+  --on-tertiary: #ffffff;
   --oro: #d99a1e;
   --oro-tint: #fbefd2;
   --on-oro: #1c1405;
@@ -26,23 +29,26 @@
   --danger: #b3361d;
   --danger-tint: #fbe5df;
   --focus: #2f4ad6;
-  --shadow-lift: 0 1px 2px rgba(17, 22, 58, 0.06), 0 8px 24px rgba(17, 22, 58, 0.08);
+  --shadow-lift: 0 1px 2px rgba(15, 31, 23, 0.06), 0 8px 24px rgba(15, 31, 23, 0.08);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --surface: #0d1130;
-    --surface-raised: #161b42;
-    --surface-sunken: #090c24;
-    --line: #2b3268;
-    --line-strong: #7a83bd;
-    --ink: #eef0fb;
-    --ink-muted: #a8aed0;
-    --adire: #9aa7f5;
-    --adire-deep: #c5ccfa;
-    --adire-tint: #1d2459;
-    --on-adire: #0d1130;
+    --surface: #0a1410;
+    --surface-raised: #101c16;
+    --surface-sunken: #070f0b;
+    --line: #22342a;
+    --line-strong: #6f8b7b;
+    --ink: #edf6f0;
+    --ink-muted: #a3b5aa;
+    --primary: #4ccb84;
+    --primary-deep: #7fe0a8;
+    --primary-tint: #12301f;
+    --on-primary: #03140a;
+    --tertiary: #9aa7f5;
+    --tertiary-tint: #1c2250;
+    --on-tertiary: #0d1130;
     --oro: #f2bb4c;
     --oro-tint: #3a2c0e;
     --on-oro: #1c1405;
@@ -58,17 +64,20 @@
 }
 
 :root[data-theme="dark"] {
-  --surface: #0d1130;
-  --surface-raised: #161b42;
-  --surface-sunken: #090c24;
-  --line: #2b3268;
-  --line-strong: #7a83bd;
-  --ink: #eef0fb;
-  --ink-muted: #a8aed0;
-  --adire: #9aa7f5;
-  --adire-deep: #c5ccfa;
-  --adire-tint: #1d2459;
-  --on-adire: #0d1130;
+  --surface: #0a1410;
+  --surface-raised: #101c16;
+  --surface-sunken: #070f0b;
+  --line: #22342a;
+  --line-strong: #6f8b7b;
+  --ink: #edf6f0;
+  --ink-muted: #a3b5aa;
+  --primary: #4ccb84;
+  --primary-deep: #7fe0a8;
+  --primary-tint: #12301f;
+  --on-primary: #03140a;
+  --tertiary: #9aa7f5;
+  --tertiary-tint: #1c2250;
+  --on-tertiary: #0d1130;
   --oro: #f2bb4c;
   --oro-tint: #3a2c0e;
   --on-oro: #1c1405;
@@ -94,10 +103,13 @@
   --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
-  --color-adire: var(--adire);
-  --color-adire-deep: var(--adire-deep);
-  --color-adire-tint: var(--adire-tint);
-  --color-on-adire: var(--on-adire);
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-tint: var(--primary-tint);
+  --color-on-primary: var(--on-primary);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-tint: var(--tertiary-tint);
+  --color-on-tertiary: var(--on-tertiary);
   --color-oro: var(--oro);
   --color-oro-tint: var(--oro-tint);
   --color-on-oro: var(--on-oro);
