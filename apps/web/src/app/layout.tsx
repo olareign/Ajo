@@ -17,10 +17,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a1410" },
-  ],
+  themeColor: "#ffffff",
+  // Keeps scrollbars, form controls and the browser's own UI light, whatever the device is set to.
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

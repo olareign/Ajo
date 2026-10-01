@@ -31,15 +31,19 @@ test("the PWA manifest is served", async ({ request }) => {
   expect(await response.json()).toMatchObject({ name: "Àjọ", display: "standalone" });
 });
 
-test("the welcome screen follows the viewer's dark theme", async ({ browser }) => {
+test("the app stays white even when the device is set to dark mode", async ({ browser }) => {
   const context = await browser.newContext({
     colorScheme: "dark",
     viewport: { width: 393, height: 851 },
   });
   const page = await context.newPage();
   await page.goto("/");
-  const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(background).toBe("rgb(10, 20, 16)");
+  for (const path of ["/", "/sign-in", "/sign-up", "/forgot-password"]) {
+    await page.goto(path);
+    const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(background, path).toBe("rgb(255, 255, 255)");
+  }
+  await page.goto("/");
   await page.screenshot({ path: "e2e/screenshots/welcome-dark.png" });
   await context.close();
 });

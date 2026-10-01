@@ -2,7 +2,7 @@
 
 Oct 1, 2026 · @olareign
 
-Green and white lead; the original indigo is kept as a quiet tertiary accent; gold is reserved for money. The circle (the group's members drawn as beads) is the motif. Tokens live in `apps/web/src/app/globals.css` (Tailwind `@theme`); components live in `apps/web/src/components`. The layout patterns for the auth screens come from the UI reference supplied by the product owner, re-coloured and re-composed for Àjọ rather than copied.
+White and green lead; the original indigo is kept as a quiet tertiary accent; gold is reserved for money. The circle (the group's members drawn as beads) is the motif. Tokens live in `apps/web/src/app/globals.css` (Tailwind `@theme`); components live in `apps/web/src/components`. The layout patterns for the auth screens come from the UI reference supplied by the product owner, re-coloured and re-composed for Àjọ rather than copied.
 
 ## Colour
 
@@ -17,7 +17,7 @@ Green and white lead; the original indigo is kept as a quiet tertiary accent; go
 | Status | `leaf`, `danger` | `#1D7346`, `#B3361D` | `#62CF92`, `#FF8F73` | Paid; errors |
 | Focus | `focus` | `#2F4AD6` | `#F2BB4C` | One visible ring on every control |
 
-Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:1, in both themes. Dark mode follows the viewer's setting (`prefers-color-scheme`) and can be forced with `data-theme`.
+Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:1. **The app is always white**: it does not follow the device's dark mode (the page, the browser's own controls and the theme colour are all light). The dark values stay in the tokens for a future, deliberate dark theme, switched on with `data-theme="dark"`.
 
 ## Type, shape and layout
 
