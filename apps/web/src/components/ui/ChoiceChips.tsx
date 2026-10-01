@@ -31,10 +31,10 @@ export function ChoiceChips({ label, options, value, onChange, hideLabel = false
 
   return (
     <div>
-      <p id={labelId} className={cn("mb-3 text-lg font-semibold", hideLabel && "sr-only")}>
+      <p id={labelId} className={cn("mb-3 font-display text-[21px] leading-7 font-semibold", hideLabel && "sr-only")}>
         {label}
       </p>
-      <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-3">
+      <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-2">
         {options.map((option, index) => {
           const checked = option.value === value;
           return (
@@ -50,11 +50,10 @@ export function ChoiceChips({ label, options, value, onChange, hideLabel = false
               onClick={() => onChange(option.value)}
               onKeyDown={(e) => onKeyDown(e, index)}
               className={cn(
-                "min-w-24 rounded-full border px-5 py-3 text-sm transition-colors",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
+                "min-h-11 rounded-full border-[1.5px] px-4 text-sm font-semibold transition-colors duration-150",
                 checked
-                  ? "border-brand-600 bg-brand-600 text-white"
-                  : "border-line bg-surface text-ink-muted hover:border-brand-600",
+                  ? "border-adire bg-adire text-on-adire"
+                  : "border-line-strong bg-surface-raised text-ink hover:bg-adire-tint",
               )}
             >
               {option.label}

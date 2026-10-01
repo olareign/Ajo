@@ -18,5 +18,10 @@ export default defineConfig({
     command: `pnpm next start -p ${PORT}`,
     port: PORT,
     reuseExistingServer: !process.env.CI,
+    // Production mode refuses to start without these; the API itself is never called by these tests.
+    env: {
+      API_BASE_URL: "https://api.ajo.invalid",
+      SESSION_SECRET: "e2e-only-secret-e2e-only-secret-0123456789",
+    },
   },
 });

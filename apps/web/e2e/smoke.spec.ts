@@ -9,7 +9,7 @@ test("the app loads on a phone with no CSP violations or console errors", async 
 
   const response = await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Àjọ" })).toBeVisible();
-  await page.screenshot({ path: "e2e/screenshots/splash.png" });
+  await page.screenshot({ path: "e2e/screenshots/welcome.png" });
 
   expect(problems).toEqual([]);
   expect(response?.headers()["content-security-policy"]).toContain("'strict-dynamic'");
@@ -29,4 +29,24 @@ test("the PWA manifest is served", async ({ request }) => {
   const response = await request.get("/manifest.webmanifest");
   expect(response.ok()).toBe(true);
   expect(await response.json()).toMatchObject({ name: "Àjọ", display: "standalone" });
+});
+
+test("the welcome screen follows the viewer's dark theme", async ({ browser }) => {
+  const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 393, height: 851 } });
+  const page = await context.newPage();
+  await page.goto("/");
+  const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  expect(background).toBe("rgb(13, 17, 48)");
+  await page.screenshot({ path: "e2e/screenshots/welcome-dark.png" });
+  await context.close();
+});
+
+test("the welcome links lead to working sign-up and sign-in screens", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Create account" }).click();
+  await expect(page.getByRole("heading", { name: "Let's get you started" })).toBeVisible();
+  await page.goto("/sign-in");
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await page.goto("/today");
+  await expect(page).toHaveURL(/\/sign-in$/);
 });
