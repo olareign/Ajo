@@ -124,7 +124,8 @@ Layout: one NestJS application with one module per bounded context (identity, KY
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
 | `@nestjs/passport`, `passport-jwt` or `jose` | Short-lived access tokens; rotating, revocable refresh tokens | Both |
-| `argon2` | Hashing transaction PINs (argon2id) | Both |
+| `argon2` | Hashing passwords and transaction PINs (argon2id) | Both |
+| Have I Been Pwned Pwned Passwords API (k-anonymity) | Rejects passwords known from breaches without sending the password | Both |
 | Node `crypto` (AES-256-GCM) with a KMS-held key | Field-level encryption of ID numbers, BVN and exact location | Both |
 | `libphonenumber-js` | Phone number validation (E.164) | Both |
 
@@ -149,7 +150,8 @@ Layout: one NestJS application with one module per bounded context (identity, KY
 
 | Tool or package | Purpose | Stage |
 | --- | --- | --- |
-| Jest (`jest`, `ts-jest`, `@nestjs/testing`) | Unit and module tests (NestJS default runner) | Dev, CI |
+| Vitest (`vitest`, `@vitest/coverage-v8`, `@nestjs/testing`) | Unit and module tests (NestJS 12 ESM template default) | Dev, CI |
+| oxlint (`oxlint`, `oxlint-tsgolint`) | Type-aware linting (NestJS 12 template default) | Dev, CI |
 | `supertest` | HTTP-level tests of controllers, guards and pipes | Dev, CI |
 | Testcontainers (`@testcontainers/postgresql`, `@testcontainers/redis`) | Integration tests against real Postgres and Redis | CI |
 | `nock` or MSW | Mock partner APIs in adapter tests | Dev, CI |
@@ -160,7 +162,7 @@ Layout: one NestJS application with one module per bounded context (identity, KY
 
 | Service | Purpose | Stage |
 | --- | --- | --- |
-| Render, Railway or Fly.io (one chosen in P0.8) | API and worker containers, managed Postgres and Redis, private networking | Staging, Prod |
+| Render (Blueprint in `render.yaml`) | API and worker containers, managed Postgres and Key Value (Redis), private networking, pre-deploy migrations | Staging, Prod |
 | Doppler or Infisical (or the host's secret store) | Secrets per environment, never in code or images | All |
 | Cloudflare R2 or AWS S3 | KYC document storage | Staging, Prod |
 
@@ -193,7 +195,7 @@ Choose providers per launch country in Phase 0; a global provider plus a regiona
 | Currency exchange and cross-border transfers | Wise Platform, Flutterwave, Thunes, Currencycloud | REST API and webhooks |
 | Open banking (bank-account checks, pay by bank) | Plaid (US, Canada), TrueLayer (UK, EU), Mono (Nigeria) | REST API and web SDK |
 | Licensed fund holding | Licensed banks or e-money institutions per market through banking-as-a-service; non-interest banks for halal products | Partner API |
-| SMS and OTP | Twilio global; Termii, Africa's Talking for Africa | REST API |
+| SMS and OTP | Twilio global; Termii, Africa's Talking for Africa (alerts and any second factor) | REST API |
 | WhatsApp messages and OTP | WhatsApp Business Platform (via Twilio or Meta) | REST API |
 | Email | Resend (with `@react-email/components` templates), Postmark | REST API |
 | Push notifications | Web Push (VAPID) now; Firebase Cloud Messaging (`firebase-admin`) for native later | Server SDK |

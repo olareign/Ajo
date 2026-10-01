@@ -26,6 +26,8 @@ Decided so far:
 | Market | Global: users at home and in the diaspora; launch country by country through licensed partners |
 | Platform | Next.js mobile-first web app (PWA) for screens only; NestJS API in a separate private repository for all business logic; native mobile app later on the same API |
 | Currencies | Multi-currency; each solo plan and each group has one currency; members paying from another currency get an exchange-rate quote |
+| Sign-in | Email and password; a transaction PIN is still required for every money action |
+| Hosting | Web app on Vercel; API, worker, Postgres and Redis on Render |
 | KYC | Required before any saving: government ID for the user's country, face capture, proof of address, location, bank details; national checks such as BVN (Nigeria) optional where available |
 | Payout order | Group creator picks one method: random draw at setup, members pick spots ("finger pick"), or order of joining |
 | Default protection | Auto-debit required; early spots reserved for trusted members; defaulters penalised and blocked |
@@ -54,7 +56,7 @@ Ten modules make up version 1; KYC gates everything that moves money.
 
 | Module | What it covers | Notes |
 | --- | --- | --- |
-| Auth and onboarding | Sign up, log in, phone and email verification, transaction PIN, password reset | Phone number as the main identity |
+| Auth and onboarding | Sign up and log in with email and password, email verification, phone number capture, transaction PIN, password reset | Email is the sign-in identity; the phone number is kept for KYC and alerts |
 | KYC | Government ID for the user's country (passport, national ID, NIN, driver's licence), selfie with liveness check, proof of address, live location, bank account; national checks such as BVN (Nigeria) optional where available | Use a KYC provider; manual review for edge cases |
 | Wallet and payments | Multi-currency wallet (e.g. NGN, GBP, USD, EUR, CAD), fund with local methods, auto-debit, withdraw to a local bank, exchange-rate quotes for cross-currency payments, transaction history | Funds held by licensed partners in each market |
 | Solo savings | Create a plan (amount, frequency, duration), auto-deposits, progress, payout at the end | Rewards to be decided (non-interest) |
@@ -178,9 +180,9 @@ Build a Next.js PWA for the screens and a separate NestJS API for all business l
 | API | NestJS in its own private repository (`olareign/ajo-api`), described by OpenAPI; the web app calls it through a server-side BFF | One home for every rule; the same API serves the future mobile app |
 | Database | PostgreSQL (with PostGIS) through TypeORM, schema changed only by migrations | Transactions and constraints for the ledger |
 | Background jobs | BullMQ on Redis, run by a worker process from the API image | Scheduled debits, retries, payouts, reminders, inside our own infrastructure |
-| Auth | Phone OTP plus transaction PIN, built in the NestJS identity module; web sessions in httpOnly cookies via the BFF, bearer tokens for mobile | Phone-first users; no token readable by browser JavaScript |
+| Auth | Email and password sign-in (argon2id, verified email, breached-password check) plus a transaction PIN for money actions, built in the NestJS identity module; web sessions in httpOnly cookies via the BFF, bearer tokens for mobile | Matches the designs; no token readable by browser JavaScript |
 | File storage | S3-compatible storage | ID documents, selfies, address proofs |
-| Hosting | Vercel for the web app; Render, Railway or Fly.io for the API, worker, Postgres and Redis (chosen in Phase 0) | Fast to start; the API image can move to AWS if a market or partner requires it |
+| Hosting | Vercel for the web app; Render for the API, worker, Postgres and Key Value (Redis), defined in `ajo-api/render.yaml` | Fast to start; the API image can move to AWS if a market or partner requires it |
 
 Third-party partners to evaluate (prices and availability not yet checked):
 

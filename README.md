@@ -18,7 +18,7 @@
 
 ## Status
 
-Phase 0, foundations. This repository has the web app skeleton with the Figma design tokens and core components, a nonce-based Content Security Policy and security headers, and CI with dependency audit, secret scanning, CodeQL and dependency review. The API repository is being set up. See the [Phase 0 checklist](docs/project-plan.md#phase-0-planning-and-foundations).
+Phase 0, foundations. This repository has the web app skeleton with the Figma design tokens and core components, a nonce-based Content Security Policy and security headers, and CI with dependency audit, secret scanning, CodeQL and dependency review. The API skeleton is in `olareign/ajo-api` (NestJS, TypeORM, BullMQ, Render Blueprint). See the [Phase 0 checklist](docs/project-plan.md#phase-0-planning-and-foundations).
 
 ```sh
 pnpm install && pnpm test && pnpm dev

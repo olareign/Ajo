@@ -118,13 +118,13 @@ Phase 0 settles the business, legal and technical groundwork; no user-facing fea
 | P0.4 | Brand: name, logo, colours, tone | Brand kit approved | Business | Designer | In progress: colours and font taken from Figma; name ("Alajo" in Figma, "Àjọ" in docs) undecided |
 | P0.5 | UX: user flows and mobile wireframes for every feature in Phase 1–3 | Clickable prototype tested with 5+ target users | Business | Designer | In progress: Figma covers sign-in, sign-up, OTP, solo savings and groups; KYC, wallet funding and withdrawal, and friends are missing; no user testing yet |
 | P0.6 | Design system (colours, type, components) | Component library in the design tool; tokens and core components in code | Engineering | Designer, frontend | In progress: tokens and core components in code (`docs/design-system.md`); Figma component library to confirm |
-| P0.7 | Repositories, structure, coding standards | Both repositories created with README, contribution guide, lint and format rules | Engineering | Tech lead | Web repository done; API repository (`olareign/ajo-api`) to be created |
-| P0.8 | CI/CD pipeline and environments (local, preview, staging, production) | A hello-world PWA and a health-checked API deploy to staging through CI | Engineering | DevOps | In progress: web CI ready; staging hosting (Vercel for web, Render, Railway or Fly.io for the API) to set up |
-| P0.9 | Database, migrations, seed data | TypeORM migrations run in CI and on staging; seed data for local development | Engineering | Backend | Not started (API repository) |
+| P0.7 | Repositories, structure, coding standards | Both repositories created with README, contribution guide, lint and format rules | Engineering | Tech lead | Done in both repositories (pull requests open) |
+| P0.8 | CI/CD pipeline and environments (local, preview, staging, production) | A hello-world PWA and a health-checked API deploy to staging through CI | Engineering | DevOps | In progress: CI in both repositories; Render Blueprint ready (`ajo-api/render.yaml`); Vercel and Render projects to create and connect |
+| P0.9 | Database, migrations, seed data | TypeORM migrations run in CI and on staging; seed data for local development | Engineering | Backend | In progress: migrations run in integration tests and before each Render deploy; seed data comes with the Phase 1 schema |
 | P0.10 | Observability baseline (logging, error tracking, uptime) | Errors from staging appear in the error tracker; logs carry request IDs with personal data redacted | Engineering | DevOps | Not started |
 | P0.11 | Terms of service and privacy policy drafts | Drafts reviewed by legal | Business | Legal | Open |
-| P0.12 | Security baseline | Threat model written; security headers and CSP; secret, dependency and code scanning in CI; pinned Actions; `SECURITY.md`; branch protection on `main` in both repositories | Engineering | Security lead | Web repository done; API repository and branch protection to do |
-| P0.13 | API skeleton | NestJS app and worker with config validation, health checks, OpenAPI spec, Helmet, rate limiting, structured logs, Docker Compose and CI | Engineering | Backend | Not started (waiting for the repository) |
+| P0.12 | Security baseline | Threat model written; security headers and CSP; secret, dependency and code scanning in CI; pinned Actions; `SECURITY.md`; branch protection on `main` in both repositories | Engineering | Security lead | Done in both repositories; branch protection and private vulnerability reporting to switch on (owner); container OS scanning to decide |
+| P0.13 | API skeleton | NestJS app and worker with config validation, health checks, OpenAPI spec, Helmet, rate limiting, structured logs, Docker Compose and CI | Engineering | Backend | Done (ajo-api pull request #1) |
 
 ## Feature backlog by epic
 
@@ -134,10 +134,10 @@ Eleven epics cover version 1. Priority uses Must, Should and Could; every Must f
 
 | ID | Feature | Acceptance criteria | Depends on | Priority |
 | --- | --- | --- | --- | --- |
-| E1.1 | Sign up with phone (any country code) and OTP | User receives OTP by SMS, verifies, account created; OTP expires and is rate-limited | P0.3 (SMS) | Must |
+| E1.1 | Sign up with email and password | Account created with a verified email (single-use link that expires); password of 12+ characters checked against known breaches; hashed with argon2id; sign-up rate-limited and bot-protected; the response never reveals whether an email is already registered | P0.3 (SMS) | Must |
 | E1.2 | Profile basics | Name, email, username saved; email verified by link | E1.1 | Must |
 | E1.3 | Transaction PIN | User sets a PIN; PIN required for money actions; lockout after repeated failures | E1.1 | Must |
-| E1.4 | Login and sessions | OTP or PIN login; sessions expire; logout from all devices | E1.1 | Must |
+| E1.4 | Login and sessions | Email and password login with rate limits and lockout; sessions expire; refresh tokens rotate; logout from all devices; new-device login alert | E1.1 | Must |
 | E1.5 | Device binding | New device requires OTP and notifies the user | E1.4 | Should |
 | E1.6 | Onboarding screens | First-time user sees how solo and èsúsú work, then is led to KYC | E1.1 | Should |
 | E1.7 | Install as app (PWA) | App installs to home screen on Android and iOS with icon and splash | P0.8 | Must |
@@ -276,7 +276,7 @@ Money logic gets the most testing: every ledger posting, round and payout path i
 
 | Test type | What it covers | When it runs |
 | --- | --- | --- |
-| Unit | API (Jest): ledger rules, trust score, payout order, fee maths, date schedules. Web (Vitest and Testing Library): components and screens by role and label | Every commit |
+| Unit | API (Vitest): ledger rules, trust score, payout order, fee maths, date schedules. Web (Vitest and Testing Library): components and screens by role and label | Every commit |
 | Integration | API endpoints through HTTP (supertest) against real Postgres and Redis (Testcontainers); provider adapters against mocks; web BFF routes against a mocked API (MSW) | Every pull request |
 | Contract | The committed OpenAPI spec matches the API code; the web client is regenerated from it | Every pull request |
 | End-to-end | Key journeys on a phone-sized browser: sign-up to KYC, create plan, create group to payout | Every pull request (preview) and before release |
@@ -305,8 +305,8 @@ The biggest risks are regulatory approval and members defaulting after collectin
 | Low KYC completion (users drop off) | Medium | High | Short steps, save progress, clear reasons, support | Designer |
 | Partner and exchange costs higher than fee revenue | Medium | Medium | Model unit costs per country in Phase 0; adjust fees | Product owner |
 | Shariah concerns about fees or rewards | Medium | Low | Fee as a service charge, not interest; non-interest partner for rewards | Product owner |
-| Account takeover (SIM swap, phished OTP or PIN) | High | Medium | PIN on every money action, device binding with alerts, step-up checks on new devices and payout-account changes, cooling-off period on new payout accounts | Security lead |
-| Managed container host (Render, Railway or Fly.io) does not meet a partner's or regulator's requirements | High | Medium | Check encryption, private networking, backups, access logs and a data processing agreement before real money; keep the API as a portable Docker image ready to move to AWS | DevOps |
+| Account takeover (credential stuffing, phished password or PIN) | High | High | Breached-password check, rate limits and lockout, PIN on every money action, new-device alerts, step-up checks on new devices and payout-account changes, cooling-off period on new payout accounts; second factor under decision | Security lead |
+| Render does not meet a partner's or regulator's requirements | High | Medium | Check encryption, private networking, backups, access logs and a data processing agreement before real money; keep the API as a portable Docker image ready to move to AWS | DevOps |
 | Ledger rules enforced only in application code (plain TypeORM, by decision) | High | Low | Ledger code fully tested, including concurrency tests on real Postgres; postings in one database transaction; daily reconciliation against partners; revisit database-level constraints if a mismatch ever appears | Tech lead |
 | Public web repository leaks sensitive detail | Medium | Low | No secrets, internal hostnames, partner details or fraud thresholds in the web repository; Gitleaks and review on every pull request | Security lead |
 

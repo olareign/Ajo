@@ -65,7 +65,7 @@ The API is a modular monolith in one NestJS codebase: one deployable image, run 
 | 13 | Durable background jobs (BullMQ on Redis) for every scheduled or external money action | Debits, retries and payouts must survive crashes and redeploys | Job volume needs a workflow engine (e.g. Temporal) |
 | 14 | Idempotency keys on every money operation and webhook | Prevents double debits and double payouts | Never |
 | 15 | Provider adapters for KYC, payments, currency exchange and SMS, routed by country | Different providers per market; swap without touching business logic | Never |
-| 16 | One primary region on a managed container host (Render, Railway or Fly.io); data residency reviewed per market | Fast to start; same Docker image can move to AWS if compliance requires | A market requires local data, or the host fails the pre-launch compliance check |
+| 16 | One primary region on Render (API, worker, Postgres, Key Value); data residency reviewed per market | Fast to start; same Docker image can move to AWS if compliance requires | A market requires local data, or the host fails the pre-launch compliance check |
 | 17 | Coarse location only (area, not coordinates) shown to other users | Safety in a money app | Never |
 | 18 | Security first: deny by default, least privilege, every control tested | A money app is a target from day one | Never |
 
@@ -75,7 +75,7 @@ Each NestJS module owns its tables and exposes services to other modules; no mod
 
 | Module | Owns | Key responsibilities |
 | --- | --- | --- |
-| Identity | users, sessions, refresh\_tokens, devices, PINs | Sign-up, OTP login, PIN, device binding, token rotation and revocation |
+| Identity | users, sessions, refresh\_tokens, devices, PINs | Email and password sign-up and login, email verification, password reset, PIN, device binding, token rotation and revocation |
 | KYC | kyc\_records, kyc\_documents | Collect country-specific ID, selfie, address proof, location, bank; national checks such as BVN where available; route to the right provider per country; tiering; manual review queue |
 | Social | friendships, friend\_suggestions, blocks | Friend requests, friend list, mutual friends, nearby people, blocking and reporting |
 | Discovery | group\_search\_index | Recommend groups by friends in them, mutual friends, area, and group fit (amount, frequency) |
@@ -261,7 +261,7 @@ The assets worth attacking are customer money, identity documents and accounts. 
 
 | Threat | Example | Main controls |
 | --- | --- | --- |
-| Account takeover | SIM swap, stolen OTP, phished PIN | OTP rate limits and expiry, PIN for every money action, device binding with alerts, step-up checks on new devices and payout-account changes |
+| Account takeover | Credential stuffing, phished password or PIN, email account compromise | Breached-password check, login rate limits and lockout, PIN for every money action, device binding with alerts, step-up checks on new devices and payout-account changes |
 | Session theft | XSS steals a token | Tokens never reach browser JavaScript (BFF with httpOnly cookies), strict nonce-based CSP, short-lived access tokens, refresh-token rotation with reuse detection |
 | Broken access control | Reading another member's group or KYC file | Ownership checks in every query (scoped repositories), deny-by-default guards, tests that try to access other users' records |
 | Double spend and replay | Repeating a payout or debit request | Idempotency keys, unique constraints on provider references, ledger postings in one database transaction |
@@ -269,13 +269,13 @@ The assets worth attacking are customer money, identity documents and accounts. 
 | Insider misuse | Staff adjusts a balance | No balance edits, only reversing entries; two-person approval; admin actions in an append-only audit log; least-privilege roles with hardware-key 2FA |
 | Data breach | Database or bucket exposed | Field-level encryption, private buckets with short-lived signed links, private networking, encrypted backups, no personal data in logs |
 | Supply chain | Malicious package or GitHub Action | Lockfile installs, dependency audit and review on every PR, Actions pinned to commit SHAs, Dependabot, CodeQL |
-| Abuse and scraping | Enumerating users, OTP pumping (SMS fraud) | Rate limits per IP, phone and device; bot protection on sign-up; search returns only KYC-approved users with coarse data |
+| Abuse and scraping | Enumerating users or emails, SMS pumping on alerts | Rate limits per IP, phone and device; bot protection on sign-up; search returns only KYC-approved users with coarse data |
 
 ### Controls
 
 | Area | Controls |
 | --- | --- |
-| Authentication | Phone OTP (hashed, single-use, 5-minute expiry, rate-limited), 4–6 digit transaction PIN hashed with argon2id, lockout after repeated failures, device binding, access tokens of 15 minutes or less, rotating refresh tokens with reuse detection, logout everywhere |
+| Authentication | Email and password: passwords of 12+ characters, checked against known breaches (k-anonymity range query), hashed with argon2id; verified email; reset links single-use, short-lived and invalidating all sessions; login responses never reveal whether an account exists. 4–6 digit transaction PIN hashed with argon2id, lockout after repeated failures, device binding, access tokens of 15 minutes or less, rotating refresh tokens with reuse detection, logout everywhere |
 | Web session | BFF holds tokens in sealed httpOnly, Secure, SameSite=strict cookies; CSRF protection on every state-changing BFF route (SameSite plus an origin check); the browser never calls the API directly |
 | Authorisation | Users can only read and act on their own records and groups they belong to; guards deny by default; admin roles (support, KYC reviewer, finance, super admin) with least privilege |
 | Input and output | Global validation pipe rejects unknown fields; parameterised queries only (TypeORM query builder, never string-built SQL); errors never leak stack traces or internal IDs |
@@ -297,7 +297,7 @@ The public web repository must never contain secrets, internal hostnames, partne
 
 Four environments; code moves forward only through pull requests and automated checks. Each phase is delivered as one branch and pull request per repository, in phase order (`phase-0/foundations`, `phase-1/identity-and-wallet`, …).
 
-| Environment | Web (Vercel) | API (Render, Railway or Fly.io) | Data | Providers |
+| Environment | Web (Vercel) | API (Render) | Data | Providers |
 | --- | --- | --- | --- | --- |
 | Local | `pnpm dev` | Docker Compose: API, worker, Postgres, Redis, Mailpit | Seed data | Sandboxes or mocks |
 | Preview | One per pull request | Shared preview API | Seed data | Sandboxes |
