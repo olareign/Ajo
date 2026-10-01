@@ -39,7 +39,20 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
 | `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
 | `TabBar` | Today, Circles, Wallet, Me, with the gold action in the centre |
-| `Welcome`, `RecoveryBadge` | The first screen; the lock badge on password recovery |
+| `Logo` | The Àjọ logo: green wordmark whose o is a piggy bank, with a gold ₦ coin and sparkles. Three transparent layers (`public/brand/ajo-wordmark.webp`, `ajo-coin.webp`, `ajo-rays.webp`) cut from the supplied artwork, so the coin and sparkles can move on their own. `ajo-logo.webp` is the whole logo for places that cannot animate |
+| `Welcome`, `RecoveryBadge` | The first screen, with its entrance (below); the lock badge on password recovery |
+
+## Motion
+
+Only transform and opacity move. Everything is skipped when the device asks for reduced motion: nothing moves and the screen is simply there.
+
+| When | What |
+| --- | --- |
+| 0.0s | The circle rolls in from the side like a wheel (slide plus a turn), its beads turning with it, and settles; the pot amount fades in once it stops |
+| 0.5s | The logo fades up |
+| 1.0s | The coin falls from the circle into the piggy bank behind its back; the logo gives one small bounce |
+| 1.65s | The sparkles appear and twinkle twice |
+| 1.1s, 1.25s | The tagline and then the buttons rise in |
 
 ## Screens and build status
 

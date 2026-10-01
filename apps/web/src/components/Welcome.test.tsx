@@ -27,9 +27,17 @@ describe("Welcome", () => {
     expect(screen.queryByText(/interest|earn|returns/i)).not.toBeInTheDocument();
   });
 
-  it("shows the piggy bank beside the name", () => {
+  it("shows the Àjọ logo (the piggy bank is its o), as the page's heading", () => {
     const { container } = render(<Welcome />);
-    expect(container.querySelector("svg.lucide-piggy-bank")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Àjọ" })).toBeInTheDocument();
+    expect(container.querySelector('img[src="/brand/ajo-wordmark.webp"]')).toBeInTheDocument();
+  });
+
+  it("brings everything in with a short entrance: the circle rolls, the coin drops", () => {
+    const { container } = render(<Welcome />);
+    expect(container.querySelector("figure[data-roll]")).toBeInTheDocument();
+    expect(container.querySelector("[data-animated] .logo-coin")).toBeInTheDocument();
+    expect(container.querySelectorAll(".motion-rise").length).toBeGreaterThanOrEqual(2);
   });
 
   it("shows people's photos in the circle when there are any", () => {
