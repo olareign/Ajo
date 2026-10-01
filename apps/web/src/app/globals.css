@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens inferred from the Figma file "Alo App (Saving App Design Template)".
+ * Brand green is sampled from the splash screen and primary buttons.
+ */
+@theme {
+  --font-sans: "Montserrat Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f2fbf6; /* tinted info panels ("Benefits", plan summary) */
+  --color-brand-100: #e3f5ea; /* "Active" / "Member" pills */
+  --color-brand-200: #c2e1d1; /* disabled Proceed button */
+  --color-brand-600: #038641; /* primary: buttons, eyebrow text, selected chips */
+  --color-brand-700: #026b34; /* pressed */
+  --color-brand-800: #14532d;
+
+  --color-ink: #111111; /* headings */
+  --color-ink-muted: #6b7280; /* secondary labels ("Next due date:") */
+  --color-line: #d9d9d9; /* chip and input borders */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f7f8f9; /* cards, auth inputs */
+  --color-danger: #e53935; /* "2/7 remaining" */
+
+  --radius-field: 0.5rem;
+  --radius-card: 0.25rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
