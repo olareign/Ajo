@@ -31,4 +31,18 @@ describe("Welcome", () => {
     const { container } = render(<Welcome />);
     expect(container.querySelector("svg.lucide-piggy-bank")).toBeInTheDocument();
   });
+
+  it("shows people's photos in the circle when there are any", () => {
+    const { container } = render(<Welcome photos={["/people/01.jpg", "/people/02.jpg"]} />);
+    expect([...container.querySelectorAll("image")].map((i) => i.getAttribute("href"))).toEqual([
+      "/people/01.jpg",
+      "/people/02.jpg",
+    ]);
+  });
+
+  it("falls back to initials when there are no photos", () => {
+    const { container } = render(<Welcome photos={[]} />);
+    expect(container.querySelectorAll("image")).toHaveLength(0);
+    expect(container.querySelector("[data-bead]")?.textContent).toBe("AO");
+  });
 });

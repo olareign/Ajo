@@ -17,12 +17,12 @@ const action =
   "flex min-h-14 w-full items-center justify-center rounded-m px-6 text-base font-semibold transition-colors";
 
 /** First screen: the circle, one promise, and the two ways in. */
-export function Welcome() {
+export function Welcome({ photos = [] }: Readonly<{ photos?: readonly string[] }>) {
   return (
     <main className="flex min-h-dvh flex-col px-4 pt-10 pb-8">
       <div className="flex flex-1 flex-col items-center justify-center gap-10">
         <CircleRing
-          members={SAMPLE_CIRCLE}
+          members={SAMPLE_CIRCLE.map((member, i) => ({ ...member, photo: photos[i] }))}
           recipient={2}
           title="An example circle of eight"
           center={{ label: "THIS ROUND", value: "₦80,000" }}
