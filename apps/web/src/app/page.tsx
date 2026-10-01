@@ -1,5 +1,5 @@
-import { Onboarding } from "@/features/onboarding/Onboarding";
+import { Splash } from "@/components/Splash";
 
 export default function Home() {
-  return <Onboarding />;
+  return <Splash />;
 }

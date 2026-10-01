@@ -1,6 +1,6 @@
 # Àjọ
 
-Àjọ is a global, mobile-first savings app for people at home and in the diaspora. Save on your own, or join rotating èsúsú groups (also known as susu, chama or tontine) with friends you trust. Built with Next.js.
+Àjọ is a global, mobile-first savings app for people at home and in the diaspora. Save on your own, or join rotating èsúsú groups (also known as susu, chama or tontine) with friends you trust.
 
 ## How it works
 
@@ -9,12 +9,16 @@
 - **Friends and discovery:** after identity checks, users build a list of people they trust and find groups through friends, mutual friends, location and diaspora communities.
 - **Across borders:** each group has one currency; members paying from another currency get an exchange-rate quote first.
 
+## Repositories
+
+| Repository                        | What it holds                                                                                      |
+| --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `olareign/Ajo` (this one, public) | The Next.js PWA (screens only, plus a server-side BFF that holds the session) and the project docs |
+| `olareign/ajo-api` (private)      | The NestJS API: every business rule, the ledger, payments, KYC, the èsúsú engine, background jobs  |
+
 ## Status
 
-Phase 0 foundations, built test first (see [CONTRIBUTING.md](CONTRIBUTING.md)):
-
-- `packages/domain`: money in minor units, double-entry ledger, calendar dates, solo plan schedules, and èsúsú rules (early spots, deposits, payout order by join order, verifiable random draw or finger pick, rounds and payouts). 100% test coverage.
-- `apps/web`: Next.js PWA with the Figma design tokens and components, onboarding, the solo savings plan wizard, and the groups list (sample data). There is no backend yet.
+Phase 0, foundations. This repository has the web app skeleton with the Figma design tokens and core components, a nonce-based Content Security Policy and security headers, and CI with dependency audit, secret scanning, CodeQL and dependency review. The API skeleton is in `olareign/ajo-api` (NestJS, TypeORM, BullMQ, Render Blueprint). See the [Phase 0 checklist](docs/project-plan.md#phase-0-planning-and-foundations).
 
 ```sh
 pnpm install && pnpm test && pnpm dev
@@ -22,11 +26,12 @@ pnpm install && pnpm test && pnpm dev
 
 ## Documents
 
-| Document                                               | What it covers                                                                                          |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| [Product spec](docs/product-spec.md)                   | What the app does, group rules, decisions and open questions                                            |
-| [Solution architecture](docs/solution-architecture.md) | System design, data model, API, integrations, security                                                  |
-| [Project plan](docs/project-plan.md)                   | Phases, epics and features with acceptance criteria, risks, go-live checklist                           |
-| [Tools and packages](docs/tools-and-packages.md)       | Every tool, package and service from development to production                                          |
-| [Design system](docs/design-system.md)                 | Tokens and components from Figma, build status per screen, and where the build departs from the designs |
-| [Contributing](CONTRIBUTING.md)                        | Setup, commands and the TDD workflow                                                                    |
+| Document                                               | What it covers                                                                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| [Product spec](docs/product-spec.md)                   | What the app does, group rules, decisions and open questions                    |
+| [Solution architecture](docs/solution-architecture.md) | System design, threat model, data model, API, integrations, security            |
+| [Project plan](docs/project-plan.md)                   | Phases, epics and features with acceptance criteria, risks, go-live checklist   |
+| [Tools and packages](docs/tools-and-packages.md)       | Every tool, package and service, per repository, from development to production |
+| [Design system](docs/design-system.md)                 | Tokens and components from Figma, and where the build departs from the designs  |
+| [Contributing](CONTRIBUTING.md)                        | Setup, commands, branching and the TDD workflow                                 |
+| [Security policy](SECURITY.md)                         | How to report a vulnerability                                                   |

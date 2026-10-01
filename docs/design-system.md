@@ -28,21 +28,26 @@ Inferred from the Figma file *Alo App (Saving App Design Template)*. Tokens live
 | `ChoiceChips` | Amount, How Often?, Duration pills | An accessible radio group with arrow-key support |
 | `TextField` | Plan Name, Group Name, No of People ("Max 12") | Label above; hint inside on the right; error below |
 | `ScreenHeader` | Back chevron, green eyebrow, bold question | Used by every wizard screen |
-| `GroupCard` | Groups list cards | Avatars (+N), status pill, payout, due date, amount per frequency, fill bar, "x/y remaining" |
+| `GroupCard` | Groups list cards | Phase 4: avatars (+N), status pill, payout, due date, amount per frequency, fill bar, "x/y remaining" |
 | `ProgressBar` | Card fill bar | |
 | `BottomNav` | Home, Groups, Wallet, More | |
 
 ## Screens in Figma and build status
 
-| Flow | Figma frames | Status |
+Screens are built in the phase that delivers their feature; Phase 0 ships the design tokens, core components and the splash screen.
+
+| Flow | Figma frames | Phase |
 | --- | --- | --- |
-| Splash and onboarding | Splash, Onboarding 1–2 | Onboarding built (`/`) |
-| Sign in, sign up, OTP, password reset | Screens 4–12 | Not built yet; see differences below |
-| Solo savings | SELECT SAVINGS, Your selections, success | Built (`/savings/new`) |
-| Group type, private group setup, success | Groupss | Next: needs the èsúsú API |
-| Groups list | Groups / Your Groups | Built with sample data (`/groups`) |
-| Group info, share link, chat room | Invites, Group Info, Linkshare | Not built |
-| Wallet, referral, account, notifications | Wallets, Refferal, Account, Notification Page | Not built |
+| Splash | Splash | Phase 0: built (`/`) |
+| Onboarding | Onboarding 1–2 | Phase 1 (E1.6) |
+| Sign in, sign up, verification code, password reset | Screens 4–12 | Phase 1 (E1) |
+| Wallet | Wallets | Phase 1 (E3) |
+| Solo savings | SELECT SAVINGS, Your selections, success | Phase 2 (E4) |
+| Referral and invites | Refferal, Linkshare | Phase 3 (E5.9) |
+| Group type, private group setup, success | Groupss | Phase 4 (E6.1) |
+| Groups list | Groups / Your Groups | Phase 4 (E6.3) |
+| Group info, share link, chat room | Invites, Group Info, Linkshare | Phase 4 (E6.2, E6.3); group chat is out of scope for version 1 |
+| Account, notifications | Account, Notification Page | Phase 1 (profile) and E8.3 |
 
 ## Where the build departs from Figma, and why
 
@@ -50,7 +55,7 @@ Inferred from the Figma file *Alo App (Saving App Design Template)*. Tokens live
 | --- | --- | --- |
 | "Earn Interest", "Interest Rate 7.5 pa", "Invest group savings to earn more interest" | No interest anywhere; the estimate equals what the user pays in | Product spec: no interest, rewards must be Sharia-compatible |
 | Brand name "Alajo" | "Àjọ" | Name used in the repo docs; the app name is still an open question in the spec |
-| Sign in and sign up with email and password, plus Google and Apple | Not built yet | Spec E1: phone number and OTP plus a transaction PIN. Needs a decision before the auth screens are built |
+| Sign in and sign up with email and password, plus Google and Apple | Email and password chosen (Phase 1); Google and Apple buttons pending a decision | The spec now follows the designs for sign-in; a transaction PIN still guards money actions |
 | "Specify Interval" | Daily, weekly or monthly only | Spec and data model support only these three frequencies |
 | Both onboarding slides say "Get Started" | "Next" on slide 1, "Get Started" on the last | Clearer progression; Skip still jumps ahead |
 | Date "Jan 19" | Dates formatted for the user's locale ("19 Jan" in en-NG) | Spec E11.7 |

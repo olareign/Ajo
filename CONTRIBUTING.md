@@ -1,5 +1,7 @@
 # Contributing to Àjọ
 
+This repository holds the web app (Next.js PWA) and the project docs. All business logic lives in the private API repository, `olareign/ajo-api`.
+
 ## Setup
 
 ```sh
@@ -8,22 +10,32 @@ pnpm install
 pnpm dev               # web app on http://localhost:3000
 ```
 
-| Command                             | What it does                                                     |
-| ----------------------------------- | ---------------------------------------------------------------- |
-| `pnpm test`                         | Unit and component tests in every package (Vitest)               |
-| `pnpm test:watch`                   | Tests in watch mode, for the TDD loop                            |
-| `pnpm typecheck`                    | TypeScript across the monorepo                                   |
-| `pnpm build`                        | Production build                                                 |
-| `pnpm format` / `pnpm format:check` | Prettier                                                         |
-| `pnpm --filter @ajo/web test:e2e`   | Playwright journeys on a phone viewport (run `pnpm build` first) |
+| Command                             | What it does                                                                                       |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `pnpm test`                         | Unit and component tests (Vitest, Testing Library)                                                 |
+| `pnpm test:watch`                   | Tests in watch mode, for the TDD loop                                                              |
+| `pnpm lint`                         | ESLint, zero warnings allowed                                                                      |
+| `pnpm typecheck`                    | TypeScript                                                                                         |
+| `pnpm build`                        | Production build                                                                                   |
+| `pnpm format` / `pnpm format:check` | Prettier                                                                                           |
+| `pnpm --filter @ajo/web test:e2e`   | Playwright on a phone viewport (run `pnpm build` first); fails on CSP violations or console errors |
 
 ## Repository layout
 
-| Path              | Contents                                                                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/domain` | Pure business rules with no framework code: money, ledger, calendar dates, solo plans, èsúsú rules. 100% test coverage is enforced.  |
-| `apps/web`        | Next.js PWA. `src/components` holds design-system pieces, `src/features` holds screens and their state, `src/app` holds routes only. |
-| `docs/`           | Product spec, architecture, plan, tools and the design system                                                                        |
+| Path                      | Contents                                                               |
+| ------------------------- | ---------------------------------------------------------------------- |
+| `apps/web/src/app`        | Routes only                                                            |
+| `apps/web/src/components` | Design-system components from Figma                                    |
+| `apps/web/src/lib`        | Display helpers, e.g. money formatting from integer-minor-unit strings |
+| `apps/web/src/security`   | Security headers and the Content Security Policy                       |
+| `apps/web/src/proxy.ts`   | Adds a fresh CSP nonce to every page                                   |
+| `docs/`                   | Product spec, architecture, plan, tools and the design system          |
+
+## Branches and pull requests
+
+- Work is delivered phase by phase: one branch and one pull request per phase, named `phase-N/<slug>`, started from `main` after the previous phase has merged.
+- Fill in the pull request template, including the security checklist.
+- CI must be green: dependency audit, format, lint, type-check, tests, build, end-to-end tests, secret scan, CodeQL and dependency review.
 
 ## Test-driven development
 
@@ -35,9 +47,15 @@ All code is written test first. For each behaviour:
 
 Guidelines:
 
-- **Money logic is tested to 100%.** `packages/domain` fails the build below full line, branch and function coverage (docs/project-plan.md, Definition of Done). An uncovered branch is either a missing test or dead code.
-- **Put rules in `packages/domain`, not in components.** A rule like "early spots go to trusted members" is tested once as a plain function and reused by the web app, the API and later the mobile app.
-- **Test screens the way a user uses them.** Component tests use Testing Library queries by role and label (`getByRole("button", { name: "Proceed" })`), never CSS classes. This also keeps the app accessible.
-- **Keep screen logic in reducers.** Multi-step flows (e.g. `features/solo-plan/wizard.ts`) keep their state in a pure reducer with its own unit tests, and the component test covers the journey.
-- **End-to-end tests cover journeys, not details.** Playwright runs the main flows on a Pixel 5 viewport and checks that pages never scroll sideways.
-- **Name tests after behaviour**, e.g. `"keeps early spots for trusted members even if they joined later"`.
+- **No business rules in the web app.** If a rule decides money, eligibility or permissions, it belongs in the API and is tested there. The web app may validate input for a better experience, but the API always re-validates.
+- **Test screens the way a user uses them.** Query by role and label (`getByRole("button", { name: "Proceed" })`), never by CSS class. This also keeps the app accessible.
+- **Keep screen logic in reducers.** Multi-step flows keep their state in a pure reducer with its own unit tests; the component test covers the journey.
+- **Security behaviour is tested like any other behaviour**: headers, CSP, cookie flags, and that the browser never receives a token.
+- **Name tests after behaviour**, e.g. `"never allows eval or inline scripts in production"`.
+
+## Security rules
+
+- Never commit secrets, tokens, internal hostnames, partner account details or real personal data, including in tests, fixtures and screenshots. This repository is public.
+- No `dangerouslySetInnerHTML`, `eval` or new script sources without a security review; the CSP will block them anyway.
+- The browser only talks to this app's own origin. API calls happen server-side in the BFF.
+- Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).

@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
+import { staticSecurityHeaders } from "./src/security/headers";
 
 const nextConfig: NextConfig = {
-  // The domain package ships TypeScript source.
-  transpilePackages: ["@ajo/domain"],
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: staticSecurityHeaders() }];
+  },
 };
 
 export default nextConfig;
