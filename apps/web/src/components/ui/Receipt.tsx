@@ -14,7 +14,7 @@ export function Receipt({ title, rows, total, stamp, reference }: Props) {
   return (
     <section
       aria-label={title}
-      className="grid gap-4 rounded-l bg-surface-raised px-4 py-6 text-ink shadow-lift"
+      className="grid gap-4 rounded-[var(--radius-l)] bg-surface-raised px-4 py-6 text-ink shadow-lift"
     >
       <header className="flex items-center justify-between gap-3">
         <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">{title}</p>

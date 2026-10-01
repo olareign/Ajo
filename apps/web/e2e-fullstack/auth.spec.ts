@@ -249,6 +249,13 @@ test("a new person is taken through onboarding and then lands on Today", async (
   const enter = async (digits: string) => {
     for (const d of digits) await page.getByRole("button", { name: d, exact: true }).click();
   };
+  // The number pad spans the screen, edge to edge with the main button under it.
+  const pad = (await page.getByRole("group", { name: /PIN|pad/i }).boundingBox())!;
+  const action = (await page.getByRole("button", { name: "Continue" }).boundingBox())!;
+  expect(Math.abs(pad.x - action.x)).toBeLessThan(1.5);
+  expect(Math.abs(pad.width - action.width)).toBeLessThan(1.5);
+  await page.screenshot({ path: "e2e/screenshots/onboarding-pin.png" });
+
   // An easy-to-guess PIN is refused by the API, with its reason.
   await enter("123456");
   await page.getByRole("button", { name: "Continue" }).click();

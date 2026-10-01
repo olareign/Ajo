@@ -22,8 +22,8 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 ## Type, shape and layout
 
 - **Fonts:** Bricolage Grotesque (display), Be Vietnam Pro (text), JetBrains Mono (numbers), all self-hosted through `@fontsource` because the content security policy allows only `font-src 'self'`.
-- **Radius:** 6 / 12 / 20px. Fields and buttons are 12px; keypads and sheets 20px.
-- **Touch targets:** 44px minimum; main buttons 56px; keypad keys 56px.
+- **Radius:** 6 / 12 / 20px. In markup use `rounded-s`/`rounded-m` for 6/12 and `rounded-[var(--radius-l)]` for 20: plain `rounded-l` means "left side" in Tailwind, not our token. Fields and buttons are 12px; keypads and sheets 20px.
+- **Touch targets:** 44px minimum; main buttons 56px; keypad keys 56px. The number pad always spans the full content width, so its edges line up with the main button under it.
 - **Phone first:** every screen is built for a small Android phone. The main action sits at the bottom, where the thumb is, with the "switch screen" line under it.
 
 ## Components

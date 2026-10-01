@@ -31,7 +31,7 @@ export function OptionCards({ label, options, value, onChange }: Props) {
             aria-checked={checked}
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex min-h-[72px] items-center gap-4 rounded-l border-[1.5px] px-4 py-3 text-left transition-colors duration-150",
+              "flex min-h-[72px] items-center gap-4 rounded-[var(--radius-l)] border-[1.5px] px-4 py-3 text-left transition-colors duration-150",
               checked
                 ? "border-primary bg-primary-tint"
                 : "border-line bg-surface-raised hover:bg-surface-sunken",

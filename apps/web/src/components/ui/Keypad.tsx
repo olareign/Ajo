@@ -34,11 +34,11 @@ export function Keypad({ value, onChange, length, label, labelledBy }: Props) {
       aria-labelledby={labelledBy}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className="grid grid-cols-[repeat(3,minmax(64px,88px))] justify-center gap-1.5 rounded-l bg-surface-sunken p-2"
+      className="grid w-full grid-cols-3 gap-2 rounded-[var(--radius-l)] bg-surface-sunken p-2"
     >
       {KEYS.map((key, i) =>
         key === "" ? (
-          <span key={i} />
+          <span key={i} aria-hidden />
         ) : key === "del" ? (
           <button
             key={i}
