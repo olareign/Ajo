@@ -15,7 +15,7 @@ type Props = Readonly<{
 export function PinPad({ value, onChange, length = 6, label }: Props) {
   const labelId = useId();
   return (
-    <div className="grid justify-items-center gap-6">
+    <div className="grid w-full justify-items-center gap-6">
       <p id={labelId} className="text-[13px] font-semibold text-ink-muted">
         {label}
       </p>
