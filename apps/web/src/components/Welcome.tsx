@@ -1,6 +1,6 @@
-import { PiggyBank } from "lucide-react";
 import Link from "next/link";
 import { CircleRing } from "./CircleRing";
+import { Logo } from "./Logo";
 
 const SAMPLE_CIRCLE = [
   { name: "Adébáyọ̀ Ola", status: "paid" },
@@ -19,7 +19,7 @@ const action =
 /** First screen: the circle, one promise, and the two ways in. */
 export function Welcome({ photos = [] }: Readonly<{ photos?: readonly string[] }>) {
   return (
-    <main className="flex min-h-dvh flex-col px-4 pt-10 pb-8">
+    <main className="flex min-h-dvh flex-col overflow-x-clip px-4 pt-10 pb-8">
       <div className="flex flex-1 flex-col items-center justify-center gap-10">
         <CircleRing
           members={SAMPLE_CIRCLE.map((member, i) => ({ ...member, photo: photos[i] }))}
@@ -27,20 +27,21 @@ export function Welcome({ photos = [] }: Readonly<{ photos?: readonly string[] }
           title="An example circle of eight"
           center={{ label: "THIS ROUND", value: "₦80,000" }}
           size={260}
+          roll
         />
-        <div className="grid justify-items-center gap-3 text-center">
-          <span className="grid size-14 place-items-center rounded-full bg-tertiary text-on-tertiary shadow-[0_6px_18px_-8px_var(--tertiary)]">
-            <PiggyBank aria-hidden className="size-8" strokeWidth={1.75} />
-          </span>
-          <h1 className="font-display text-[44px] leading-[46px] font-bold tracking-[-0.02em] text-balance">
-            Àjọ
+        <div className="grid justify-items-center gap-4 text-center">
+          <h1 className="m-0">
+            <span className="sr-only">Àjọ</span>
+            <span aria-hidden="true" className="block">
+              <Logo width={280} animated />
+            </span>
           </h1>
-          <p className="text-[17px] leading-[26px] text-ink-muted">
+          <p className="motion-rise text-[17px] leading-[26px] text-ink-muted [--rise-delay:1100ms]">
             Save together, with people you trust.
           </p>
         </div>
       </div>
-      <div className="grid gap-3">
+      <div className="motion-rise grid gap-3 [--rise-delay:1250ms]">
         <Link
           href="/sign-up"
           className={`${action} bg-primary text-on-primary hover:bg-primary-deep`}

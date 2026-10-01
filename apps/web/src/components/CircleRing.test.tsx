@@ -72,4 +72,27 @@ describe("CircleRing", () => {
       expect(screen.getAllByRole("img")).toHaveLength(1);
     });
   });
+
+  describe("rolling in", () => {
+    it("spins the ring and its beads as one wheel, leaving the pot in the middle still", () => {
+      const { container } = render(
+        <CircleRing members={members} center={{ label: "POT", value: "₦80,000" }} roll />,
+      );
+      const wheel = container.querySelector("[data-wheel]");
+      expect(wheel).toBeInTheDocument();
+      expect(wheel!.querySelectorAll("[data-bead]")).toHaveLength(4);
+      expect(wheel!.textContent).not.toContain("₦80,000");
+      expect(container.querySelector("figure")).toHaveAttribute("data-roll");
+    });
+
+    it("does not roll unless asked", () => {
+      const { container } = render(<CircleRing members={members} />);
+      expect(container.querySelector("figure")).not.toHaveAttribute("data-roll");
+    });
+
+    it("keeps the description for screen readers either way", () => {
+      render(<CircleRing members={members} recipient={2} roll />);
+      expect(screen.getByRole("img")).toHaveAccessibleName(/Funmi Ojo: receives this round/);
+    });
+  });
 });

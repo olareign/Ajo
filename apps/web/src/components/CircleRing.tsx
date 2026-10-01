@@ -18,6 +18,8 @@ type Props = Readonly<{
   title?: string;
   size?: number;
   className?: string;
+  /** Rolls in like a wheel from the side, then settles. Respects reduced-motion. */
+  roll?: boolean;
 }>;
 
 const WORD = { paid: "paid", pending: "pending", late: "late", covered: "covered" } as const;
@@ -55,6 +57,7 @@ export function CircleRing({
   title,
   size = 240,
   className,
+  roll = false,
 }: Props) {
   const clipId = useId();
   const n = Math.max(members.length, 1);
@@ -69,64 +72,77 @@ export function CircleRing({
     .join("; ");
 
   return (
-    <figure className={cn("m-0 aspect-square max-w-full", className)} style={{ width: size }}>
+    <figure
+      data-roll={roll ? "" : undefined}
+      className={cn("m-0 aspect-square max-w-full", roll && "ring-roll", className)}
+      style={{ width: size }}
+    >
       <svg
         viewBox="0 0 200 200"
         role="img"
         aria-label={`${title ? `${title}. ` : ""}${description}`}
         className="block h-auto w-full overflow-visible"
       >
-        <circle cx={C} cy={C} r={R} fill="none" className="stroke-primary-tint" strokeWidth={10} />
-        {members.map((m, i) => {
-          const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-          const x = C + R * Math.cos(angle);
-          const y = C + R * Math.sin(angle);
-          const kind = i === recipient ? "recipient" : (m.status ?? "pending");
-          const r = kind === "recipient" ? bead + 3 : bead;
-          const ringWidth = i === you ? 3 : 2;
-          return (
-            <g key={`${m.name}-${i}`} data-bead={kind} data-you={i === you ? "" : undefined}>
-              <circle
-                cx={x}
-                cy={y}
-                r={r}
-                strokeWidth={ringWidth}
-                className={cn(BEAD[kind], i === you && "stroke-ink")}
-              />
-              <text x={x} y={y} dy="0.35em" textAnchor="middle" className="text-[10px] font-bold">
-                {initials(m.name)}
-              </text>
-              {m.photo && (
-                <>
-                  <clipPath id={`${clipId}-${i}`}>
-                    <circle cx={x} cy={y} r={r - ringWidth / 2} />
-                  </clipPath>
-                  <image
-                    href={m.photo}
-                    x={x - r}
-                    y={y - r}
-                    width={r * 2}
-                    height={r * 2}
-                    preserveAspectRatio="xMidYMid slice"
-                    clipPath={`url(#${clipId}-${i})`}
-                    aria-hidden
-                  />
-                  {/* The status ring is drawn over the photo; pending is dashed so colour is not the only cue. */}
-                  <circle
-                    data-ring=""
-                    cx={x}
-                    cy={y}
-                    r={r}
-                    fill="none"
-                    strokeWidth={ringWidth + 0.5}
-                    strokeDasharray={kind === "pending" ? "3 2.5" : undefined}
-                    className={cn(RING[kind], i === you && "stroke-ink")}
-                  />
-                </>
-              )}
-            </g>
-          );
-        })}
+        <g data-wheel="" className={roll ? "ring-wheel" : undefined}>
+          <circle
+            cx={C}
+            cy={C}
+            r={R}
+            fill="none"
+            className="stroke-primary-tint"
+            strokeWidth={10}
+          />
+          {members.map((m, i) => {
+            const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+            const x = C + R * Math.cos(angle);
+            const y = C + R * Math.sin(angle);
+            const kind = i === recipient ? "recipient" : (m.status ?? "pending");
+            const r = kind === "recipient" ? bead + 3 : bead;
+            const ringWidth = i === you ? 3 : 2;
+            return (
+              <g key={`${m.name}-${i}`} data-bead={kind} data-you={i === you ? "" : undefined}>
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={r}
+                  strokeWidth={ringWidth}
+                  className={cn(BEAD[kind], i === you && "stroke-ink")}
+                />
+                <text x={x} y={y} dy="0.35em" textAnchor="middle" className="text-[10px] font-bold">
+                  {initials(m.name)}
+                </text>
+                {m.photo && (
+                  <>
+                    <clipPath id={`${clipId}-${i}`}>
+                      <circle cx={x} cy={y} r={r - ringWidth / 2} />
+                    </clipPath>
+                    <image
+                      href={m.photo}
+                      x={x - r}
+                      y={y - r}
+                      width={r * 2}
+                      height={r * 2}
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath={`url(#${clipId}-${i})`}
+                      aria-hidden
+                    />
+                    {/* The status ring is drawn over the photo; pending is dashed so colour is not the only cue. */}
+                    <circle
+                      data-ring=""
+                      cx={x}
+                      cy={y}
+                      r={r}
+                      fill="none"
+                      strokeWidth={ringWidth + 0.5}
+                      strokeDasharray={kind === "pending" ? "3 2.5" : undefined}
+                      className={cn(RING[kind], i === you && "stroke-ink")}
+                    />
+                  </>
+                )}
+              </g>
+            );
+          })}
+        </g>
         {center && (
           <g aria-hidden>
             <text

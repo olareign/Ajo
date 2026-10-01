@@ -2,7 +2,7 @@
 
 Oct 1, 2026 · @olareign
 
-Green and white lead; the original indigo is kept as a quiet tertiary accent; gold is reserved for money. The circle (the group's members drawn as beads) is the motif. Tokens live in `apps/web/src/app/globals.css` (Tailwind `@theme`); components live in `apps/web/src/components`. The layout patterns for the auth screens come from the UI reference supplied by the product owner, re-coloured and re-composed for Àjọ rather than copied.
+White and green lead; the original indigo is kept as a quiet tertiary accent; gold is reserved for money. The circle (the group's members drawn as beads) is the motif. Tokens live in `apps/web/src/app/globals.css` (Tailwind `@theme`); components live in `apps/web/src/components`. The layout patterns for the auth screens come from the UI reference supplied by the product owner, re-coloured and re-composed for Àjọ rather than copied.
 
 ## Colour
 
@@ -17,7 +17,7 @@ Green and white lead; the original indigo is kept as a quiet tertiary accent; go
 | Status | `leaf`, `danger` | `#1D7346`, `#B3361D` | `#62CF92`, `#FF8F73` | Paid; errors |
 | Focus | `focus` | `#2F4AD6` | `#F2BB4C` | One visible ring on every control |
 
-Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:1, in both themes. Dark mode follows the viewer's setting (`prefers-color-scheme`) and can be forced with `data-theme`.
+Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:1. **The app is always white**: it does not follow the device's dark mode (the page, the browser's own controls and the theme colour are all light). The dark values stay in the tokens for a future, deliberate dark theme, switched on with `data-theme="dark"`.
 
 ## Type, shape and layout
 
@@ -39,7 +39,20 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
 | `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
 | `TabBar` | Today, Circles, Wallet, Me, with the gold action in the centre |
-| `Welcome`, `RecoveryBadge` | The first screen; the lock badge on password recovery |
+| `Logo` | The Àjọ logo: green wordmark whose o is a piggy bank, with a gold ₦ coin and sparkles. Three transparent layers (`public/brand/ajo-wordmark.webp`, `ajo-coin.webp`, `ajo-rays.webp`) cut from the supplied artwork, so the coin and sparkles can move on their own. `ajo-logo.webp` is the whole logo for places that cannot animate |
+| `Welcome`, `RecoveryBadge` | The first screen, with its entrance (below); the lock badge on password recovery |
+
+## Motion
+
+Only transform and opacity move. Everything is skipped when the device asks for reduced motion: nothing moves and the screen is simply there.
+
+| When | What |
+| --- | --- |
+| 0.0s | The circle rolls in from the side like a wheel (slide plus a turn), its beads turning with it, and settles; the pot amount fades in once it stops |
+| 0.5s | The logo fades up |
+| 1.0s | The coin falls from the circle into the piggy bank behind its back; the logo gives one small bounce |
+| 1.65s | The sparkles appear and twinkle twice |
+| 1.1s, 1.25s | The tagline and then the buttons rise in |
 
 ## Screens and build status
 

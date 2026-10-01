@@ -28,18 +28,25 @@ test("the page fits a phone screen without sideways scrolling", async ({ page })
 test("the PWA manifest is served", async ({ request }) => {
   const response = await request.get("/manifest.webmanifest");
   expect(response.ok()).toBe(true);
-  expect(await response.json()).toMatchObject({ name: "Àjọ", display: "standalone" });
+  const manifest = await response.json();
+  expect(manifest).toMatchObject({ name: "Àjọ", display: "standalone" });
+  for (const icon of manifest.icons)
+    expect((await request.get(icon.src)).ok(), icon.src).toBe(true);
 });
 
-test("the welcome screen follows the viewer's dark theme", async ({ browser }) => {
+test("the app stays white even when the device is set to dark mode", async ({ browser }) => {
   const context = await browser.newContext({
     colorScheme: "dark",
     viewport: { width: 393, height: 851 },
   });
   const page = await context.newPage();
   await page.goto("/");
-  const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(background).toBe("rgb(10, 20, 16)");
+  for (const path of ["/", "/sign-in", "/sign-up", "/forgot-password"]) {
+    await page.goto(path);
+    const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(background, path).toBe("rgb(255, 255, 255)");
+  }
+  await page.goto("/");
   await page.screenshot({ path: "e2e/screenshots/welcome-dark.png" });
   await context.close();
 });
@@ -76,4 +83,54 @@ test("the recovery and code screens load, and the code screen guards itself", as
   await expect(page.getByText("This link is incomplete")).toBeVisible();
   await page.goto("/sign-in/verify");
   await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test("the welcome screen plays its entrance: the circle rolls in and the coin drops", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const names = await page.evaluate(() =>
+    document.getAnimations().map((a) => (a as CSSAnimation).animationName),
+  );
+  for (const name of ["ring-slide", "ring-spin", "coin-drop", "twinkle", "rise"]) {
+    expect(names, name).toContain(name);
+  }
+  // It ends where the still design is: the logo, the circle and both buttons are all there.
+  await page.waitForFunction(
+    () => document.getAnimations().every((a) => a.playState === "finished"),
+    null,
+    {
+      timeout: 8000,
+    },
+  );
+  for (const image of ["ajo-wordmark", "ajo-coin", "ajo-rays"]) {
+    const loaded = await page
+      .locator(`img[src="/brand/${image}.webp"]`)
+      .evaluate((el) => (el as HTMLImageElement).naturalWidth);
+    expect(loaded, image).toBeGreaterThan(0);
+  }
+  await expect(page.getByRole("link", { name: "Create account" })).toBeVisible();
+});
+
+test("with reduce-motion on, nothing moves and everything is already in place", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    reducedMotion: "reduce",
+    viewport: { width: 393, height: 851 },
+  });
+  const page = await context.newPage();
+  await page.goto("/");
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+  const opacity = await page.getByRole("link", { name: "Create account" }).evaluate((el) => {
+    let node: HTMLElement | null = el as HTMLElement;
+    let value = 1;
+    while (node) {
+      value *= Number(getComputedStyle(node).opacity);
+      node = node.parentElement;
+    }
+    return value;
+  });
+  expect(opacity).toBe(1);
+  await context.close();
 });
