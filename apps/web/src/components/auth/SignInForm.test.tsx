@@ -64,4 +64,12 @@ describe("SignInForm", () => {
     finish(Response.json({ signedIn: true }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/today"));
   });
+
+  it("offers password recovery right under the password", () => {
+    render(<SignInForm />);
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute(
+      "href",
+      "/forgot-password",
+    );
+  });
 });

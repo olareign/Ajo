@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
@@ -47,6 +48,12 @@ export function SignInForm() {
           error={error}
           required
         />
+        <Link
+          href="/forgot-password"
+          className="-mt-2 justify-self-end rounded-s px-1 py-2 text-[15px] font-semibold text-adire underline-offset-4 hover:underline"
+        >
+          Forgot password?
+        </Link>
       </div>
       <div className="mt-auto pt-8">
         <Button type="submit" size="lg" block disabled={busy || !email || !password}>

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { AuthScreen } from "@/components/auth/AuthScreen";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ScreenHeader } from "@/components/ScreenHeader";
 
@@ -6,9 +8,25 @@ export const metadata: Metadata = { title: "Create account" };
 
 export default function SignUpPage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
-      <ScreenHeader backHref="/" eyebrow="Welcome" title="Let's get you started" />
+    <AuthScreen
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link
+            href="/sign-in"
+            className="font-semibold text-adire underline-offset-4 hover:underline"
+          >
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <ScreenHeader
+        backHref="/"
+        title="Let's get you started"
+        subtitle="Create your Àjọ account. It takes a minute."
+      />
       <SignUpForm />
-    </main>
+    </AuthScreen>
   );
 }

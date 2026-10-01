@@ -86,4 +86,12 @@ describe("TextField", () => {
     render(<TextField label="Email" type="email" value="" onChange={() => {}} />);
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  it("is a soft filled field that takes an outline only when focused", () => {
+    render(<TextField label="Email" value="" onChange={() => {}} />);
+    const cls = screen.getByLabelText("Email").className;
+    expect(cls).toContain("bg-surface-sunken");
+    expect(cls).toContain("border-transparent");
+    expect(cls).toContain("focus:border-adire");
+  });
 });
