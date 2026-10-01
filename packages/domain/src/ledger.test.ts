@@ -116,9 +116,9 @@ describe("Ledger", () => {
   });
 
   it("refuses to open the same account twice", () => {
-    expect(() => ledger.openAccount({ id: "partner:NGN", currency: "NGN", normal: "debit" })).toThrow(
-      /already exists/i,
-    );
+    expect(() =>
+      ledger.openAccount({ id: "partner:NGN", currency: "NGN", normal: "debit" }),
+    ).toThrow(/already exists/i);
   });
 
   it("is idempotent: replaying the same key does not post twice", () => {
