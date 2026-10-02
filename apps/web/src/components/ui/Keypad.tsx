@@ -34,7 +34,7 @@ export function Keypad({ value, onChange, length, label, labelledBy }: Props) {
       aria-labelledby={labelledBy}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className="grid w-full grid-cols-3 gap-0 rounded-[var(--radius-l)] bg-surface-sunken p-0"
+      className="grid w-full grid-cols-3 gap-2 rounded-[var(--radius-l)] bg-surface-sunken p-2"
     >
       {KEYS.map((key, i) =>
         key === "" ? (

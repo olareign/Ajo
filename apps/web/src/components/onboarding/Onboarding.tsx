@@ -123,7 +123,7 @@ export function Onboarding({ name }: Readonly<{ name: string }>) {
             {error}
           </p>
         )}
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-0">
           <Button
             size="lg"
             block
