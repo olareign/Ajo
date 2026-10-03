@@ -56,7 +56,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.4 | Login and sessions | 🟡 | ☐ | Works: lockout, expiry, rotating refresh tokens with theft detection, session limit. **Missing: new-device alert**; logout-from-all-devices exists in the API but has no screen. **Defects D1, D2** |
 | E1.5 | Device binding (Should) | ⬜ | | Needs the real client address and device to reach the API first (D1) |
 | E1.6 | Onboarding screens | 🟡 | ☐ | Built: three animated scenes that show how solo saving and èsúsú work, then country, goal, handle and PIN, resumable and saved step by step. **Remaining:** "then led to KYC" (waits for E2) and the country freeze once KYC starts (D4) |
-| E1.7 | Install as app (PWA) | 🟡 | ☐ | Manifest and icons served and checked. Installing on Android and iOS, and the splash, are for your hand test |
+| E1.7 | Install as app (PWA) | 🟡 | ☐ | Manifest served; icons now show the **whole Àjọ logo** (they used to cut out the "À" and most of the "j"): plain 192 and 512, a separate maskable one with room for Android's circle, the iPhone icon, and the pig-and-coin mark for the browser tab, with a test that fails if the logo is ever cropped again. Android's splash is built from this icon and the white background. **Not built:** iPhone splash screens (they need an image per device size). Installing on Android and iPhone is for your hand test |
 | E1.8 | Authenticator-app second factor | 🟡 | ☐ | API complete (enrol, confirm, recovery codes, disable, encrypted secret). Sign-in code screen works. **Missing:** the screen to turn it on (comes with Me), and "enrolment required before the first money action" |
 | E1.9 | Confirm email again | ✅ | ☐ | Resend after a minute, ten a day, `email_verified` boolean kept in step by the database |
 | E1.10 | Housekeeping of sessions and tokens | ✅ | | Job built and tested. Runs only where the worker is deployed |
@@ -109,7 +109,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 1. E1.1 and E1.9: sign up, receive the email, open the link; try "Resend email" before and after the minute.
 2. E1.4: sign in with a wrong then the right password; sign out; sign in again.
 3. E1.6, E1.2 and E1.3: sign up and sign in as a new person. Watch the three scenes (swipe them; try Skip on another account), choose a country and goal, pick a handle (try a taken or reserved one such as `support`: it must be refused), and finish with a PIN (an easy one must be refused). Close the tab part-way and sign in again: it must pick up where you stopped. An older account (set up before handles) should be asked for the handle only.
-4. E1.7: add to home screen on Android and on iPhone.
+4. E1.7: remove any Àjọ icon already on your home screen, then add it again on Android and on iPhone (phones keep the old icon until you do): the whole Àjọ logo must show, not just the ọ.
 5. E3.2: Today shows a wallet card; it opens `/wallet` (empty for a new account; real rows need the ledger seeded).
 
 **Merge order for E1.2 and E1.6 (this release). Order matters: the new API code reads a new column.**

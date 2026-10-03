@@ -12,7 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      // Android crops this one to a circle or squircle, so the logo sits smaller, inside the safe zone.
+      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

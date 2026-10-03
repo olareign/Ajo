@@ -42,7 +42,7 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
 | `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
 | `TabBar` | Today, Circles, Wallet, Me, with the gold action in the centre |
-| `Logo` | The Àjọ logo: green wordmark whose o is a piggy bank, with a gold ₦ coin and sparkles. Three transparent layers (`public/brand/ajo-wordmark.webp`, `ajo-coin.webp`, `ajo-rays.webp`) cut from the supplied artwork, so the coin and sparkles can move on their own. `ajo-logo.webp` is the whole logo for places that cannot animate |
+| `Logo` | The Àjọ logo: green wordmark whose o is a piggy bank, with a gold ₦ coin and sparkles. Three transparent layers (`public/brand/ajo-wordmark.webp`, `ajo-coin.webp`, `ajo-rays.webp`) cut from the supplied artwork, so the coin and sparkles can move on their own. `ajo-logo.webp` is the whole logo for places that cannot animate. The app icons are made from `ajo-logo.webp` by `apps/web/scripts/generate-icons.py`: the whole logo for the home screen (plain, and a smaller maskable one that stays inside the circle Android crops to, and the iPhone one) and the pig-and-coin mark alone for the browser tab; `src/app/icons.test.ts` fails if the logo is cropped |
 | `Welcome`, `RecoveryBadge` | The first screen, with its entrance (below); the lock badge on password recovery |
 
 ## Motion
