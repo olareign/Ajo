@@ -51,11 +51,11 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | ID | Feature | Mark | Hand test | Note |
 | --- | --- | --- | --- | --- |
 | E1.1 | Sign up with email and password | 🟡 | ☐ | Works: 12+ characters, breach check, argon2id, single-use expiring link, same answer whether or not the email exists, **bot protection (Cloudflare Turnstile, built Oct 3; fails closed; widget only shows when Cloudflare needs the person)**. Remaining: defects D1 and D3 below. Needs the Render and Vercel settings in To-dos before it can go live |
-| E1.2 | Profile basics | 🟡 | ☐ | Name and email saved, email confirmed by link. **Missing: username** (no column, no field; friends search in Phase 3 needs it) |
+| E1.2 | Profile basics | ✅ | ☐ | Name and email saved, email confirmed by link, and a **username** (3 to 20 lowercase letters, digits or underscores, unique whatever the capitals, enforced by the database; chosen once during setup; changing it comes with account settings, not built). Taken names and names the company keeps get one refusal; two people claiming one name get exactly one winner. Needs the SQL script run on Neon first (see To-dos) |
 | E1.3 | Transaction PIN | ✅ | ☐ | Set once, verified, five tries then a 15-minute lock. "Required for money actions" waits for E3.5. No change-PIN yet (planned with settings) |
 | E1.4 | Login and sessions | 🟡 | ☐ | Works: lockout, expiry, rotating refresh tokens with theft detection, session limit. **Missing: new-device alert**; logout-from-all-devices exists in the API but has no screen. **Defects D1, D2** |
 | E1.5 | Device binding (Should) | ⬜ | | Needs the real client address and device to reach the API first (D1) |
-| E1.6 | Onboarding screens | 🟡 | ☐ | Built: country, goal, PIN. **Missing:** the screens that explain how solo and èsúsú work, and the step into KYC (no KYC yet) |
+| E1.6 | Onboarding screens | 🟡 | ☐ | Built: three animated scenes that show how solo saving and èsúsú work, then country, goal, handle and PIN, resumable and saved step by step. **Remaining:** "then led to KYC" (waits for E2) and the country freeze once KYC starts (D4) |
 | E1.7 | Install as app (PWA) | 🟡 | ☐ | Manifest and icons served and checked. Installing on Android and iOS, and the splash, are for your hand test |
 | E1.8 | Authenticator-app second factor | 🟡 | ☐ | API complete (enrol, confirm, recovery codes, disable, encrypted secret). Sign-in code screen works. **Missing:** the screen to turn it on (comes with Me), and "enrolment required before the first money action" |
 | E1.9 | Confirm email again | ✅ | ☐ | Resend after a minute, ten a day, `email_verified` boolean kept in step by the database |
@@ -108,11 +108,18 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 1. E1.1 and E1.9: sign up, receive the email, open the link; try "Resend email" before and after the minute.
 2. E1.4: sign in with a wrong then the right password; sign out; sign in again.
-3. E1.6 and E1.3: finish onboarding with a PIN; try an easy PIN (it must be refused).
+3. E1.6, E1.2 and E1.3: sign up and sign in as a new person. Watch the three scenes (swipe them; try Skip on another account), choose a country and goal, pick a handle (try a taken or reserved one such as `support`: it must be refused), and finish with a PIN (an easy one must be refused). Close the tab part-way and sign in again: it must pick up where you stopped. An older account (set up before handles) should be asked for the handle only.
 4. E1.7: add to home screen on Android and on iPhone.
 5. E3.2: Today shows a wallet card; it opens `/wallet` (empty for a new account; real rows need the ledger seeded).
 
-**Merge order for E1.1 (bot protection). Order matters, because the API rejects unknown fields until it has this change and production refuses to start without the bot-check settings**
+**Merge order for E1.2 and E1.6 (this release). Order matters: the new API code reads a new column.**
+
+1. **Neon SQL editor:** paste and run `ajo-api/scripts/sql/bring-database-up-to-date.sql`. It adds the `username` column (verified on a database in your live state). Safe to run again.
+2. Merge the API pull request. Render deploys it (a minute, plus a cold start).
+3. Merge the web pull request. It also carries the Cloudflare-error fix for sign-up.
+4. Hand-test (item 3 above). Anyone who already finished setup will be asked for a handle the next time they sign in.
+
+**Merge order for E1.1 (bot protection), already done. Order matters, because the API rejects unknown fields until it has this change and production refuses to start without the bot-check settings**
 
 1. Render, service `ajo-api`, Environment: add `BOT_CHECK` = `turnstile` and `TURNSTILE_SECRET_KEY` = the widget's **secret** key (not the site key). Do this first.
 2. Vercel, project `ajo-web`, Environment Variables (Production and Preview): add `TURNSTILE_SITE_KEY` = `0x4AAAAAAFM0tH6uB0tllz7t`. The old web code ignores it.
@@ -145,6 +152,6 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 By the book, Phase 1 is open, and its gaps are in this order:
 
-1. ~~Intro screen with real human photos (P0.4)~~ done; ~~E1.1 bot protection~~ built, waiting for your hand test and the merge order above.
-2. **E1.2** username, then **E1.4** client address and device through to the API (D1), the refresh-token grace window (D2), the new-device alert and a logout-everywhere screen, then **E1.8** the screen to turn the authenticator on and the rule that it is needed before money moves, and **E1.6** the how-it-works screens (and D4). D3 (per-address limit on reset emails) closes E1.1.
-3. **E2 KYC** (E2.1 to E2.8), then **E3.3 to E3.8**. That closes the Phase 1 gate: a verified user funds and withdraws, and the ledger matches the partner.
+1. Done and waiting for your hand test: P0.4 photos, E1.1 bot protection (needs the Cloudflare hostnames above), E1.2 usernames, E1.6 scenes and flow.
+2. **E1.4** client address and device through to the API (D1), the refresh-token grace window (D2), the new-device alert and a logout-everywhere screen. **E1.8** the screen to turn the authenticator on, and the rule that it is needed before money moves. D3 (per-address limit on reset emails) closes E1.1.
+3. **E2 KYC** (E2.1 to E2.8), then **E3.3 to E3.8**. E1.6's "then led to KYC" and D4 land with E2. That closes the Phase 1 gate: a verified user funds and withdraws, and the ledger matches the partner.
