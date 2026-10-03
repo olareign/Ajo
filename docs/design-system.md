@@ -63,7 +63,8 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 | Sign up, confirm email, sign in, password recovery | Built (`/sign-up`, `/check-email`, `/verify-email`, `/sign-in`, `/forgot-password`, `/reset-password`). Check your email has a Resend button that waits a minute between sends; signing in before confirming lands there |
 | Verify it's you (authenticator code or recovery code) | Built (`/sign-in/verify`); turning the second factor on from the app comes with the Me screen |
 | Onboarding (country, goal, transaction PIN) | Built (`/onboarding`); Today sends anyone who hasn't finished it there |
-| KYC, wallet | Phase 1, next |
+| Wallet | Built (`/wallet`): a card per currency with what is available, locked and saved, and the activity list a page at a time; Today shows a summary that leads to it. Adding and withdrawing money come with funding |
+| KYC | Phase 1, next |
 | Solo savings, referrals, groups | Phases 2 to 4 |
 
 ## Where the build departs from the reference, and why

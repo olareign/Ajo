@@ -48,9 +48,14 @@ describe("Welcome", () => {
     ]);
   });
 
-  it("falls back to initials when there are no photos", () => {
+  it("shows a person, not initials, in every bead when there are no photos", () => {
     const { container } = render(<Welcome photos={[]} />);
     expect(container.querySelectorAll("image")).toHaveLength(0);
-    expect(container.querySelector("[data-bead]")?.textContent).toBe("AO");
+    const beads = [...container.querySelectorAll("[data-bead]")];
+    expect(beads).toHaveLength(8);
+    for (const bead of beads) {
+      expect(bead.querySelector("[data-silhouette]")).toBeInTheDocument();
+      expect(bead.textContent).toBe("");
+    }
   });
 });

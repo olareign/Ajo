@@ -27,6 +27,9 @@ export function buildContentSecurityPolicy({
     "font-src 'self'",
     // The browser only talks to this origin; the BFF calls the API server-side.
     "connect-src 'self'",
+    // Cloudflare Turnstile's check (sign-up) is drawn in a frame from its own origin. Its script is
+    // not listed under script-src: our trusted script loads it, which 'strict-dynamic' allows.
+    "frame-src https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

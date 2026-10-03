@@ -63,6 +63,30 @@ describe("handleSignUp", () => {
     expect(new Headers(init!.headers).get("cookie")).toBeNull();
   });
 
+  it("passes the bot-check token on, and relays a refusal's code", async () => {
+    const fetchFn = apiReturning(400, {
+      message: "Please complete the check and try again.",
+      code: "bot_check_failed",
+    });
+    const res = await handleSignUp(
+      post("/api/auth/sign-up", {
+        email: "a@b.co",
+        password: "pw",
+        displayName: "Ada",
+        botToken: "token-from-the-widget",
+      }),
+      { env, fetchFn },
+    );
+    expect(JSON.parse(fetchFn.mock.calls[0]![1]!.body as string)).toEqual({
+      email: "a@b.co",
+      password: "pw",
+      displayName: "Ada",
+      botToken: "token-from-the-widget",
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: "bot_check_failed" });
+  });
+
   it("relays field problems so the form can show them", async () => {
     const fetchFn = apiReturning(400, {
       message: "Password does not meet the requirements",

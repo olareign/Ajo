@@ -16,16 +16,24 @@ describe("CircleRing", () => {
     );
   });
 
-  it("draws one bead per member with initials, in spot order", () => {
+  it("draws one bead per member, in spot order", () => {
     const { container } = render(<CircleRing members={members} recipient={2} />);
     const beads = [...container.querySelectorAll("[data-bead]")];
-    expect(beads.map((b) => b.textContent)).toEqual(["AO", "GO", "FO", "CO"]);
     expect(beads.map((b) => b.getAttribute("data-bead"))).toEqual([
       "paid",
       "paid",
       "recipient",
       "late",
     ]);
+  });
+
+  it("shows a person in every bead, never the first letters of a name", () => {
+    const { container } = render(<CircleRing members={members} />);
+    const beads = [...container.querySelectorAll("[data-bead]")];
+    for (const bead of beads) {
+      expect(bead.querySelector("[data-silhouette]")).toBeInTheDocument();
+      expect(bead.textContent).toBe("");
+    }
   });
 
   it("marks the signed-in member", () => {
@@ -54,10 +62,11 @@ describe("CircleRing", () => {
       ]);
     });
 
-    it("keeps initials underneath, so a photo that fails to load still leaves a name", () => {
+    it("keeps the silhouette underneath, so a photo that fails to load still leaves a person", () => {
       const { container } = render(<CircleRing members={withPhotos} />);
       const beads = [...container.querySelectorAll("[data-bead]")];
-      expect(beads.map((b) => b.textContent)).toEqual(["AO", "GO", "FO"]);
+      expect(beads.every((b) => b.querySelector("[data-silhouette]"))).toBe(true);
+      expect(beads.map((b) => b.textContent)).toEqual(["", "", ""]);
     });
 
     it("does not rely on colour alone: pending is dashed, paid is solid", () => {

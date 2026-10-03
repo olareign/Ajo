@@ -4,7 +4,7 @@ import type { Deps } from "./auth-handlers";
 import { isSameOrigin } from "./same-origin";
 import { openSeal, seal, SESSION_TTL_SECONDS, sessionCookie, type Session } from "./session";
 
-const json = (status: number, body: unknown, cookies: string[] = []) => {
+export const json = (status: number, body: unknown, cookies: string[] = []) => {
   const headers = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store" });
   for (const c of cookies) headers.append("Set-Cookie", c);
   return new Response(status === 204 ? null : JSON.stringify(body), { status, headers });
@@ -17,7 +17,7 @@ type ApiRequest = Readonly<{ path: string; method: "GET" | "PUT" | "POST"; body?
  * refresh token (which rotates, so the new pair is stored in the cookie straight away); if the
  * refresh is refused the session is cleared and the caller sees 401.
  */
-async function withSession(
+export async function withSession(
   request: Request,
   { env, fetchFn }: Deps,
   call: ApiRequest,

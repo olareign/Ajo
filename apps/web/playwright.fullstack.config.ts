@@ -5,7 +5,7 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3100",
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3100",
     ...devices["Pixel 5"],
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }

@@ -48,7 +48,7 @@ export async function handleSignUp(request: Request, { env, fetchFn }: Deps): Pr
   const result = await callApi(env, fetchFn, {
     path: "/auth/sign-up",
     patient: true,
-    body: pick(body, ["email", "password", "displayName"]),
+    body: pick(body, ["email", "password", "displayName", "botToken"]),
   });
   return json(result.status, result.data);
 }

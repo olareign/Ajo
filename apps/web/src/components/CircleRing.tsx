@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 export type RingMember = Readonly<{
   name: string;
   status?: "paid" | "pending" | "late" | "covered";
-  /** A real photo of the member. Without one the bead shows their initials. */
+  /** A real photo of the member. Without one the bead shows a person silhouette, never initials. */
   photo?: string;
 }>;
 
@@ -25,11 +25,11 @@ type Props = Readonly<{
 const WORD = { paid: "paid", pending: "pending", late: "late", covered: "covered" } as const;
 
 const BEAD = {
-  paid: "fill-leaf stroke-leaf [&+text]:fill-surface-raised",
-  pending: "fill-surface-raised stroke-line-strong [&+text]:fill-ink",
-  late: "fill-danger stroke-danger [&+text]:fill-surface-raised",
-  covered: "fill-tertiary stroke-tertiary [&+text]:fill-on-tertiary",
-  recipient: "fill-oro stroke-oro [&+text]:fill-on-oro",
+  paid: "fill-leaf stroke-leaf [&+g]:fill-surface-raised",
+  pending: "fill-surface-raised stroke-line-strong [&+g]:fill-ink",
+  late: "fill-danger stroke-danger [&+g]:fill-surface-raised",
+  covered: "fill-tertiary stroke-tertiary [&+g]:fill-on-tertiary",
+  recipient: "fill-oro stroke-oro [&+g]:fill-on-oro",
 } as const;
 
 const RING = {
@@ -39,14 +39,6 @@ const RING = {
   covered: "stroke-tertiary",
   recipient: "stroke-oro",
 } as const;
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
 
 /** The circle: members as beads in spot order (spot 1 at the top, clockwise), recipient in gold. */
 export function CircleRing({
@@ -101,6 +93,9 @@ export function CircleRing({
             const ringWidth = i === you ? 3 : 2;
             return (
               <g key={`${m.name}-${i}`} data-bead={kind} data-you={i === you ? "" : undefined}>
+                <clipPath id={`${clipId}-${i}`}>
+                  <circle cx={x} cy={y} r={r - ringWidth / 2} />
+                </clipPath>
                 <circle
                   cx={x}
                   cy={y}
@@ -108,14 +103,13 @@ export function CircleRing({
                   strokeWidth={ringWidth}
                   className={cn(BEAD[kind], i === you && "stroke-ink")}
                 />
-                <text x={x} y={y} dy="0.35em" textAnchor="middle" className="text-[10px] font-bold">
-                  {initials(m.name)}
-                </text>
+                {/* Head and shoulders, cut to the bead. The photo, when there is one, covers it. */}
+                <g data-silhouette="" clipPath={`url(#${clipId}-${i})`} aria-hidden>
+                  <circle cx={x} cy={y - r * 0.2} r={r * 0.34} />
+                  <ellipse cx={x} cy={y + r * 0.85} rx={r * 0.7} ry={r * 0.5} />
+                </g>
                 {m.photo && (
                   <>
-                    <clipPath id={`${clipId}-${i}`}>
-                      <circle cx={x} cy={y} r={r - ringWidth / 2} />
-                    </clipPath>
                     <image
                       href={m.photo}
                       x={x - r}

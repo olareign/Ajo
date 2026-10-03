@@ -18,7 +18,7 @@
 
 ## Status
 
-Phase 1, identity and wallet, in progress. Done: sign-up with email confirmation (with resend), sign-in with sessions and refresh rotation, password recovery, authenticator-app second factor, onboarding with a transaction PIN, and the double-entry ledger with the wallet view (API). Still to build: KYC, funding, mandates, withdrawals and the wallet screens. The web app has the design system, a nonce-based Content Security Policy and security headers, and CI with dependency audit, secret scanning, CodeQL and dependency review. The API is in `olareign/ajo-api` (NestJS, TypeORM, BullMQ, Render Blueprint). See the [Phase 0 checklist](docs/project-plan.md#phase-0-planning-and-foundations) and the [feature backlog](docs/project-plan.md#feature-backlog-by-epic).
+Phase 1, identity and wallet, in progress. Done: sign-up with email confirmation (with resend), sign-in with sessions and refresh rotation, password recovery, authenticator-app second factor, onboarding with a transaction PIN, the double-entry ledger with the wallet view (API), and the wallet screens (balances per currency and activity). Still to build: KYC, funding, mandates and withdrawals. The web app has the design system, a nonce-based Content Security Policy and security headers, and CI with dependency audit, secret scanning, CodeQL and dependency review. The API is in `olareign/ajo-api` (NestJS, TypeORM, BullMQ, Render Blueprint). See the [Phase 0 checklist](docs/project-plan.md#phase-0-planning-and-foundations) and the [feature backlog](docs/project-plan.md#feature-backlog-by-epic).
 
 ```sh
 pnpm install && pnpm test && pnpm dev
@@ -31,6 +31,7 @@ pnpm install && pnpm test && pnpm dev
 | [Product spec](docs/product-spec.md)                   | What the app does, group rules, decisions and open questions                    |
 | [Solution architecture](docs/solution-architecture.md) | System design, threat model, data model, API, integrations, security            |
 | [Project plan](docs/project-plan.md)                   | Phases, epics and features with acceptance criteria, risks, go-live checklist   |
+| [Progress checklist](docs/progress.md)                 | What is done, working, failing and not started, per plan bullet                 |
 | [Tools and packages](docs/tools-and-packages.md)       | Every tool, package and service, per repository, from development to production |
 | [Design system](docs/design-system.md)                 | Tokens and components from Figma, and where the build departs from the designs  |
 | [Contributing](CONTRIBUTING.md)                        | Setup, commands, branching and the TDD workflow                                 |

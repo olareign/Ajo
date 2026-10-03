@@ -1,6 +1,7 @@
 "use client";
 
 import { MeGate } from "@/components/onboarding/MeGate";
+import { WalletSummary } from "@/components/wallet/WalletSummary";
 
 export function TodayScreen() {
   return (
@@ -13,6 +14,7 @@ export function TodayScreen() {
           <p className="mt-3 text-ink-muted">
             Nothing needs you yet. Your circles will show up here.
           </p>
+          <WalletSummary />
         </main>
       )}
     </MeGate>

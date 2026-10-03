@@ -29,6 +29,14 @@ describe("buildContentSecurityPolicy", () => {
     expect(prod["connect-src"]).toBe("'self'");
   });
 
+  it("lets the page show Cloudflare's check in a frame, and nothing else in one", () => {
+    expect(prod["frame-src"]).toBe("https://challenges.cloudflare.com");
+  });
+
+  it("does not open script-src to a host: Cloudflare's script is loaded by our own trusted script", () => {
+    expect(prod["script-src"]).not.toContain("cloudflare");
+  });
+
   it("blocks framing, plugins, base-tag hijacking and off-site form posts", () => {
     expect(prod["frame-ancestors"]).toBe("'none'");
     expect(prod["object-src"]).toBe("'none'");
