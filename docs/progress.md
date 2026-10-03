@@ -120,6 +120,11 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 4. Merge the web pull request. Vercel deploys it, and the sign-up form shows the check.
 5. Hand-test E1.1 on your phone, then tick it.
 
+**Bot protection on the live site: two things only you can do (found Oct 3)**
+
+- **Cloudflare, Turnstile, your widget, Hostname management:** add `ajo-web-dusky.vercel.app` (and `ajo-web-abdulrasaq-taofeeqs-projects.vercel.app`; add `localhost` for local work). Until you do, Cloudflare refuses the page (console error 110200) and sign-up cannot complete. Preview URLs change per build and are not covered: test on the production address.
+- **Vercel:** a variable you add reaches only *new* deployments, so redeploy after adding or changing one.
+
 **Setup only you can do**
 
 - Vercel: decide whether `*.vercel.app` stays behind Vercel sign-in (it is on today, so testers must be signed in to Vercel). `API_BASE_URL` and `SESSION_SECRET` are already set.
