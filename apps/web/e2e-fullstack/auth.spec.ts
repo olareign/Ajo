@@ -8,6 +8,9 @@
  *   2. Start the web app: API_BASE_URL=http://localhost:4000 SESSION_SECRET=<32+ chars> pnpm next dev -p 3100
  *      Always give it a fixed SESSION_SECRET: without one, development makes a random secret per bundle,
  *      and the code screen (a page) cannot open the cookie the sign-in route (a handler) sealed.
+ *      Per-person limits and sign-in alerts (optional): give the API BFF_SHARED_SECRET and the web app the same
+ *      value (32+ characters), and set E2E_BFF=1 here. Every test then visits from its own address, as Vercel
+ *      would report it, and the tests that check the recorded address and device run.
  *      Bot check (optional): run the API with BOT_CHECK=turnstile and TURNSTILE_SECRET_KEY, the web app with
  *      TURNSTILE_SITE_KEY, and set E2E_TURNSTILE=1 here. Cloudflare's published test keys work and need no
  *      account: site key 1x00000000000000000000AA, secret 1x0000000000000000000000000000000AA (always pass).
@@ -21,6 +24,17 @@ import { execSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
 
 const psql = process.env.E2E_PSQL_COMMAND;
+const bff = Boolean(process.env.E2E_BFF);
+
+/** The address Vercel would report for a visitor: a different one for every test. */
+const visitorIp = () => `102.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`;
+test.beforeEach(async ({ context, baseURL }) => {
+  const ip = visitorIp();
+  // Only for our own origin: a custom header on another site's requests would need its permission.
+  await context.route(`${baseURL}/**`, (route) =>
+    route.continue({ headers: { ...route.request().headers(), "x-real-ip": ip } }),
+  );
+});
 test.skip(!psql, "Set E2E_PSQL_COMMAND to run the full-stack tests against a real API.");
 
 const sql = (text: string) => execSync(psql!, { input: text }).toString().trim();
@@ -197,13 +211,17 @@ type ApiJson = {
   items?: unknown[];
 };
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:4000";
-async function api(path: string, init: { method?: string; token?: string; body?: object } = {}) {
+async function api(
+  path: string,
+  init: { method?: string; token?: string; body?: object; userAgent?: string } = {},
+) {
   const res = await fetch(`${apiUrl}/api/v1${path}`, {
     method: init.method ?? "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Forwarded-For": `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
       ...(init.token ? { Authorization: `Bearer ${init.token}` } : {}),
+      ...(init.userAgent ? { "User-Agent": init.userAgent } : {}),
     },
     body: init.body ? JSON.stringify(init.body) : undefined,
   });
@@ -506,4 +524,86 @@ test("with the bot check on, sign-up sends Cloudflare's token and still ends at 
   await expect(page).toHaveURL(/\/check-email/);
 
   expect(JSON.parse(bodies[0]!).botToken).toBeTruthy();
+});
+
+test("Me shows who you are, and signing out of all devices ends the session on every other device too", async ({
+  page,
+}) => {
+  const email = `e2e+me${Date.now()}@example.com`;
+  const otherDevice = await onboardedAccount(email); // a session on another device, from the API
+  const handle = sql(`select username from users where email = '${email}'`);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  await page.getByRole("link", { name: "Me" }).click();
+  await expect(page).toHaveURL(/\/me$/);
+  const card = page.getByRole("region", { name: "Your membership" });
+  await expect(card).toContainText(`@${handle}`);
+  await expect(card).toContainText(email);
+  await expect(card).toContainText("Confirmed");
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: "e2e/screenshots/me.png" });
+  // A long email must not push the page wider than the phone.
+  const sideways = () =>
+    page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+  expect(await sideways()).toBe(0);
+
+  expect((await api("/me", { method: "GET", token: otherDevice })).status).toBe(200);
+  await page.getByRole("button", { name: "Sign out of all devices" }).click();
+  await expect(page.getByText(/signs you out everywhere/i)).toBeVisible();
+  await page.screenshot({ path: "e2e/screenshots/me-confirm.png" });
+  expect(await sideways()).toBe(0);
+  await page.getByRole("button", { name: "Sign out everywhere" }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
+
+  // The other device's session is over too, and nothing is left open for this person.
+  expect((await api("/me", { method: "GET", token: otherDevice })).status).toBe(401);
+  expect(
+    Number(
+      sql(
+        `select count(*) from sessions s join users u on u.id = s.user_id where u.email = '${email}' and s.revoked_at is null`,
+      ),
+    ),
+  ).toBe(0);
+  await page.goto("/me");
+  await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test("the person's own address and device reach the API, and a different kind of device is flagged", async ({
+  page,
+}) => {
+  test.skip(
+    !bff,
+    "Needs BFF_SHARED_SECRET on both the API and the web app, and E2E_BFF=1 (see the top).",
+  );
+  const email = `e2e+device${Date.now()}@example.com`;
+  await onboardedAccount(email);
+  sql(`delete from login_devices where user_id = (select id from users where email = '${email}')`);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // Through the web server, yet recorded as this browser, from this visitor's address (not the server's).
+  const latest = sql(
+    `select host(s.ip) || ' | ' || s.user_agent from sessions s join users u on u.id = s.user_id where u.email = '${email}' order by s.created_at desc limit 1`,
+  );
+  expect(latest).toMatch(/^102\.\d+\.\d+\.\d+ \| .*Android.*Chrome/);
+
+  // The very first device is recorded quietly; a different kind of device is new, and is flagged.
+  const iphone =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  await api("/auth/login", { body: { email, password }, userAgent: iphone });
+  const devices = sql(
+    `select string_agg(d.label || ':' || (d.alerted_at is not null), ' ; ' order by d.first_seen_at) from login_devices d join users u on u.id = d.user_id where u.email = '${email}'`,
+  );
+  expect(devices).toBe("Chrome on Android:false ; Safari on iPhone:true");
 });

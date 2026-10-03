@@ -2,6 +2,7 @@ import { callApi, type ApiResult } from "./api-client";
 import { readCookie, serializeCookie } from "./cookies";
 import type { Deps } from "./auth-handlers";
 import { normalizeUsername, USERNAME_PATTERN } from "@/lib/username";
+import { clientOf } from "./client-context";
 import { isSameOrigin } from "./same-origin";
 import { openSeal, seal, SESSION_TTL_SECONDS, sessionCookie, type Session } from "./session";
 
@@ -29,12 +30,14 @@ export async function withSession(
   if (!session) return json(401, { message: "Please sign in." });
 
   let result: ApiResult = await callApi(env, fetchFn, {
+    client: clientOf(request),
     ...call,
     accessToken: session.accessToken,
   });
   const cookies: string[] = [];
   if (result.status === 401) {
     const refreshed = await callApi(env, fetchFn, {
+      client: clientOf(request),
       path: "/auth/refresh",
       body: { refreshToken: session.refreshToken },
     });
@@ -52,7 +55,7 @@ export async function withSession(
       SESSION_TTL_SECONDS,
     );
     cookies.push(serializeCookie(cookie.name, sealed, cookie.options));
-    result = await callApi(env, fetchFn, { ...call, accessToken });
+    result = await callApi(env, fetchFn, { ...call, accessToken, client: clientOf(request) });
     if (result.status === 401) return json(401, { message: "Please sign in again." }, [expire]);
   }
   return json(result.status, result.data, cookies);

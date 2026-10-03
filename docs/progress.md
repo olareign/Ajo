@@ -53,10 +53,10 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.1 | Sign up with email and password | 🟡 | ☐ | Works: 12+ characters, breach check, argon2id, single-use expiring link, same answer whether or not the email exists, **bot protection (Cloudflare Turnstile, built Oct 3; fails closed; widget only shows when Cloudflare needs the person)**. Remaining: defects D1 and D3 below. Needs the Render and Vercel settings in To-dos before it can go live |
 | E1.2 | Profile basics | ✅ | ☐ | Name and email saved, email confirmed by link, and a **username** (3 to 20 lowercase letters, digits or underscores, unique whatever the capitals, enforced by the database; chosen once during setup; changing it comes with account settings, not built). Taken names and names the company keeps get one refusal; two people claiming one name get exactly one winner. Needs the SQL script run on Neon first (see To-dos) |
 | E1.3 | Transaction PIN | ✅ | ☐ | Set once, verified, five tries then a 15-minute lock. "Required for money actions" waits for E3.5. No change-PIN yet (planned with settings) |
-| E1.4 | Login and sessions | 🟡 | ☐ | Works: lockout, expiry, rotating refresh tokens with theft detection, session limit. **Missing: new-device alert**; logout-from-all-devices exists in the API but has no screen. **Defects D1, D2** |
-| E1.5 | Device binding (Should) | ⬜ | | Needs the real client address and device to reach the API first (D1) |
+| E1.4 | Login and sessions | ✅ | ☐ | Built Oct 3: lockout, expiry, rotating refresh tokens with theft detection and a 10-second grace window (two requests at once no longer end the session, D2), a session limit, **new-device alert** (an email when a different kind of browser or system signs in; the first device and returning ones are silent; at most five a day), **sign out of all devices** on the new **Me** screen (with a confirmation), and per-person rate limits and the real device on every session (D1). **D1 only takes effect once you set the shared secret on both Render and Vercel** (see To-dos); until then everything behaves as before |
+| E1.5 | Device binding (Should) | ⬜ | | Unblocked: the real address and device now reach the API and new devices are recognised (E1.4). Still to build: asking for the authenticator code on a new device, which needs E1.8 first |
 | E1.6 | Onboarding screens | 🟡 | ☐ | Built: three animated scenes that show how solo saving and èsúsú work, then country, goal, handle and PIN, resumable and saved step by step. **Remaining:** "then led to KYC" (waits for E2) and the country freeze once KYC starts (D4) |
-| E1.7 | Install as app (PWA) | 🟡 | ☐ | Manifest and icons served and checked. Installing on Android and iOS, and the splash, are for your hand test |
+| E1.7 | Install as app (PWA) | 🟡 | ☐ | Manifest served; icons now show the **whole Àjọ logo** (they used to cut out the "À" and most of the "j"): plain 192 and 512, a separate maskable one with room for Android's circle, the iPhone icon, and the pig-and-coin mark for the browser tab, with a test that fails if the logo is ever cropped again. Android's splash is built from this icon and the white background. **Not built:** iPhone splash screens (they need an image per device size). Installing on Android and iPhone is for your hand test |
 | E1.8 | Authenticator-app second factor | 🟡 | ☐ | API complete (enrol, confirm, recovery codes, disable, encrypted secret). Sign-in code screen works. **Missing:** the screen to turn it on (comes with Me), and "enrolment required before the first money action" |
 | E1.9 | Confirm email again | ✅ | ☐ | Resend after a minute, ten a day, `email_verified` boolean kept in step by the database |
 | E1.10 | Housekeeping of sessions and tokens | ✅ | | Job built and tested. Runs only where the worker is deployed |
@@ -95,8 +95,8 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 | ID | Defect | Affects | Mark |
 | --- | --- | --- | --- |
-| D1 | The web server sends no client address, so the API's per-address limits (10 sign-ins per 15 minutes, 5 sign-ups an hour, 120 requests a minute) are shared by every user; sessions also record the web server's address, not the person's | E1.1, E1.4, E1.5 | ❌ |
-| D2 | Two requests at once on an expired access token each try to swap the single-use refresh token; the second looks like theft and ends the session. The wallet screens avoid it by asking one call at a time | E1.4 | ❌ (latent) |
+| D1 | The web server sent no client address, so the API's per-address limits were shared by every user, and sessions recorded the web server's address | E1.1, E1.4, E1.5 | ✅ built; live once the shared secret is set |
+| D2 | Two requests at once on an expired access token ended the session | E1.4 | ✅ fixed (grace window) |
 | D3 | Password-reset emails have only the shared address limit, so one inbox can be flooded; verification emails already have a per-address limit | E1.1 | ❌ |
 | D4 | `PUT /me/profile` lets a person change country at any time | E1.6, E2 | ❌ (until KYC) |
 
@@ -109,10 +109,18 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 1. E1.1 and E1.9: sign up, receive the email, open the link; try "Resend email" before and after the minute.
 2. E1.4: sign in with a wrong then the right password; sign out; sign in again.
 3. E1.6, E1.2 and E1.3: sign up and sign in as a new person. Watch the three scenes (swipe them; try Skip on another account), choose a country and goal, pick a handle (try a taken or reserved one such as `support`: it must be refused), and finish with a PIN (an easy one must be refused). Close the tab part-way and sign in again: it must pick up where you stopped. An older account (set up before handles) should be asked for the handle only.
-4. E1.7: add to home screen on Android and on iPhone.
+4. E1.7: remove any Àjọ icon already on your home screen, then add it again on Android and on iPhone (phones keep the old icon until you do): the whole Àjọ logo must show, not just the ọ.
 5. E3.2: Today shows a wallet card; it opens `/wallet` (empty for a new account; real rows need the ledger seeded).
+6. E1.4: sign in on your phone, then in a different browser or on another device: the owner gets a "New sign-in to your Àjọ account" email naming it. Open Today, tap the round person icon (Me), and use "Sign out of all devices": every other device must lose access.
 
-**Merge order for E1.2 and E1.6 (this release). Order matters: the new API code reads a new column.**
+**Merge order for E1.4 (this release). Sign-in now writes to a new table, so the database comes first.**
+
+1. **Neon SQL editor:** run `ajo-api/scripts/sql/bring-database-up-to-date.sql` again (adds `login_devices`; safe to repeat).
+2. Merge the API pull request; Render deploys it. (Render has not deployed on its own for the last merge: if nothing happens within a few minutes, use Manual Deploy, Deploy latest commit.)
+3. Merge the web pull request; Vercel deploys it.
+4. **To switch on per-person limits and real devices (D1):** make one secret with `openssl rand -base64 48`. Put it as `BFF_SHARED_SECRET` in Render (service `ajo-api`, Environment) **and** the same value as `BFF_SHARED_SECRET` in Vercel (project `ajo-web`, Production and Preview), then redeploy both (a variable only reaches new deployments). Without it nothing breaks; the API simply ignores the visitor details. Never paste the secret anywhere else.
+
+**Merge order for E1.2 and E1.6 (done) Order matters: the new API code reads a new column.**
 
 1. **Neon SQL editor:** paste and run `ajo-api/scripts/sql/bring-database-up-to-date.sql`. It adds the `username` column (verified on a database in your live state). Safe to run again.
 2. Merge the API pull request. Render deploys it (a minute, plus a cold start).
@@ -152,6 +160,6 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 By the book, Phase 1 is open, and its gaps are in this order:
 
-1. Done and waiting for your hand test: P0.4 photos, E1.1 bot protection (needs the Cloudflare hostnames above), E1.2 usernames, E1.6 scenes and flow.
-2. **E1.4** client address and device through to the API (D1), the refresh-token grace window (D2), the new-device alert and a logout-everywhere screen. **E1.8** the screen to turn the authenticator on, and the rule that it is needed before money moves. D3 (per-address limit on reset emails) closes E1.1.
+1. Done and waiting for your hand test: P0.4 photos, E1.1 bot protection, E1.2 usernames, E1.4 sessions and alerts, E1.6 scenes and flow, E1.7 icons.
+2. **E1.8** the screen to turn the authenticator on (the Me screen already shows its state), the rule that it is needed before money moves, and then **E1.5** asking for the code on a new device. D3 (per-address limit on reset emails) closes E1.1.
 3. **E2 KYC** (E2.1 to E2.8), then **E3.3 to E3.8**. E1.6's "then led to KYC" and D4 land with E2. That closes the Phase 1 gate: a verified user funds and withdraws, and the ledger matches the partner.

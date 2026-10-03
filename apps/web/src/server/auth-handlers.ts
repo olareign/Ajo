@@ -1,6 +1,8 @@
 import { callApi, type Fetch } from "./api-client";
 import { readCookie, serializeCookie } from "./cookies";
 import type { ServerEnv } from "./env";
+import { clientOf } from "./client-context";
+import { withSession } from "./me-handlers";
 import { isSameOrigin } from "./same-origin";
 import {
   MFA_TTL_SECONDS,
@@ -46,6 +48,7 @@ export async function handleSignUp(request: Request, { env, fetchFn }: Deps): Pr
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
+    client: clientOf(request),
     path: "/auth/sign-up",
     patient: true,
     body: pick(body, ["email", "password", "displayName", "botToken"]),
@@ -61,6 +64,7 @@ export async function handleVerifyEmail(
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
+    client: clientOf(request),
     path: "/auth/email/verify",
     patient: true,
     body: pick(body, ["token"]),
@@ -77,6 +81,7 @@ export async function handleResendVerification(
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
+    client: clientOf(request),
     path: "/auth/email/resend",
     patient: true,
     body: pick(body, ["email"]),
@@ -92,6 +97,7 @@ export async function handleForgotPassword(
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
+    client: clientOf(request),
     path: "/auth/password/forgot",
     patient: true,
     body: pick(body, ["email"]),
@@ -108,6 +114,7 @@ export async function handleResetPassword(
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
+    client: clientOf(request),
     path: "/auth/password/reset",
     patient: true,
     body: pick(body, ["token", "password"]),
@@ -120,6 +127,7 @@ export async function handleSignIn(request: Request, { env, fetchFn }: Deps): Pr
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
   const result = await callApi(env, fetchFn, {
+    client: clientOf(request),
     path: "/auth/login",
     patient: true,
     body: pick(body, ["email", "password"]),
@@ -151,6 +159,7 @@ export async function handleMfaSignIn(request: Request, { env, fetchFn }: Deps):
   );
   if (!challenge) return json(401, { message: "That sign-in took too long. Please start again." });
   const result = await callApi(env, fetchFn, {
+    client: clientOf(request),
     path: "/auth/login/mfa",
     patient: true,
     body: { mfaToken: challenge.mfaToken, ...pick(body, ["code", "recoveryCode"]) },
@@ -182,7 +191,31 @@ export async function handleSignOut(request: Request, { env, fetchFn }: Deps): P
   const cookie = sessionCookie(env.production);
   const session = await openSeal<Session>(readCookie(request, cookie.name), env.sessionSecret);
   if (session) {
-    await callApi(env, fetchFn, { path: "/auth/logout", accessToken: session.accessToken });
+    await callApi(env, fetchFn, {
+      path: "/auth/logout",
+      accessToken: session.accessToken,
+      client: clientOf(request),
+    });
   }
   return json(204, null, [serializeCookie(cookie.name, "", { ...cookie.options, maxAge: 0 })]);
+}
+
+/**
+ * Ends every session the person has, on every device, then this one's cookie. It goes through the
+ * same refresh-aware call as the rest of the signed-in API: an access token that has simply expired
+ * (the usual state after a quarter of an hour) must not be mistaken for "already signed out", or the
+ * other devices would stay signed in while this one claimed success. If the API cannot be reached the
+ * person stays signed in here and is told, so they can try again.
+ */
+export async function handleSignOutAll(request: Request, deps: Deps): Promise<Response> {
+  if (!isSameOrigin(request)) return FORBIDDEN();
+  const cookie = sessionCookie(deps.env.production);
+  if (!readCookie(request, cookie.name)) return json(401, { message: "Please sign in." });
+
+  const result = await withSession(request, deps, { path: "/auth/logout-all", method: "POST" });
+  // Done, or the session was already gone: either way this device is signed out now.
+  if (result.status < 300 || result.status === 401) {
+    return json(204, null, [serializeCookie(cookie.name, "", { ...cookie.options, maxAge: 0 })]);
+  }
+  return result;
 }

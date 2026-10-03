@@ -12,6 +12,8 @@ export type Me = Readonly<{
   goal?: string | null;
   username?: string | null;
   hasPin?: boolean;
+  emailVerified?: boolean;
+  mfaEnabled?: boolean;
 }>;
 
 type Props = Readonly<{
