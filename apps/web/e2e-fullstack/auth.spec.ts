@@ -2,12 +2,18 @@
  * Opt-in: drives the real web app against a real, running API (not mocks).
  *
  *   1. Start the API on http://localhost:4000 with a local Postgres and Redis (docker compose up -d), migrated.
+ *      Start it with TRUST_PROXY_HOPS=1: the API limits attempts per address, the web app's server is
+ *      one address for everyone, and the tests that call the API directly send their own
+ *      X-Forwarded-For so they do not use up the sign-in allowance (10 per 15 minutes).
  *   2. Start the web app: API_BASE_URL=http://localhost:4000 SESSION_SECRET=<32+ chars> pnpm next dev -p 3100
+ *      Always give it a fixed SESSION_SECRET: without one, development makes a random secret per bundle,
+ *      and the code screen (a page) cannot open the cookie the sign-in route (a handler) sealed.
+ *      If a dev server already holds this folder, run another from a copy, or set E2E_BASE_URL.
  *   3. Run it, telling it how to reach the database (the real email links only exist in the API's outbox,
  *      so the test does what a link does in the database). The command gets SQL on standard input:
  *        E2E_PSQL_COMMAND='docker exec -i <postgres> psql -U ajo -d ajo -tA' pnpm test:e2e:fullstack
  */
-import { createHash, createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomInt } from "node:crypto";
 import { execSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -178,13 +184,20 @@ function authenticatorCode(base32Secret: string, offsetSteps = 0): string {
   return String(value).padStart(6, "0");
 }
 
-type ApiJson = { accessToken?: string; secret?: string; recoveryCodes?: string[] };
+type ApiJson = {
+  accessToken?: string;
+  secret?: string;
+  recoveryCodes?: string[];
+  wallets?: unknown[];
+  items?: unknown[];
+};
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:4000";
 async function api(path: string, init: { method?: string; token?: string; body?: object } = {}) {
   const res = await fetch(`${apiUrl}/api/v1${path}`, {
     method: init.method ?? "POST",
     headers: {
       "Content-Type": "application/json",
+      "X-Forwarded-For": `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
       ...(init.token ? { Authorization: `Bearer ${init.token}` } : {}),
     },
     body: init.body ? JSON.stringify(init.body) : undefined,
@@ -307,4 +320,106 @@ test("a new person is taken through onboarding and then lands on Today", async (
       `select pin_hash like '$argon2id$%' from transaction_pins p join users u on u.id = p.user_id where u.email = '${email}'`,
     ),
   ).toBe("t");
+});
+
+/** An account that has confirmed its email and finished onboarding, made through the API. */
+async function onboardedAccount(email: string) {
+  expect(
+    (await api("/auth/sign-up", { body: { email, password, displayName: "Ada Wallet" } })).status,
+  ).toBe(202);
+  confirmEmail(email);
+  const { accessToken } = (await api("/auth/login", { body: { email, password } })).data;
+  expect(
+    (
+      await api("/me/profile", {
+        method: "PUT",
+        token: accessToken,
+        body: { country: "NG", goal: "both" },
+      })
+    ).status,
+  ).toBe(204);
+  expect(
+    (await api("/me/pin", { method: "PUT", token: accessToken, body: { pin: "493817" } })).status,
+  ).toBe(204);
+  return accessToken!;
+}
+
+/**
+ * Money in the ledger the way the API will one day put it there: each posting is one database
+ * transaction of two balanced entries (the ledger refuses anything else).
+ */
+function seedLedger(email: string, stamp: string) {
+  const mine = (kind: string) =>
+    `(select a.id from ledger_accounts a join users u on u.id = a.owner_id where u.email = '${email}' and a.currency = 'NGN' and a.kind = '${kind}')`;
+  const settlement = `(select id from ledger_accounts where owner_type = 'system' and currency = 'NGN' and kind = 'settlement' and ref = '${stamp}')`;
+  let n = 0;
+  const post = (type: string, from: string, to: string, amount: number) => `
+    begin;
+    with t as (insert into ledger_transactions (type, idempotency_key) values ('${type}', '${stamp}-${n++}') returning id)
+    insert into ledger_entries (transaction_id, account_id, currency, amount, direction)
+      select t.id, ${from}, 'NGN', ${amount}, 'debit' from t
+      union all select t.id, ${to}, 'NGN', ${amount}, 'credit' from t;
+    commit;`;
+  sql(`
+    begin;
+    insert into ledger_accounts (owner_type, owner_id, currency, kind)
+      select 'user', id, 'NGN', k from users, unnest(array['available', 'locked', 'savings']) k where email = '${email}';
+    insert into ledger_accounts (owner_type, currency, kind, ref) values ('system', 'NGN', 'settlement', '${stamp}');
+    commit;`);
+  // 25 rows in all: more than one page of 20.
+  for (let i = 0; i < 21; i++) sql(post("funding", settlement, mine("available"), 20_000));
+  sql(post("funding", settlement, mine("available"), 250_000));
+  sql(post("withdrawal", mine("available"), settlement, 100_000));
+  sql(post("lock_deposit", mine("available"), mine("locked"), 50_000));
+}
+
+test("the wallet shows the real ledger: balances, a page of activity, then the rest; another person sees none of it", async ({
+  page,
+}) => {
+  const stamp = `e2e${Date.now()}`;
+  const email = `e2e+wallet${Date.now()}@example.com`;
+  await onboardedAccount(email);
+  seedLedger(email, stamp);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // Today glances at the wallet and leads to it. Available: 21 x 200 + 2,500 - 1,000 - 500 = 5,200.
+  const card = page.getByRole("link", { name: /wallet/i });
+  await expect(card).toContainText("₦5,200");
+  await card.click();
+  await expect(page).toHaveURL(/\/wallet$/);
+
+  const naira = page.getByRole("region", { name: "Nigerian Naira wallet" });
+  await expect(naira).toContainText("₦5,200");
+  await expect(naira.getByText("Locked").locator("xpath=following-sibling::dd")).toHaveText("₦500");
+  await expect(naira.getByText("Savings").locator("xpath=following-sibling::dd")).toHaveText("₦0");
+
+  // 25 entries come as 20, then 5 more on request, and the button goes away at the end.
+  const rows = page.getByRole("list", { name: "Recent activity" }).getByRole("listitem");
+  await expect(rows).toHaveCount(20);
+  await page.getByRole("button", { name: "Show more" }).click();
+  await expect(rows).toHaveCount(25);
+  await expect(page.getByRole("button", { name: "Show more" })).toHaveCount(0);
+
+  const withdrawal = rows.filter({ hasText: "Withdrawal" });
+  await expect(withdrawal).toContainText("Money out");
+  await expect(withdrawal).toContainText("-₦1,000");
+  await expect(rows.filter({ hasText: "Lock deposit" })).toHaveCount(2);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(0);
+  await page.screenshot({ path: "e2e/screenshots/wallet.png" });
+
+  // Someone else, signed in with their own token, gets an empty wallet and no history: the API
+  // reads the owner from the session, never from the request.
+  const other = await onboardedAccount(`e2e+nomoney${Date.now()}@example.com`);
+  expect((await api("/wallet", { method: "GET", token: other })).data.wallets).toEqual([]);
+  expect((await api("/wallet/transactions", { method: "GET", token: other })).data.items).toEqual(
+    [],
+  );
 });
