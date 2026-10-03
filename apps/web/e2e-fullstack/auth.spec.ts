@@ -289,8 +289,20 @@ test("a new person is taken through onboarding and then lands on Today", async (
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // Not onboarded yet, so Today sends them to the questions.
+  // Not onboarded yet, so Today sends them to the scenes that show how Àjọ works, then the questions.
   await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Save on your own");
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: "e2e/screenshots/onboarding-scene-solo.png" });
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("take turns");
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: "e2e/screenshots/onboarding-scene-circle.png" });
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Everyone is checked");
+  await page.waitForTimeout(1600);
+  await page.screenshot({ path: "e2e/screenshots/onboarding-scene-trust.png" });
+  await page.getByRole("button", { name: "Let's set you up" }).click();
 
   await page.getByRole("radio", { name: /Nigeria/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
@@ -309,7 +321,7 @@ test("a new person is taken through onboarding and then lands on Today", async (
   await page.screenshot({ path: "e2e/screenshots/onboarding-handle.png" });
   await page.getByRole("button", { name: "Continue" }).click();
 
-  // Answers are saved as they are given: reloading part-way picks up at the PIN.
+  // Answers are saved as they are given: reloading part-way picks up at the PIN, without the scenes.
   await expect(page.getByRole("heading", { name: "Choose a PIN" })).toBeVisible();
   await page.goto("/onboarding");
   await expect(page.getByRole("heading", { name: "Choose a PIN" })).toBeVisible();

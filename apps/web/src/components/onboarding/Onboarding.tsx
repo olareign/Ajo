@@ -9,6 +9,7 @@ import { OptionCards, type CardOption } from "@/components/ui/OptionCards";
 import { PinPad } from "@/components/ui/PinPad";
 import { normalizeUsername } from "@/lib/username";
 import { HandlePicker } from "./HandlePicker";
+import { HowItWorks } from "./HowItWorks";
 import type { Me } from "./MeGate";
 import { useUsernameCheck } from "./useUsernameCheck";
 
@@ -34,9 +35,9 @@ const GOALS: readonly CardOption[] = [
   },
 ];
 
-type Step = "country" | "goal" | "handle" | "pin" | "confirm";
+type Step = "story" | "country" | "goal" | "handle" | "pin" | "confirm";
 
-const TITLES: Record<Step, string> = {
+const TITLES: Record<Exclude<Step, "story">, string> = {
   country: "Where do you live?",
   goal: "What brings you to Àjọ?",
   handle: "Pick your handle",
@@ -46,10 +47,12 @@ const TITLES: Record<Step, string> = {
 
 /**
  * Only what is still missing. Someone who stopped part-way (or who set up before usernames existed)
- * is asked for the rest and nothing they have already given.
+ * is asked for the rest and nothing they have already given; the scenes are for a brand-new person.
  */
 function stepsFor(me: Me): Step[] {
+  const untouched = !me.country && !me.goal && !me.username && !me.hasPin;
   return [
+    ...(untouched ? (["story"] as const) : []),
     ...(me.country ? [] : (["country"] as const)),
     ...(me.goal ? [] : (["goal"] as const)),
     ...(me.username ? [] : (["handle"] as const)),
@@ -74,17 +77,22 @@ export function Onboarding({ me, photos }: Props) {
   const check = useUsernameCheck(username, refused);
 
   const step = steps[at];
-  const number = step ? steps.indexOf(step) : -1;
+  const questions: Step[] = steps.filter((s) => s !== "story");
+  const number = step ? questions.indexOf(step) : -1;
   const last = at === steps.length - 1;
+  const firstQuestion = steps[0] === "story" ? 1 : 0;
 
   useEffect(() => {
     if (steps.length === 0) router.replace("/today");
   }, [steps, router]);
 
   if (!step) return null;
+  if (step === "story") {
+    return <HowItWorks photos={photos} onFinish={() => setAt(1)} />;
+  }
 
   const name = me.displayName;
-  const subtitle: Record<Step, string> = {
+  const subtitle: Record<Exclude<Step, "story">, string> = {
     country: `Welcome, ${name}. This sets your currency and the rules that apply to you.`,
     goal: "Pick what fits now. Nothing here is locked in.",
     handle: "Friends will find you by it. Take your seat in the circle.",
@@ -173,10 +181,12 @@ export function Onboarding({ me, photos }: Props) {
   return (
     <main className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
       <ScreenHeader
-        eyebrow={steps.length === 1 ? "One last thing" : `Step ${number + 1} of ${steps.length}`}
+        eyebrow={
+          questions.length === 1 ? "One last thing" : `Step ${number + 1} of ${questions.length}`
+        }
         title={TITLES[step]}
         subtitle={subtitle[step]}
-        onBack={at > 0 ? back : undefined}
+        onBack={at > firstQuestion ? back : undefined}
       />
       <div className="flex flex-1 flex-col">
         {step === "country" && (

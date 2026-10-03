@@ -48,6 +48,7 @@ const click = (name: string | RegExp, role = "button") =>
 async function enter(digits: string) {
   for (const d of digits) await click(d);
 }
+const skipStory = () => click("Skip");
 async function chooseCountryAndGoal() {
   await click(/Nigeria/, "radio");
   await click("Continue");
@@ -61,9 +62,27 @@ async function chooseHandle(name = "ada_ola") {
 }
 
 describe("Onboarding: a new person", () => {
+  it("is shown how Àjọ works first, and can skip it", async () => {
+    api();
+    show();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/save on your own/i);
+    await skipStory();
+    expect(screen.getByRole("heading", { name: /where do you live/i })).toBeInTheDocument();
+  });
+
+  it("goes on from the last scene straight into the questions", async () => {
+    api();
+    show();
+    await click("Next");
+    await click("Next");
+    await click("Let's set you up");
+    expect(screen.getByRole("heading", { name: /where do you live/i })).toBeInTheDocument();
+  });
+
   it("asks for the country first and will not move on without one", async () => {
     api();
     show();
+    await skipStory();
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await click(/United Kingdom/, "radio");
     expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
@@ -72,6 +91,7 @@ describe("Onboarding: a new person", () => {
   it("walks country, goal, handle, PIN and confirmation, saving each answer as it goes, then lands on Today", async () => {
     const fetchMock = api();
     show();
+    await skipStory();
     await chooseCountryAndGoal();
     expect(saves(fetchMock)).toEqual([["/api/me/profile", { country: "NG", goal: "both" }]]);
 
@@ -95,15 +115,17 @@ describe("Onboarding: a new person", () => {
     expect(saves(fetchMock).at(-1)).toEqual(["/api/me/pin", { pin: "493817" }]);
   });
 
-  it("says where the person is, 'Step n of m'", async () => {
+  it("counts only the questions in 'Step n of m', not the scenes", async () => {
     api();
     show();
+    await skipStory();
     expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
   });
 
-  it("lets the back button return to the previous question", async () => {
+  it("lets the back button return to the previous question, but not into the scenes", async () => {
     api();
     show();
+    await skipStory();
     expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
     await click(/Nigeria/, "radio");
     await click("Continue");
@@ -115,6 +137,7 @@ describe("Onboarding: a new person", () => {
 describe("Onboarding: choosing a handle", () => {
   async function toHandle() {
     show();
+    await skipStory();
     await chooseCountryAndGoal();
   }
 
@@ -170,6 +193,7 @@ describe("Onboarding: choosing a handle", () => {
 describe("Onboarding: the PIN", () => {
   async function toPin() {
     show();
+    await skipStory();
     await chooseCountryAndGoal();
     await chooseHandle();
   }
@@ -218,6 +242,7 @@ describe("Onboarding: a person who stopped part-way", () => {
     const fetchMock = api();
     show({ country: "NG", goal: "solo", hasPin: true });
 
+    expect(screen.queryByRole("heading", { level: 1, name: /save on your own/i })).toBeNull();
     expect(screen.getByRole("heading", { name: /pick your handle/i })).toBeInTheDocument();
     expect(screen.getByText("One last thing")).toBeInTheDocument();
 
@@ -235,7 +260,7 @@ describe("Onboarding: a person who stopped part-way", () => {
     expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();
   });
 
-  it("picks up at the goal when only the country was saved", async () => {
+  it("picks up at the goal when only the country was saved, without replaying the scenes", async () => {
     show({ country: "NG" });
     expect(screen.getByRole("heading", { name: /what brings you/i })).toBeInTheDocument();
   });
@@ -248,6 +273,7 @@ describe("Onboarding: a person who stopped part-way", () => {
   it("sends a signed-out person to sign in when saving is refused", async () => {
     api({ "/api/me/profile": () => Response.json({}, { status: 401 }) });
     show();
+    await skipStory();
     await chooseCountryAndGoal();
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/sign-in"));
   });
