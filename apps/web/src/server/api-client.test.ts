@@ -28,6 +28,40 @@ describe("callApi", () => {
     ]);
   });
 
+  describe("naming the person behind a call", () => {
+    const withSecret = loadServerEnv({
+      NODE_ENV: "production",
+      API_BASE_URL: "https://api.ajo.example",
+      SESSION_SECRET: "k".repeat(40),
+      BFF_SHARED_SECRET: "b".repeat(48),
+    });
+    const sent = async (e: typeof env, client?: { ip?: string; userAgent?: string }) => {
+      const fetchFn = vi.fn<Fetch>(async () => Response.json({}));
+      await callApi(e, fetchFn, { path: "/auth/login", client });
+      return new Headers(fetchFn.mock.calls[0]![1]!.headers);
+    };
+
+    it("tells the API the visitor's address and device, proving it is us with the shared secret", async () => {
+      const headers = await sent(withSecret, { ip: "102.89.34.7", userAgent: "Chrome on Android" });
+      expect(headers.get("x-ajo-bff-secret")).toBe("b".repeat(48));
+      expect(headers.get("x-ajo-client-ip")).toBe("102.89.34.7");
+      expect(headers.get("x-ajo-client-ua")).toBe("Chrome on Android");
+    });
+
+    it("sends nothing of the kind when no secret is configured", async () => {
+      const headers = await sent(env, { ip: "102.89.34.7", userAgent: "Chrome" });
+      expect([...headers.keys()].filter((h) => h.startsWith("x-ajo-"))).toEqual([]);
+    });
+
+    it("does not send the secret for a call that has nothing to say about a visitor", async () => {
+      const headers = await sent(withSecret, {});
+      expect([...headers.keys()].filter((h) => h.startsWith("x-ajo-"))).toEqual([]);
+      expect([...(await sent(withSecret)).keys()].filter((h) => h.startsWith("x-ajo-"))).toEqual(
+        [],
+      );
+    });
+  });
+
   it("turns a network failure into a plain 502 for the person", async () => {
     const fetchFn = vi.fn<Fetch>(async () => {
       throw new Error("ECONNREFUSED");

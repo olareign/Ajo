@@ -6,6 +6,11 @@ export type ServerEnv = Readonly<{
   production: boolean;
   /** Cloudflare Turnstile's public site key. Without one the sign-up form shows no check. */
   turnstileSiteKey?: string;
+  /**
+   * Shared with the API. When set, each call tells the API the visitor's own address and device, proved
+   * by this secret, so rate limits and sign-in alerts are per person. Never sent to the browser.
+   */
+  bffSecret?: string;
 }>;
 
 const SITE_KEY = /^[0-9A-Za-z_-]{8,64}$/;
@@ -20,6 +25,9 @@ export function loadServerEnv(source: Record<string, string | undefined>): Serve
   const problems: string[] = [];
   const siteKey = source.TURNSTILE_SITE_KEY?.trim() || undefined;
   if (siteKey && !SITE_KEY.test(siteKey)) problems.push("TURNSTILE_SITE_KEY: not a valid key");
+  const bffSecret = source.BFF_SHARED_SECRET || undefined;
+  if (bffSecret !== undefined && bffSecret.length < 32)
+    problems.push("BFF_SHARED_SECRET: must be at least 32 characters");
 
   let url: URL | null = null;
   try {
@@ -37,5 +45,6 @@ export function loadServerEnv(source: Record<string, string | undefined>): Serve
     sessionSecret,
     production,
     ...(siteKey ? { turnstileSiteKey: siteKey } : {}),
+    ...(bffSecret ? { bffSecret } : {}),
   };
 }

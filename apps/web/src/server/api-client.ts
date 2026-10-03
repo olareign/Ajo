@@ -1,3 +1,4 @@
+import type { ClientContext } from "./client-context";
 import type { ServerEnv } from "./env";
 
 export type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
@@ -22,11 +23,19 @@ export async function callApi(
     accessToken?: string;
     /** Wait for a cold start instead of giving up after 10 seconds. */
     patient?: boolean;
+    /** The visitor behind this call, passed to the API when the shared secret is configured. */
+    client?: ClientContext;
   }>,
 ): Promise<ApiResult> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (request.body) headers["Content-Type"] = "application/json";
   if (request.accessToken) headers.Authorization = `Bearer ${request.accessToken}`;
+  // Only with something to say, and only server to server: the secret is never sent to the browser.
+  if (env.bffSecret && (request.client?.ip || request.client?.userAgent)) {
+    headers["X-Ajo-Bff-Secret"] = env.bffSecret;
+    if (request.client.ip) headers["X-Ajo-Client-Ip"] = request.client.ip;
+    if (request.client.userAgent) headers["X-Ajo-Client-Ua"] = request.client.userAgent;
+  }
   try {
     const res = await fetchFn(`${env.apiBaseUrl}/api/v1${request.path}`, {
       method: request.method ?? "POST",

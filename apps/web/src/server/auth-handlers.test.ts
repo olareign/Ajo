@@ -7,6 +7,7 @@ import {
   handleResetPassword,
   handleSignIn,
   handleSignOut,
+  handleSignOutAll,
   handleSignUp,
   handleVerifyEmail,
 } from "./auth-handlers";
@@ -270,6 +271,124 @@ describe("handleSignOut", () => {
     expect(res.headers.getSetCookie().find((c) => c.startsWith("__Host-ajo_session="))).toMatch(
       /Max-Age=0/,
     );
+  });
+});
+
+describe("handleSignOutAll", () => {
+  const signedIn = async () => {
+    const sealed = await seal({ accessToken: "acc", refreshToken: "ref" }, env.sessionSecret, 60);
+    return {
+      "Sec-Fetch-Site": "same-origin",
+      Cookie: `__Host-ajo_session=${encodeURIComponent(sealed)}`,
+    };
+  };
+
+  it("ends every session at the API, then clears this device's cookie", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => new Response(null, { status: 204 }));
+    const res = await handleSignOutAll(
+      new Request(`${base}/api/auth/sign-out-all`, { method: "POST", headers: await signedIn() }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(204);
+    expect(fetchFn.mock.calls[0]![0]).toBe("https://api.ajo.example/api/v1/auth/logout-all");
+    expect(new Headers(fetchFn.mock.calls[0]![1]!.headers).get("authorization")).toBe("Bearer acc");
+    expect(res.headers.getSetCookie().find((c) => c.startsWith("__Host-ajo_session="))).toMatch(
+      /Max-Age=0/,
+    );
+  });
+
+  it("does not claim success when the API could not end the sessions, and keeps the person signed in to try again", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => {
+      throw new Error("down");
+    });
+    const res = await handleSignOutAll(
+      new Request(`${base}/api/auth/sign-out-all`, { method: "POST", headers: await signedIn() }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(502);
+    expect(
+      res.headers.getSetCookie().find((c) => c.startsWith("__Host-ajo_session=")),
+    ).toBeUndefined();
+  });
+
+  it("still ends every session when the access token has expired: it refreshes first, instead of pretending", async () => {
+    const fetchFn = vi
+      .fn<Fetch>()
+      .mockResolvedValueOnce(Response.json({ message: "Unauthorized" }, { status: 401 }))
+      .mockResolvedValueOnce(Response.json({ accessToken: "new-acc", refreshToken: "new-ref" }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const res = await handleSignOutAll(
+      new Request(`${base}/api/auth/sign-out-all`, { method: "POST", headers: await signedIn() }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(204);
+    expect(fetchFn.mock.calls.map(([url]) => url)).toEqual([
+      "https://api.ajo.example/api/v1/auth/logout-all",
+      "https://api.ajo.example/api/v1/auth/refresh",
+      "https://api.ajo.example/api/v1/auth/logout-all",
+    ]);
+    expect(new Headers(fetchFn.mock.calls[2]![1]!.headers).get("authorization")).toBe(
+      "Bearer new-acc",
+    );
+    const cookies = res.headers.getSetCookie().filter((c) => c.startsWith("__Host-ajo_session="));
+    expect(cookies.every((c) => /Max-Age=0/.test(c))).toBe(true);
+  });
+
+  it("clears the cookie and says 401 when the session is already gone", async () => {
+    const fetchFn = apiReturning(401, { message: "Unauthorized" });
+    const res = await handleSignOutAll(
+      new Request(`${base}/api/auth/sign-out-all`, { method: "POST", headers: await signedIn() }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(204);
+    expect(res.headers.getSetCookie().find((c) => c.startsWith("__Host-ajo_session="))).toMatch(
+      /Max-Age=0/,
+    );
+  });
+
+  it("refuses a request that did not come from our own pages, and without a session does nothing at the API", async () => {
+    const fetchFn = vi.fn<Fetch>();
+    const crossSite = new Request(`${base}/api/auth/sign-out-all`, {
+      method: "POST",
+      headers: { ...(await signedIn()), "Sec-Fetch-Site": "cross-site" },
+    });
+    expect((await handleSignOutAll(crossSite, { env, fetchFn })).status).toBe(403);
+    const anonymous = new Request(`${base}/api/auth/sign-out-all`, {
+      method: "POST",
+      headers: { "Sec-Fetch-Site": "same-origin" },
+    });
+    expect((await handleSignOutAll(anonymous, { env, fetchFn })).status).toBe(401);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("the visitor's own address and device", () => {
+  it("reach the API on sign-in when the shared secret is configured, so limits and alerts are per person", async () => {
+    const shared = loadServerEnv({
+      NODE_ENV: "production",
+      API_BASE_URL: "https://api.ajo.example",
+      SESSION_SECRET: "k".repeat(40),
+      BFF_SHARED_SECRET: "b".repeat(48),
+    });
+    const fetchFn = apiReturning(401, { message: "Email or password is incorrect." });
+    await handleSignIn(
+      post(
+        "/api/auth/sign-in",
+        { email: "a@b.co", password: "pw" },
+        {
+          "Sec-Fetch-Site": "same-origin",
+          "x-real-ip": "102.89.34.7",
+          "user-agent": "Mozilla/5.0 (Linux; Android 14) Chrome/130",
+        },
+      ),
+      { env: shared, fetchFn },
+    );
+    const headers = new Headers(fetchFn.mock.calls[0]![1]!.headers);
+    expect(headers.get("x-ajo-bff-secret")).toBe("b".repeat(48));
+    expect(headers.get("x-ajo-client-ip")).toBe("102.89.34.7");
+    expect(headers.get("x-ajo-client-ua")).toBe("Mozilla/5.0 (Linux; Android 14) Chrome/130");
+    // still only the browser's own cookies never travel
+    expect(headers.get("cookie")).toBeNull();
   });
 });
 

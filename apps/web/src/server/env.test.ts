@@ -55,6 +55,31 @@ describe("loadServerEnv", () => {
     });
   });
 
+  describe("the secret shared with the API (BFF_SHARED_SECRET)", () => {
+    it("is optional: without it the visitor's address and device are simply not passed on", () => {
+      expect(loadServerEnv(prod).bffSecret).toBeUndefined();
+      expect(loadServerEnv({ ...prod, BFF_SHARED_SECRET: "" }).bffSecret).toBeUndefined();
+    });
+
+    it("is passed on when long enough", () => {
+      expect(loadServerEnv({ ...prod, BFF_SHARED_SECRET: "b".repeat(48) }).bffSecret).toBe(
+        "b".repeat(48),
+      );
+    });
+
+    it("must be at least 32 characters, and an error names the variable and never its value", () => {
+      const weak = "short-but-secret";
+      expect(() => loadServerEnv({ ...prod, BFF_SHARED_SECRET: weak })).toThrow(
+        /BFF_SHARED_SECRET/,
+      );
+      try {
+        loadServerEnv({ ...prod, BFF_SHARED_SECRET: weak });
+      } catch (error) {
+        expect(String(error)).not.toContain(weak);
+      }
+    });
+  });
+
   it("never echoes the secret in errors", () => {
     try {
       loadServerEnv({
