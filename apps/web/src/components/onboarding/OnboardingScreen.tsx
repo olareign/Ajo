@@ -3,6 +3,6 @@
 import { MeGate } from "./MeGate";
 import { Onboarding } from "./Onboarding";
 
-export function OnboardingScreen() {
-  return <MeGate needs="not-onboarded">{(me) => <Onboarding name={me.displayName} />}</MeGate>;
+export function OnboardingScreen({ photos }: Readonly<{ photos: readonly string[] }>) {
+  return <MeGate needs="not-onboarded">{(me) => <Onboarding me={me} photos={photos} />}</MeGate>;
 }

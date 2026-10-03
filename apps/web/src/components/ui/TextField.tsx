@@ -11,6 +11,8 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> &
     onChange: (value: string) => void;
     hint?: string;
     error?: string;
+    /** A small mark inside the field before the text, such as "@". Decoration only: not part of the value. */
+    prefix?: string;
   }>;
 
 /**
@@ -23,6 +25,7 @@ export function TextField({
   onChange,
   hint,
   error,
+  prefix,
   className,
   type,
   ...props
@@ -41,6 +44,14 @@ export function TextField({
         {label}
       </label>
       <div className="relative">
+        {prefix && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-base font-semibold text-ink-muted"
+          >
+            {prefix}
+          </span>
+        )}
         <input
           id={id}
           type={isPassword && revealed ? "text" : type}
@@ -55,6 +66,7 @@ export function TextField({
             "min-h-14 w-full rounded-m border-[1.5px] bg-surface-sunken px-4 text-base text-ink transition-colors placeholder:text-ink-muted",
             "focus:border-primary focus:bg-surface-raised focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
             isPassword && "pr-14",
+            prefix && "pl-9",
             error ? "border-danger" : "border-transparent",
           )}
           {...props}

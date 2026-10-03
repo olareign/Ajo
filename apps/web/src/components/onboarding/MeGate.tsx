@@ -3,7 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
-export type Me = Readonly<{ displayName: string; email: string; onboarded: boolean }>;
+export type Me = Readonly<{
+  displayName: string;
+  email: string;
+  onboarded: boolean;
+  /** What setup has saved so far, so it can pick up where the person stopped. */
+  country?: string | null;
+  goal?: string | null;
+  username?: string | null;
+  hasPin?: boolean;
+}>;
 
 type Props = Readonly<{
   /** Which side of onboarding this screen belongs to; the other side is redirected away. */

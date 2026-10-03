@@ -1,17 +1,7 @@
 import Link from "next/link";
 import { CircleRing } from "./CircleRing";
+import { SAMPLE_CIRCLE } from "@/lib/sample-circle";
 import { Logo } from "./Logo";
-
-const SAMPLE_CIRCLE = [
-  { name: "Adébáyọ̀ Ola", status: "paid" },
-  { name: "Grace Ogunyemi", status: "paid" },
-  { name: "Funmi Ojo", status: "paid" },
-  { name: "Chidi Obi", status: "pending" },
-  { name: "Kemi Adams", status: "pending" },
-  { name: "Tolu Bello", status: "paid" },
-  { name: "Segun Lawal", status: "pending" },
-  { name: "Ada Eze", status: "paid" },
-] as const;
 
 const action =
   "flex min-h-14 w-full items-center justify-center rounded-m px-6 text-base font-semibold transition-colors";
