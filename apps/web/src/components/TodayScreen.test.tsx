@@ -19,4 +19,28 @@ describe("TodayScreen", () => {
     expect(await screen.findByRole("heading", { name: "Hello, Ada" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Me" })).toHaveAttribute("href", "/me");
   });
+
+  const signedIn = (mfaEnabled: boolean) =>
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url === "/api/me"
+          ? Response.json({ displayName: "Ada", email: "a@b.co", onboarded: true, mfaEnabled })
+          : Response.json({ wallets: [] }),
+      ),
+    );
+
+  it("nudges toward the second lock until it is on, because money cannot move without it", async () => {
+    signedIn(false);
+    render(<TodayScreen />);
+    const nudge = await screen.findByRole("link", { name: /Add a second lock/ });
+    expect(nudge).toHaveAttribute("href", "/me/security");
+  });
+
+  it("stops nudging once the second lock is on", async () => {
+    signedIn(true);
+    render(<TodayScreen />);
+    await screen.findByRole("heading", { name: "Hello, Ada" });
+    expect(screen.queryByRole("link", { name: /second lock/i })).not.toBeInTheDocument();
+  });
 });

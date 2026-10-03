@@ -21,6 +21,7 @@
  */
 import { createHash, createHmac, randomBytes, randomInt } from "node:crypto";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const psql = process.env.E2E_PSQL_COMMAND;
@@ -606,4 +607,113 @@ test("the person's own address and device reach the API, and a different kind of
     `select string_agg(d.label || ':' || (d.alerted_at is not null), ' ; ' order by d.first_seen_at) from login_devices d join users u on u.id = d.user_id where u.email = '${email}'`,
   );
   expect(devices).toBe("Chrome on Android:false ; Safari on iPhone:true");
+});
+
+test("a person turns the authenticator app on from Today, signs in with a spare key, and turns it off", async ({
+  page,
+}) => {
+  // A long journey, and the first visit to each page compiles it in a development server.
+  test.setTimeout(120_000);
+  const email = `e2e+lock${Date.now()}@example.com`;
+  await onboardedAccount(email);
+  const sideways = () =>
+    page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+  const type = async (digits: string) => {
+    for (const d of digits)
+      await page
+        .getByRole("group", { name: "Number pad" })
+        .getByRole("button", { name: d, exact: true })
+        .click();
+  };
+  const signIn = async () => {
+    await page.goto("/sign-in");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+  };
+
+  await signIn();
+  await expect(page).toHaveURL(/\/today$/);
+  // Until it is on, Today says why it matters and leads there.
+  await page.getByRole("link", { name: /Add a second lock/ }).click();
+  await expect(page).toHaveURL(/\/me\/security$/);
+  await expect(page.getByRole("heading", { name: "Add a second lock" })).toBeVisible();
+  expect(await sideways()).toBe(0);
+  await page.getByRole("button", { name: "Start" }).click();
+
+  // The real secret the API made, shown as a QR code and as text.
+  await expect(page.getByRole("img", { name: /QR code/i })).toBeVisible();
+  const keyText = await page.locator("p.font-mono").first().innerText();
+  const secret = keyText.replace(/\s/g, "");
+  expect(secret).toMatch(/^[A-Z2-7]{32}$/);
+  expect(await sideways()).toBe(0);
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: "e2e/screenshots/second-lock-scan.png" });
+  await page.getByRole("button", { name: "I've added it" }).click();
+
+  // A wrong code is refused with the API's message; the right one turns it on.
+  await type("000000");
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(alert(page)).toContainText("That code is incorrect.");
+  await type(authenticatorCode(secret));
+  await page.getByRole("button", { name: "Confirm" }).click();
+
+  // The ten spare keys, once, and the way out is closed until they are saved.
+  await expect(page.getByRole("heading", { name: "Keep your spare keys" })).toBeVisible();
+  const keys = await page
+    .getByRole("list", { name: "Recovery codes" })
+    .getByRole("listitem")
+    .allInnerTexts();
+  const recoveryCodes = keys.map((k) => k.replace(/^\d+\s*/, "").trim());
+  expect(recoveryCodes).toHaveLength(10);
+  expect(recoveryCodes[0]).toMatch(/^[a-z0-9]{5}-[a-z0-9]{5}$/);
+  expect(await sideways()).toBe(0);
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: "e2e/screenshots/second-lock-keys.png" });
+  await expect(page.getByRole("button", { name: "Done" })).toBeDisabled();
+  // Download really produces a file with all ten (the strict content policy must not get in the way).
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "Download" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("ajo-recovery-codes.txt");
+  const file = readFileSync((await download.path())!, "utf8");
+  for (const code of recoveryCodes) expect(file).toContain(code);
+  await page.getByRole("checkbox", { name: /saved these codes/i }).check();
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(page).toHaveURL(/\/me$/);
+  await expect(page.getByRole("link", { name: /Authenticator app/ })).toContainText("On");
+
+  // Signing in now asks for a code; a spare key works, once.
+  await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
+  await signIn();
+  await expect(page).toHaveURL(/\/sign-in\/verify$/);
+  await page.getByRole("button", { name: "Use a recovery code" }).click();
+  await page.getByLabel("Recovery code").fill(recoveryCodes[0]!);
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  await expect(page.getByRole("link", { name: /second lock/i })).toHaveCount(0);
+
+  // Turning it off needs the password and a fresh code; a wrong password keeps the person signed in.
+  await page.goto("/me/security");
+  await expect(page.getByRole("heading", { name: "Your second lock is on" })).toBeVisible();
+  await page.getByRole("button", { name: "Turn off", exact: true }).click();
+  await page.getByLabel("Password", { exact: true }).fill("not the password at all");
+  await page.getByLabel("Code from your app").fill(authenticatorCode(secret, 1));
+  await page.getByRole("button", { name: "Turn off the second lock" }).click();
+  await expect(alert(page)).toContainText("That password is incorrect.");
+  await expect(page).toHaveURL(/\/me\/security$/);
+  expect(await sideways()).toBe(0);
+
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Turn off the second lock" }).click();
+  await expect(page).toHaveURL(/\/me$/);
+  await expect(page.getByRole("link", { name: /Authenticator app/ })).toContainText("Set up");
+  expect(
+    sql(
+      `select count(*) from user_mfa m join users u on u.id = m.user_id where u.email = '${email}'`,
+    ),
+  ).toBe("0");
 });

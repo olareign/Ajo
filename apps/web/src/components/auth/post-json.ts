@@ -6,7 +6,7 @@ export const OFFLINE = "We couldn't reach Àjọ. Check your connection and try 
 export async function postJson(
   path: string,
   body: object,
-  method: "POST" | "PUT" = "POST",
+  method: "POST" | "PUT" | "DELETE" = "POST",
 ): Promise<PostResult> {
   try {
     const res = await fetch(path, {
