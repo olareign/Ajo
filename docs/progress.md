@@ -32,7 +32,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | P0.1 | Product spec open questions | ⬜ | Deposit size, trust rule, payout fee, early-spot rule, app name: all unanswered. **You** |
 | P0.2 | Launch countries and legal review | ⬜ | **You** and legal |
 | P0.3 | Partners and sandbox keys | 🟡 | Partners chosen; no sandbox keys yet. Mail and password-check adapters exist with stand-ins for tests |
-| P0.4 | Brand | 🟡 | Colours, fonts and logo are in code. Name ("Àjọ" or "Alajo") undecided. The intro circle has no human photos yet (see To-dos) |
+| P0.4 | Brand | 🟡 | Colours, fonts and logo are in code. Name ("Àjọ" or "Alajo") undecided. The intro circle now shows a person silhouette in every bead instead of initials; the real human photos wait for your OK to download (see To-dos) |
 | P0.5 | UX flows and prototype | 🟡 | Sign-in, sign-up, code, solo savings and groups drawn. KYC, funding, withdrawal and friends are not; no user testing |
 | P0.6 | Design system | 🟡 | Tokens and components in code; Figma component library unconfirmed |
 | P0.7 | Repositories and standards | ✅ | Both repositories |
@@ -99,7 +99,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | D3 | Password-reset emails have only the shared address limit, so one inbox can be flooded; verification emails already have a per-address limit | E1.1 | ❌ |
 | D4 | `PUT /me/profile` lets a person change country at any time | E1.6, E2 | ❌ (until KYC) |
 
-None of these is in the plan yet. They need a decision on where they belong (see To-dos).
+**Plan change proposed Oct 3, awaiting your approval before anything is built:** the four defects are written into the plan as acceptance criteria: D1 and D2 in E1.4, D3 in E1.1, D4 in E1.6. D1 is the prerequisite for the new-device alert and for E1.5.
 
 ## Your to-dos
 
