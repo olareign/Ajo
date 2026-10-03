@@ -30,6 +30,31 @@ describe("loadServerEnv", () => {
     expect(() => loadServerEnv({ ...prod, SESSION_SECRET: undefined })).toThrow(/SESSION_SECRET/);
   });
 
+  describe("the Turnstile site key (public, but only ever read on the server)", () => {
+    it("is optional: without it the sign-up form shows no check", () => {
+      expect(loadServerEnv(prod).turnstileSiteKey).toBeUndefined();
+      expect(loadServerEnv({ ...prod, TURNSTILE_SITE_KEY: "" }).turnstileSiteKey).toBeUndefined();
+    });
+
+    it("is passed on when it looks like a key", () => {
+      expect(
+        loadServerEnv({ ...prod, TURNSTILE_SITE_KEY: "0x4AAAAAAFM0tH6uB0tllz7t" }).turnstileSiteKey,
+      ).toBe("0x4AAAAAAFM0tH6uB0tllz7t");
+    });
+
+    it("refuses something that is not a key, naming the variable and not its value", () => {
+      const bad = "has spaces and <script>";
+      expect(() => loadServerEnv({ ...prod, TURNSTILE_SITE_KEY: bad })).toThrow(
+        /TURNSTILE_SITE_KEY/,
+      );
+      try {
+        loadServerEnv({ ...prod, TURNSTILE_SITE_KEY: bad });
+      } catch (error) {
+        expect(String(error)).not.toContain(bad);
+      }
+    });
+  });
+
   it("never echoes the secret in errors", () => {
     try {
       loadServerEnv({

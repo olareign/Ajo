@@ -5,11 +5,20 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { messageOf, postJson } from "./post-json";
+import { Turnstile } from "./Turnstile";
 
 const MIN_LENGTH = 12;
 
-export function SignUpForm() {
+type Props = Readonly<{
+  /** Cloudflare Turnstile's public key. Without one there is no check (local work, tests). */
+  turnstileSiteKey?: string;
+}>;
+
+export function SignUpForm({ turnstileSiteKey }: Props) {
   const router = useRouter();
+  const [botToken, setBotToken] = useState<string | null>(null);
+  const [checkAttempt, setCheckAttempt] = useState(0);
+  const [checkBlocked, setCheckBlocked] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +37,7 @@ export function SignUpForm() {
       email: email.trim(),
       password,
       displayName: name.trim(),
+      ...(turnstileSiteKey ? { botToken } : {}),
     });
     if (result.ok) {
       router.push(`/check-email?e=${encodeURIComponent(email.trim())}`);
@@ -35,6 +45,11 @@ export function SignUpForm() {
     }
     setError(messageOf(result));
     setBusy(false);
+    if (turnstileSiteKey) {
+      // The token is spent whatever the answer was: start a new check.
+      setBotToken(null);
+      setCheckAttempt((n) => n + 1);
+    }
   }
 
   return (
@@ -72,13 +87,36 @@ export function SignUpForm() {
           required
         />
       </div>
+      {turnstileSiteKey && (
+        <div className="mt-5">
+          <Turnstile
+            siteKey={turnstileSiteKey}
+            onToken={setBotToken}
+            onUnavailable={() => setCheckBlocked(true)}
+            resetKey={checkAttempt}
+          />
+          {checkBlocked ? (
+            <p role="alert" className="text-sm text-danger">
+              We couldn&apos;t load the security check. Check your connection and refresh the page.
+            </p>
+          ) : (
+            !botToken && (
+              <p role="status" className="text-sm text-ink-muted">
+                Checking that you&apos;re a person…
+              </p>
+            )
+          )}
+        </div>
+      )}
       {/* Pinned to the bottom of the screen, where the thumb is, like the buttons on the welcome screen. */}
       <div className="mt-auto pt-8">
         <Button
           type="submit"
           size="lg"
           block
-          disabled={busy || !name.trim() || !email || !password}
+          disabled={
+            busy || !name.trim() || !email || !password || (!!turnstileSiteKey && !botToken)
+          }
         >
           {busy ? "One moment…" : "Create account"}
         </Button>

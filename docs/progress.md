@@ -17,11 +17,12 @@ The live status of every bullet in the [project plan](project-plan.md), by phase
 | Check | Result |
 | --- | --- |
 | Web production (Vercel `ajo-web`) | Ready, serving `main` at `f00625a` (PR #13). Every merge into `main` deploys |
-| Web automated tests | 255 unit and component tests pass; lint, typecheck, format and production build clean |
-| API automated tests (`ajo-api`) | 122 unit and 110 integration tests pass against real Postgres and Redis |
-| Full-stack browser tests | 6 of 6 pass against the real API (needs a dev server with a fixed `SESSION_SECRET`) |
-| Live database | Not checked from here. Run `ajo-api/scripts/sql/bring-database-up-to-date.sql` on Neon to be sure it matches the code |
-| API on Render | Not checked from here (the Render connector needs authorising) |
+| Web automated tests | 274 unit and component tests pass; lint, typecheck, format and production build clean |
+| API automated tests (`ajo-api`) | 138 unit and 114 integration tests pass against real Postgres and Redis |
+| Full-stack browser tests | Default mode: 6 pass, 1 skipped. With the bot check on (real Cloudflare test keys): 7 of 7. Needs a dev server with a fixed `SESSION_SECRET` |
+| Live database | Has the boolean `email_verified` column (proved through the live API on Oct 3). The other migrations are not individually checked: run `ajo-api/scripts/sql/bring-database-up-to-date.sql` on Neon to be sure |
+| API on Render (`ajo-api`) | Live and healthy (database and Redis up, docs off) at https://ajo-api-78oq.onrender.com, serving `main` at `314be73` (PR #10). Free plan, deploys on every commit to `main`, about 35 s to wake from sleep. No worker service exists |
+| Vercel settings | Production and Preview have `API_BASE_URL` (the Render URL above) and `SESSION_SECRET` |
 
 ## Phase 0: foundations
 
@@ -32,11 +33,11 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | P0.1 | Product spec open questions | ⬜ | Deposit size, trust rule, payout fee, early-spot rule, app name: all unanswered. **You** |
 | P0.2 | Launch countries and legal review | ⬜ | **You** and legal |
 | P0.3 | Partners and sandbox keys | 🟡 | Partners chosen; no sandbox keys yet. Mail and password-check adapters exist with stand-ins for tests |
-| P0.4 | Brand | 🟡 | Colours, fonts and logo are in code. Name ("Àjọ" or "Alajo") undecided. The intro circle now shows a person silhouette in every bead instead of initials; the real human photos wait for your OK to download (see To-dos) |
+| P0.4 | Brand | 🟡 | Colours, fonts and logo are in code. Name ("Àjọ" or "Alajo") undecided. The intro circle shows eight real human photos (Nappy, credited in `public/people/CREDITS.md`), with a person silhouette, never initials, for any bead without one. Release forms for the people shown are unchecked: legal, with P0.11 |
 | P0.5 | UX flows and prototype | 🟡 | Sign-in, sign-up, code, solo savings and groups drawn. KYC, funding, withdrawal and friends are not; no user testing |
 | P0.6 | Design system | 🟡 | Tokens and components in code; Figma component library unconfirmed |
 | P0.7 | Repositories and standards | ✅ | Both repositories |
-| P0.8 | CI/CD and environments | 🟡 | Web: CI plus Vercel deploy working. API: Render Blueprint written, deploy unverified. Preview and staging split not confirmed |
+| P0.8 | CI/CD and environments | 🟡 | Web: CI plus Vercel deploy working. API: live on Render (free plan, created in the dashboard, not from the Blueprint). The free plan has no pre-deploy command, so migrations do not run on deploy, and there is no worker, so E1.10's housekeeping is not running live. Staging split not confirmed |
 | P0.9 | Database, migrations, seed data | 🟡 | Nine migrations run in tests and on empty databases; the hand-run SQL script is verified. No seed data for local development |
 | P0.10 | Observability | ⬜ | No error tracker, no uptime check |
 | P0.11 | Terms and privacy drafts | ⬜ | **You** and legal |
@@ -49,7 +50,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 | ID | Feature | Mark | Hand test | Note |
 | --- | --- | --- | --- | --- |
-| E1.1 | Sign up with email and password | 🟡 | ☐ | Works: 12+ characters, breach check, argon2id, single-use expiring link, same answer whether or not the email exists. **Missing: bot protection** (no CAPTCHA anywhere). **Defect D1** below makes the rate limit shared by everyone |
+| E1.1 | Sign up with email and password | 🟡 | ☐ | Works: 12+ characters, breach check, argon2id, single-use expiring link, same answer whether or not the email exists, **bot protection (Cloudflare Turnstile, built Oct 3; fails closed; widget only shows when Cloudflare needs the person)**. Remaining: defects D1 and D3 below. Needs the Render and Vercel settings in To-dos before it can go live |
 | E1.2 | Profile basics | 🟡 | ☐ | Name and email saved, email confirmed by link. **Missing: username** (no column, no field; friends search in Phase 3 needs it) |
 | E1.3 | Transaction PIN | ✅ | ☐ | Set once, verified, five tries then a 15-minute lock. "Required for money actions" waits for E3.5. No change-PIN yet (planned with settings) |
 | E1.4 | Login and sessions | 🟡 | ☐ | Works: lockout, expiry, rotating refresh tokens with theft detection, session limit. **Missing: new-device alert**; logout-from-all-devices exists in the API but has no screen. **Defects D1, D2** |
@@ -111,14 +112,22 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 4. E1.7: add to home screen on Android and on iPhone.
 5. E3.2: Today shows a wallet card; it opens `/wallet` (empty for a new account; real rows need the ledger seeded).
 
+**Merge order for E1.1 (bot protection). Order matters, because the API rejects unknown fields until it has this change and production refuses to start without the bot-check settings**
+
+1. Render, service `ajo-api`, Environment: add `BOT_CHECK` = `turnstile` and `TURNSTILE_SECRET_KEY` = the widget's **secret** key (not the site key). Do this first.
+2. Vercel, project `ajo-web`, Environment Variables (Production and Preview): add `TURNSTILE_SITE_KEY` = `0x4AAAAAAFM0tH6uB0tllz7t`. The old web code ignores it.
+3. Merge the API pull request (`phase-1/identity-and-wallet` in `ajo-api`). Render deploys it. From now until step 4, sign-ups on the live site are refused ("please complete the check"): keep the gap short.
+4. Merge the web pull request. Vercel deploys it, and the sign-up form shows the check.
+5. Hand-test E1.1 on your phone, then tick it.
+
 **Setup only you can do**
 
-- Vercel: confirm `API_BASE_URL` (https) and `SESSION_SECRET` are set for Production; decide whether `*.vercel.app` stays behind Vercel sign-in (it is on today, so testers must be signed in to Vercel).
+- Vercel: decide whether `*.vercel.app` stays behind Vercel sign-in (it is on today, so testers must be signed in to Vercel). `API_BASE_URL` and `SESSION_SECRET` are already set.
 - Neon: run `ajo-api/scripts/sql/bring-database-up-to-date.sql`.
-- Render: confirm the API and the worker are deployed and the pre-deploy migration runs.
+- Render: the free plan runs no pre-deploy command, so migrations do not run on deploy: run the SQL script on Neon whenever a migration lands (or move to a paid plan). Decide whether to deploy the worker (E1.10 housekeeping needs it).
 - GitHub: switch on branch protection for `main` in both repositories, and private vulnerability reporting.
 - Local: create `apps/web/.env.local` with a fixed `SESSION_SECRET` so the code screen and the browser tests work on your dev server.
-- Business: P0.1, P0.2, P0.11 answers; partner sandbox keys (KYC, payments); a bot-protection key for E1.1; the member photos for the intro circle.
+- Business: P0.1, P0.2, P0.11 answers; partner sandbox keys (KYC, payments); legal release check for the intro photos.
 
 ## Branches, commits and pull requests
 
@@ -131,6 +140,6 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 By the book, Phase 1 is open, and its gaps are in this order:
 
-1. **Intro screen with real human photos** (P0.4 / P0.5, your priority): photos instead of initials.
-2. **E1.1** bot protection, **E1.2** username, **E1.4** client address and device through to the API, then the new-device alert and a logout-everywhere screen, **E1.8** the screen to turn the authenticator on and the rule that it is needed before money moves, **E1.6** the how-it-works screens.
+1. ~~Intro screen with real human photos (P0.4)~~ done; ~~E1.1 bot protection~~ built, waiting for your hand test and the merge order above.
+2. **E1.2** username, then **E1.4** client address and device through to the API (D1), the refresh-token grace window (D2), the new-device alert and a logout-everywhere screen, then **E1.8** the screen to turn the authenticator on and the rule that it is needed before money moves, and **E1.6** the how-it-works screens (and D4). D3 (per-address limit on reset emails) closes E1.1.
 3. **E2 KYC** (E2.1 to E2.8), then **E3.3 to E3.8**. That closes the Phase 1 gate: a verified user funds and withdraws, and the ledger matches the partner.

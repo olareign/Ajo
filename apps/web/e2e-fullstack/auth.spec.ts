@@ -8,6 +8,9 @@
  *   2. Start the web app: API_BASE_URL=http://localhost:4000 SESSION_SECRET=<32+ chars> pnpm next dev -p 3100
  *      Always give it a fixed SESSION_SECRET: without one, development makes a random secret per bundle,
  *      and the code screen (a page) cannot open the cookie the sign-in route (a handler) sealed.
+ *      Bot check (optional): run the API with BOT_CHECK=turnstile and TURNSTILE_SECRET_KEY, the web app with
+ *      TURNSTILE_SITE_KEY, and set E2E_TURNSTILE=1 here. Cloudflare's published test keys work and need no
+ *      account: site key 1x00000000000000000000AA, secret 1x0000000000000000000000000000000AA (always pass).
  *      If a dev server already holds this folder, run another from a copy, or set E2E_BASE_URL.
  *   3. Run it, telling it how to reach the database (the real email links only exist in the API's outbox,
  *      so the test does what a link does in the database). The command gets SQL on standard input:
@@ -23,6 +26,8 @@ test.skip(!psql, "Set E2E_PSQL_COMMAND to run the full-stack tests against a rea
 const sql = (text: string) => execSync(psql!, { input: text }).toString().trim();
 const alert = (page: Page) => page.locator("p[role=alert]");
 const password = "ember7 river QUILT 93 harbor";
+/** Direct API sign-ups carry some token: ignored by the stand-in check, accepted by Cloudflare's test secret. */
+const E2E_BOT_TOKEN = "e2e-bot-token";
 
 async function signUp(page: Page, email: string) {
   await page.goto("/sign-up");
@@ -214,7 +219,11 @@ test("a sign-in with the authenticator app on: the code screen, a wrong code, th
   // Set the user up the way the app will: account, confirmed email, authenticator app turned on.
   const email = `e2e+mfa${Date.now()}@example.com`;
   expect(
-    (await api("/auth/sign-up", { body: { email, password, displayName: "Ada MFA" } })).status,
+    (
+      await api("/auth/sign-up", {
+        body: { email, password, displayName: "Ada MFA", botToken: E2E_BOT_TOKEN },
+      })
+    ).status,
   ).toBe(202);
   confirmEmail(email);
   const tokens = (await api("/auth/login", { body: { email, password } })).data;
@@ -325,7 +334,11 @@ test("a new person is taken through onboarding and then lands on Today", async (
 /** An account that has confirmed its email and finished onboarding, made through the API. */
 async function onboardedAccount(email: string) {
   expect(
-    (await api("/auth/sign-up", { body: { email, password, displayName: "Ada Wallet" } })).status,
+    (
+      await api("/auth/sign-up", {
+        body: { email, password, displayName: "Ada Wallet", botToken: E2E_BOT_TOKEN },
+      })
+    ).status,
   ).toBe(202);
   confirmEmail(email);
   const { accessToken } = (await api("/auth/login", { body: { email, password } })).data;
@@ -422,4 +435,31 @@ test("the wallet shows the real ledger: balances, a page of activity, then the r
   expect((await api("/wallet/transactions", { method: "GET", token: other })).data.items).toEqual(
     [],
   );
+});
+
+test("with the bot check on, sign-up sends Cloudflare's token and still ends at check-your-email", async ({
+  page,
+}) => {
+  test.skip(
+    !process.env.E2E_TURNSTILE,
+    "Needs BOT_CHECK=turnstile on the API and TURNSTILE_SITE_KEY on the web app (see the top of this file).",
+  );
+  const bodies: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/api/auth/sign-up")) bodies.push(request.postData() ?? "");
+  });
+
+  await page.goto("/sign-up");
+  await page.getByLabel("Your name").fill("Ada Human");
+  await page.getByLabel("Email").fill(`e2e+human${Date.now()}@example.com`);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  // The button waits for Cloudflare's check, which loads its own script and frame under our CSP.
+  // Cloudflare can take several seconds under automation, so wait longer than the usual 5.
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled({
+    timeout: 30_000,
+  });
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/check-email/);
+
+  expect(JSON.parse(bodies[0]!).botToken).toBeTruthy();
 });
