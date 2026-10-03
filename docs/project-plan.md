@@ -142,6 +142,8 @@ Eleven epics cover version 1. Priority uses Must, Should and Could; every Must f
 | E1.8 | Authenticator-app second factor (TOTP) | User enrols with a QR code and confirms a code; secret encrypted at rest; 10 single-use recovery codes shown once and stored hashed; a code is required at login once enrolled and before any money movement; enrolment required before the first money action | E1.4 | Must |
 | E1.6 | Onboarding screens | First-time user sees how solo and èsúsú work, then is led to KYC | E1.1 | Should |
 | E1.7 | Install as app (PWA) | App installs to home screen on Android and iOS with icon and splash | P0.8 | Must |
+| E1.9 | Confirm email again | On the check-your-email page a person can ask for a new link after a minute; signing in with the right password before confirming sends a fresh link and lands on that page. At most one link a minute and ten a day per address, and the answer never reveals whether an address has an account. Users carry an explicit `email_verified` flag that the database keeps in step with its timestamp | E1.1 | Must |
+| E1.10 | Housekeeping of sessions and tokens | A background job, run by the worker every six hours (or by hand with `pnpm retention:run`), deletes sessions expired for a week or revoked for a month, long-expired refresh tokens, and spent or expired links and codes, in small batches; a person has at most 10 active sessions (the oldest ends first). Accounts and the ledger are never touched | E1.4, P0.8 | Must |
 
 ### E2. KYC (Phase 1)
 

@@ -176,7 +176,7 @@ The core tables are grouped by the module that owns them. All tables carry `id` 
 
 | Module | Table | Key columns |
 | --- | --- | --- |
-| Identity | users | phone (international format), email, username, display\_name, country, timezone, locale, pin\_hash, status, kyc\_tier |
+| Identity | users | phone (international format), email, email\_verified (flag, kept equal to email\_verified\_at by a constraint), username, display\_name, country, timezone, locale, pin\_hash, status, kyc\_tier |
 | Identity | devices | user\_id, device\_fingerprint, push\_token, last\_seen\_at |
 | KYC | kyc\_records | user\_id, country, id\_type, id\_number (encrypted), national\_check (e.g. BVN; encrypted, optional), liveness\_result, address\_status, provider\_ref, status, reviewed\_by |
 | KYC | kyc\_documents | kyc\_record\_id, type (id, selfie, address\_proof), storage\_key |
@@ -276,7 +276,7 @@ The assets worth attacking are customer money, identity documents and accounts. 
 
 | Area | Controls |
 | --- | --- |
-| Authentication | Email and password: passwords of 12+ characters, checked against known breaches (k-anonymity range query), hashed with argon2id; verified email; reset links single-use, short-lived and invalidating all sessions; login responses never reveal whether an account exists. Authenticator-app second factor (TOTP, RFC 6238) with the secret encrypted at rest and single-use hashed recovery codes, required at login once enrolled and before money movement. 4–6 digit transaction PIN hashed with argon2id, lockout after repeated failures, device binding, access tokens of 15 minutes or less, rotating refresh tokens with reuse detection, logout everywhere |
+| Authentication | Email and password: passwords of 12+ characters, checked against known breaches (k-anonymity range query), hashed with argon2id; verified email (a new link can be requested, limited to one a minute and ten a day per address, and is sent automatically when an unconfirmed person signs in); reset links single-use, short-lived and invalidating all sessions; login responses never reveal whether an account exists. Authenticator-app second factor (TOTP, RFC 6238) with the secret encrypted at rest and single-use hashed recovery codes, required at login once enrolled and before money movement. 4–6 digit transaction PIN hashed with argon2id, lockout after repeated failures, device binding, access tokens of 15 minutes or less, rotating refresh tokens with reuse detection, logout everywhere |
 | Web session | BFF holds tokens in sealed httpOnly, Secure, SameSite=strict cookies; CSRF protection on every state-changing BFF route (SameSite plus an origin check); the browser never calls the API directly |
 | Authorisation | Users can only read and act on their own records and groups they belong to; guards deny by default; admin roles (support, KYC reviewer, finance, super admin) with least privilege |
 | Input and output | Global validation pipe rejects unknown fields; parameterised queries only (TypeORM query builder, never string-built SQL); errors never leak stack traces or internal IDs |
@@ -289,7 +289,7 @@ The assets worth attacking are customer money, identity documents and accounts. 
 | Supply chain and CI | Frozen lockfile installs; `pnpm audit` and dependency review fail on high or critical issues; Gitleaks; CodeQL `security-extended`; Actions pinned to SHAs with least-privilege tokens; Dependabot |
 | Testing | Security tests in the normal suite (headers, guards, access to others' data, rate limits); OWASP ZAP on staging; penetration test before launch and yearly |
 | Compliance | Data protection law in every market: GDPR (EU), UK GDPR, Nigeria Data Protection Act 2023, US state laws such as CCPA; money rules through licensed partners per market (e.g. CBN, FCA, FinCEN and state regulators); AML checks and sanctions screening on users and cross-border transfers; PCI DSS handled by the payment provider (no card data stored) |
-| Data retention | KYC and transaction records kept for the period each market's regulator and partner require; cross-border data transfers covered by approved legal mechanisms; account deletion removes profile and social data |
+| Data retention | KYC and transaction records kept for the period each market's regulator and partner require; cross-border data transfers covered by approved legal mechanisms; account deletion removes profile and social data; sessions, refresh tokens and spent one-time links are deleted by a scheduled worker job (expired sessions after 7 days, revoked after 30), with at most 10 active sessions per person |
 | Disclosure | `SECURITY.md` in each repository; private vulnerability reporting enabled on GitHub |
 
 The public web repository must never contain secrets, internal hostnames, partner account details or fraud-rule thresholds; those live in the private API repository or the secret store.

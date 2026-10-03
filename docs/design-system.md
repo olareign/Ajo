@@ -60,7 +60,7 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 | Flow | Status |
 | --- | --- |
 | Welcome | Built (`/`) |
-| Sign up, confirm email, sign in, password recovery | Built (`/sign-up`, `/check-email`, `/verify-email`, `/sign-in`, `/forgot-password`, `/reset-password`) |
+| Sign up, confirm email, sign in, password recovery | Built (`/sign-up`, `/check-email`, `/verify-email`, `/sign-in`, `/forgot-password`, `/reset-password`). Check your email has a Resend button that waits a minute between sends; signing in before confirming lands there |
 | Verify it's you (authenticator code or recovery code) | Built (`/sign-in/verify`); turning the second factor on from the app comes with the Me screen |
 | Onboarding (country, goal, transaction PIN) | Built (`/onboarding`); Today sends anyone who hasn't finished it there |
 | KYC, wallet | Phase 1, next |

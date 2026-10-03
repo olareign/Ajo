@@ -40,6 +40,35 @@ describe("SignInForm", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/sign-in/verify"));
   });
 
+  it("sends someone whose email is not confirmed to the check-your-email page, with the address", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          { message: "Verify your email before signing in.", code: "email_not_verified" },
+          { status: 403 },
+        ),
+      ),
+    );
+    render(<SignInForm />);
+    await submit();
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/check-email?e=ada%40example.com&from=sign-in"),
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("keeps showing the message for other refusals", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ message: "Too many requests." }, { status: 403 })),
+    );
+    render(<SignInForm />);
+    await submit();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Too many requests.");
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it("shows a generic message for bad credentials", async () => {
     vi.stubGlobal(
       "fetch",
