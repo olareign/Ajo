@@ -36,6 +36,8 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `ScreenHeader` | Squared back button, optional small label, heading and one calm subtitle |
 | `AuthScreen` | The frame every sign-in screen shares: full height, content on top, footer line at the bottom, a corner of beads |
 | `OptionCards` | Big tappable single-choice cards for onboarding questions: a title, one calm line, a tick when chosen |
+| `HowItWorks` | Three swipeable scenes shown to a brand-new person before any question: a savings goal filling stitch by stitch with a coin landing each week (solo), the circle of photos with the gold ring travelling from person to person (èsúsú), a shield and three reasons rising in (trust). Pictures are for the eye (hidden from screen readers) and every message is also in words; they hold still when the device asks for less motion; skippable; the buttons stay pinned to the bottom on a short phone |
+| `HandlePicker` | Choosing a handle as taking a seat: the person's own bead joins a circle of seven photos and the handle appears at its heart, shrinking as it grows; free or taken in words under the field, with name-based ideas to tap |
 | `Keypad`, `PinPad`, `CodeBoxes` | Number pad; PIN pad (digits shown as dots); one-time code boxes (digits shown) |
 | `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
 | `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
@@ -62,7 +64,7 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 | Welcome | Built (`/`) |
 | Sign up, confirm email, sign in, password recovery | Built (`/sign-up`, `/check-email`, `/verify-email`, `/sign-in`, `/forgot-password`, `/reset-password`). Check your email has a Resend button that waits a minute between sends; signing in before confirming lands there |
 | Verify it's you (authenticator code or recovery code) | Built (`/sign-in/verify`); turning the second factor on from the app comes with the Me screen |
-| Onboarding (country, goal, transaction PIN) | Built (`/onboarding`); Today sends anyone who hasn't finished it there |
+| Onboarding (how it works, country, goal, handle, transaction PIN) | Built (`/onboarding`); Today sends anyone who hasn't finished it there. It asks only for what is still missing, so someone who stopped part-way, or set up before handles existed, is asked for just the rest; the scenes are for a brand-new person. Each answer is saved as it is given |
 | Wallet | Built (`/wallet`): a card per currency with what is available, locked and saved, and the activity list a page at a time; Today shows a summary that leads to it. Adding and withdrawing money come with funding |
 | KYC | Phase 1, next |
 | Solo savings, referrals, groups | Phases 2 to 4 |

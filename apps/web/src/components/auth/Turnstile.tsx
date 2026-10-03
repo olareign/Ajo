@@ -56,7 +56,7 @@ type Props = Readonly<{
   siteKey: string;
   /** The token when the check passes; null when it expires, fails or is reset. */
   onToken: (token: string | null) => void;
-  /** Cloudflare's script could not be loaded (blocked or offline). */
+  /** The check cannot run: the script could not load, or Cloudflare reported an error. */
   onUnavailable?: () => void;
   /** Change it to start a new check: a token works once. */
   resetKey?: number;
@@ -84,7 +84,11 @@ export function Turnstile({ siteKey, onToken, onUnavailable, resetKey = 0 }: Pro
           theme: "light",
           callback: (token) => callbacks.current.onToken(token),
           "expired-callback": () => callbacks.current.onToken(null),
-          "error-callback": () => callbacks.current.onToken(null),
+          // Cloudflare gave up (for example, it does not allow this domain): say so, never wait for ever.
+          "error-callback": () => {
+            callbacks.current.onToken(null);
+            callbacks.current.onUnavailable?.();
+          },
         });
       },
       () => {

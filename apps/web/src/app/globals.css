@@ -207,6 +207,51 @@ body {
   }
 }
 
+/* The "how it works" scenes and the handle step. Only transform and opacity move. */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  0%,
+  100% {
+    transform: none;
+  }
+  40% {
+    transform: scale(1.04);
+  }
+}
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .ring-roll {
   animation: ring-slide 1.1s cubic-bezier(0.22, 0.9, 0.25, 1) both;
 }
@@ -221,6 +266,21 @@ body {
 }
 .motion-rise {
   animation: rise 0.55s ease-out var(--rise-delay, 0ms) both;
+}
+.scene-coin {
+  animation: coin-drop 0.7s cubic-bezier(0.3, 0.1, 0.4, 1) both;
+}
+.pop-in {
+  animation: pop-in 0.6s cubic-bezier(0.3, 0.1, 0.4, 1) var(--pop-delay, 0ms) both;
+}
+.pop {
+  animation: pop 0.5s ease-out both;
+}
+.slide-from-right {
+  animation: slide-from-right 0.35s ease-out both;
+}
+.slide-from-left {
+  animation: slide-from-left 0.35s ease-out both;
 }
 .logo-pop {
   animation:
@@ -243,6 +303,11 @@ body {
   .ring-roll text[aria-hidden],
   .ring-roll g[aria-hidden],
   .motion-rise,
+  .scene-coin,
+  .pop-in,
+  .pop,
+  .slide-from-right,
+  .slide-from-left,
   .logo-pop,
   .logo-coin,
   .logo-rays {

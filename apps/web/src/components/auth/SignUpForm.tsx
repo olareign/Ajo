@@ -91,13 +91,16 @@ export function SignUpForm({ turnstileSiteKey }: Props) {
         <div className="mt-5">
           <Turnstile
             siteKey={turnstileSiteKey}
-            onToken={setBotToken}
+            onToken={(token) => {
+              setBotToken(token);
+              if (token) setCheckBlocked(false); // a retry worked
+            }}
             onUnavailable={() => setCheckBlocked(true)}
             resetKey={checkAttempt}
           />
           {checkBlocked ? (
             <p role="alert" className="text-sm text-danger">
-              We couldn&apos;t load the security check. Check your connection and refresh the page.
+              We couldn&apos;t run the security check. Refresh the page and try again.
             </p>
           ) : (
             !botToken && (

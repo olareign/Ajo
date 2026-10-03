@@ -26,6 +26,23 @@ describe("TextField", () => {
     expect(input).toHaveAccessibleDescription("Enter a valid amount");
   });
 
+  describe("with a prefix (like the @ before a username)", () => {
+    it("shows it in the field without making it part of the value or the label", async () => {
+      const onChange = vi.fn();
+      render(<TextField label="Username" prefix="@" value="" onChange={onChange} />);
+      const input = screen.getByLabelText("Username");
+      expect(screen.getByText("@")).toBeVisible();
+      expect(screen.getByText("@")).toHaveAttribute("aria-hidden", "true");
+      await userEvent.type(input, "a");
+      expect(onChange).toHaveBeenCalledWith("a");
+    });
+
+    it("leaves room for it, so typing never runs under it", () => {
+      render(<TextField label="Username" prefix="@" value="" onChange={() => {}} />);
+      expect(screen.getByLabelText("Username").className).toMatch(/\bpl-9\b/);
+    });
+  });
+
   describe("password fields", () => {
     it("start hidden, with an eye button to show the password", () => {
       render(

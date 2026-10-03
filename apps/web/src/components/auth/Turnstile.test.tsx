@@ -54,6 +54,17 @@ describe("Turnstile", () => {
     expect(onToken).toHaveBeenLastCalledWith(null);
   });
 
+  it("says the check is unavailable when Cloudflare itself errors (for example, a domain it does not allow), but not when a token merely expires", () => {
+    const { options } = stubTurnstile();
+    const onUnavailable = vi.fn();
+    render(<Turnstile siteKey="0xKEY" onToken={() => undefined} onUnavailable={onUnavailable} />);
+
+    act(() => options()["expired-callback"]());
+    expect(onUnavailable).not.toHaveBeenCalled();
+    act(() => options()["error-callback"]());
+    expect(onUnavailable).toHaveBeenCalledTimes(1);
+  });
+
   it("starts a fresh check when told to, because a token works once", () => {
     const { api } = stubTurnstile();
     const { rerender } = render(

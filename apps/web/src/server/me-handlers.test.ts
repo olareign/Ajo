@@ -1,7 +1,13 @@
 // @vitest-environment node
 import type { Fetch } from "./api-client";
 import { loadServerEnv } from "./env";
-import { handleMe, handleSetPin, handleUpdateProfile } from "./me-handlers";
+import {
+  handleMe,
+  handleSetPin,
+  handleSetUsername,
+  handleUpdateProfile,
+  handleUsernameAvailable,
+} from "./me-handlers";
 import { openSeal, seal } from "./session";
 
 const env = loadServerEnv({
@@ -108,6 +114,81 @@ describe("profile and PIN", () => {
       body: JSON.stringify({ pin: "493817" }),
     });
     expect((await handleSetPin(r, { env, fetchFn })).status).toBe(403);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("username", () => {
+  it("claims a username, forwarding only that field", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => ok(204));
+    const res = await handleSetUsername(
+      await req("PUT", "/api/me/username", { username: "ada_ola", userId: "someone-else" }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(204);
+    const [url, init] = fetchFn.mock.calls[0]!;
+    expect(url).toBe("https://api.ajo.example/api/v1/me/username");
+    expect(init!.method).toBe("PUT");
+    expect(JSON.parse(init!.body as string)).toEqual({ username: "ada_ola" });
+  });
+
+  it("relays the API's refusal so the person sees why", async () => {
+    const fetchFn = vi.fn<Fetch>(async () =>
+      ok(409, { message: "That username isn't available." }),
+    );
+    const res = await handleSetUsername(await req("PUT", "/api/me/username", { username: "ada" }), {
+      env,
+      fetchFn,
+    });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ message: "That username isn't available." });
+  });
+
+  it("refuses a claim that did not come from our own pages", async () => {
+    const fetchFn = vi.fn<Fetch>();
+    const r = new Request(`${base}/api/me/username`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Sec-Fetch-Site": "cross-site" },
+      body: JSON.stringify({ username: "ada" }),
+    });
+    expect((await handleSetUsername(r, { env, fetchFn })).status).toBe(403);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("asks the API whether a name is free, sending it tidied up", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => ok(200, { available: true }));
+    const res = await handleUsernameAvailable(
+      await req("GET", "/api/me/username/available?username=%40Ada_Ola&other=x"),
+      { env, fetchFn },
+    );
+    expect(await res.json()).toEqual({ available: true });
+    expect(fetchFn.mock.calls[0]![0]).toBe(
+      "https://api.ajo.example/api/v1/me/username/available?username=ada_ola",
+    );
+  });
+
+  it.each([
+    ["a missing name", ""],
+    ["a name that is not possible", "?username=no%20spaces"],
+    ["a name that tries to add to the query", "?username=ada%26admin%3D1"],
+    ["a name that is too long", `?username=${"x".repeat(21)}`],
+  ])("never asks the API about %s", async (_why, query) => {
+    const fetchFn = vi.fn<Fetch>();
+    const res = await handleUsernameAvailable(
+      await req("GET", `/api/me/username/available${query}`),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(400);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("is 401 without a session for the live check too", async () => {
+    const fetchFn = vi.fn<Fetch>();
+    const res = await handleUsernameAvailable(
+      await req("GET", "/api/me/username/available?username=ada", undefined, false),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(401);
     expect(fetchFn).not.toHaveBeenCalled();
   });
 });

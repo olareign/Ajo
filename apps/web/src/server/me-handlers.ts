@@ -1,6 +1,7 @@
 import { callApi, type ApiResult } from "./api-client";
 import { readCookie, serializeCookie } from "./cookies";
 import type { Deps } from "./auth-handlers";
+import { normalizeUsername, USERNAME_PATTERN } from "@/lib/username";
 import { isSameOrigin } from "./same-origin";
 import { openSeal, seal, SESSION_TTL_SECONDS, sessionCookie, type Session } from "./session";
 
@@ -93,3 +94,17 @@ export const handleUpdateProfile = (request: Request, deps: Deps) =>
   forward(request, deps, "/me/profile", "PUT", ["country", "goal"]);
 export const handleSetPin = (request: Request, deps: Deps) =>
   forward(request, deps, "/me/pin", "PUT", ["pin"]);
+export const handleSetUsername = (request: Request, deps: Deps) =>
+  forward(request, deps, "/me/username", "PUT", ["username"]);
+
+/** The live check while typing. Only a well-formed, tidied name ever reaches the API. */
+export function handleUsernameAvailable(request: Request, deps: Deps): Promise<Response> {
+  const username = normalizeUsername(new URL(request.url).searchParams.get("username") ?? "");
+  if (!USERNAME_PATTERN.test(username)) {
+    return Promise.resolve(json(400, { message: "That isn't a possible username." }));
+  }
+  return withSession(request, deps, {
+    path: `/me/username/available?username=${username}`,
+    method: "GET",
+  });
+}

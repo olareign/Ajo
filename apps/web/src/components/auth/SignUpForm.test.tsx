@@ -175,9 +175,24 @@ describe("SignUpForm", () => {
         script.dispatchEvent(new Event("error"));
       });
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        /couldn't load the security check/i,
+        /couldn't run the security check/i,
       );
       expect(screen.getByRole("button", { name: "Create account" })).toBeDisabled();
+    });
+
+    it("says so, instead of waiting for ever, when Cloudflare reports an error", async () => {
+      const { api, state } = stubTurnstile();
+      render(<SignUpForm turnstileSiteKey="0xKEY" />);
+      expect(screen.getByRole("status")).toHaveTextContent(/checking that you/i);
+
+      act(() => (state.widget as unknown as { "error-callback": () => void })["error-callback"]());
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        /couldn't run the security check/i,
+      );
+      expect(screen.queryByRole("status")).toBeNull();
+      expect(screen.getByRole("button", { name: "Create account" })).toBeDisabled();
+      expect(api.reset).not.toHaveBeenCalled();
     });
 
     it("asks for a fresh check after a refusal, since a token works once, and shows the reason", async () => {
