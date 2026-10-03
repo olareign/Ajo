@@ -68,6 +68,22 @@ export async function handleVerifyEmail(
   return json(result.status, result.data);
 }
 
+/** Asks for a new confirmation link. The API answers the same whether or not the address has an account. */
+export async function handleResendVerification(
+  request: Request,
+  { env, fetchFn }: Deps,
+): Promise<Response> {
+  if (!isSameOrigin(request)) return FORBIDDEN();
+  const body = await readObject(request);
+  if (!body) return json(400, { message: "Send the form as JSON." });
+  const result = await callApi(env, fetchFn, {
+    path: "/auth/email/resend",
+    patient: true,
+    body: pick(body, ["email"]),
+  });
+  return json(result.status, result.data);
+}
+
 export async function handleForgotPassword(
   request: Request,
   { env, fetchFn }: Deps,

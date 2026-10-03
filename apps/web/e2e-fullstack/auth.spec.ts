@@ -27,9 +27,9 @@ async function signUp(page: Page, email: string) {
   await expect(page).toHaveURL(/\/check-email/);
 }
 const confirmEmail = (email: string) =>
-  sql(`update users set email_verified_at = now() where email = '${email}'`);
+  sql(`update users set email_verified = true, email_verified_at = now() where email = '${email}'`);
 
-test("sign up, get refused until verified, then sign in and out against the real API", async ({
+test("sign up, get sent to check your email until verified, then sign in and out against the real API", async ({
   page,
   context,
 }) => {
@@ -46,14 +46,42 @@ test("sign up, get refused until verified, then sign in and out against the real
 
   await signUp(page, email);
 
-  // Signing in before confirming the email is refused, with the API's own message shown.
+  // Signing in before confirming the email sends the person to "check your email": the API has
+  // just sent a fresh link, and the page offers another once the minute is up.
+  await page.clock.install();
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(alert(page)).toContainText("Verify your email before signing in.");
+  await expect(page).toHaveURL(/\/check-email\?e=.*from=sign-in/);
+  await expect(page.getByText("Please confirm your email before you sign in.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Resend email" })).toBeDisabled();
+  expect(
+    Number(
+      sql(
+        `select count(*) from email_verification_tokens t join users u on u.id = t.user_id where u.email = '${email}'`,
+      ),
+    ),
+  ).toBe(1);
 
-  // A wrong password gives the generic message.
+  // After the wait, "Resend email" asks the API (through the BFF) for a second link.
+  sql(
+    `update email_verification_tokens set created_at = created_at - interval '2 minutes' where user_id = (select id from users where email = '${email}')`,
+  );
+  await page.clock.fastForward(61_000);
+  await page.getByRole("button", { name: "Resend email" }).click();
+  await expect(page.getByRole("status")).toContainText("We've sent a new link");
+  expect(
+    Number(
+      sql(
+        `select count(*) from email_verification_tokens t join users u on u.id = t.user_id where u.email = '${email}'`,
+      ),
+    ),
+  ).toBe(2);
+
+  // A wrong password gives the generic message, and no email.
+  await page.getByRole("link", { name: "Back to sign in" }).click();
+  await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill("not the right password at all");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(alert(page)).toContainText("Email or password is incorrect.");

@@ -23,6 +23,12 @@ export function SignInForm() {
       router.push(result.data.mfaRequired === true ? "/sign-in/verify" : "/today");
       return;
     }
+    if (result.status === 403 && result.data.code === "email_not_verified") {
+      // The API has just sent a fresh link; the next page says so and offers to send another.
+      const query = new URLSearchParams({ e: email.trim(), from: "sign-in" });
+      router.push(`/check-email?${query}`);
+      return;
+    }
     setError(messageOf(result));
     setBusy(false);
   }

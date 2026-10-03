@@ -3,6 +3,7 @@ import type { Fetch } from "./api-client";
 import {
   handleForgotPassword,
   handleMfaSignIn,
+  handleResendVerification,
   handleResetPassword,
   handleSignIn,
   handleSignOut,
@@ -109,7 +110,53 @@ describe("handleSignUp", () => {
   });
 });
 
+describe("handleResendVerification", () => {
+  it("forwards only the email to the API and relays its answer", async () => {
+    const fetchFn = apiReturning(202, { message: "If that account still needs confirming..." });
+    const res = await handleResendVerification(
+      post("/api/auth/resend-verification", { email: "a@b.co", isAdmin: true }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(202);
+    const [url, init] = fetchFn.mock.calls[0]!;
+    expect(url).toBe("https://api.ajo.example/api/v1/auth/email/resend");
+    expect(JSON.parse(init!.body as string)).toEqual({ email: "a@b.co" });
+  });
+
+  it("refuses cross-site requests without calling the API", async () => {
+    const fetchFn = apiReturning(202, {});
+    const res = await handleResendVerification(
+      post("/api/auth/resend-verification", {}, { "Sec-Fetch-Site": "cross-site" }),
+      { env, fetchFn },
+    );
+    expect(res.status).toBe(403);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("passes on a rate-limit answer so the screen can say so", async () => {
+    const res = await handleResendVerification(
+      post("/api/auth/resend-verification", { email: "a@b.co" }),
+      { env, fetchFn: apiReturning(429, { message: "Too many requests. Try again later." }) },
+    );
+    expect(res.status).toBe(429);
+  });
+});
+
 describe("handleSignIn", () => {
+  it("relays the 'email not confirmed' code, with no cookie, so the app can send the person to check their email", async () => {
+    const fetchFn = apiReturning(403, {
+      message: "Verify your email before signing in.",
+      code: "email_not_verified",
+    });
+    const res = await handleSignIn(post("/api/auth/sign-in", { email: "a@b.co", password: "pw" }), {
+      env,
+      fetchFn,
+    });
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("email_not_verified");
+    expect(res.headers.getSetCookie()).toEqual([]);
+  });
+
   it("keeps tokens in a sealed httpOnly cookie, never in the response body", async () => {
     const fetchFn = apiReturning(200, {
       tokenType: "Bearer",
