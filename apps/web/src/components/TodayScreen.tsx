@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { InstallCard } from "@/components/install/InstallCard";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { Avatar } from "@/components/ui/Avatar";
+import { TodayFriends } from "@/components/friends/TodayFriends";
 import { TodaySavings } from "@/components/savings/TodaySavings";
 import { WalletSummary } from "@/components/wallet/WalletSummary";
 
@@ -15,10 +16,12 @@ export function TodayScreen() {
 
 function Today({ me }: Readonly<{ me: Me }>) {
   // Today asks the server for one thing after another (the session's refresh token is single-use):
-  // the wallet first, then the savings and the unread count.
+  // the wallet first, then the savings and the unread count, then friends.
   const [walletDone, setWalletDone] = useState(false);
+  const [savingsDone, setSavingsDone] = useState(false);
   const [unread, setUnread] = useState(0);
   const onWallet = useCallback(() => setWalletDone(true), []);
+  const onSavings = useCallback(() => setSavingsDone(true), []);
   const onUnread = useCallback((n: number) => setUnread(n), []);
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-10 pb-28">
@@ -49,7 +52,8 @@ function Today({ me }: Readonly<{ me: Me }>) {
       </div>
       <p className="mt-3 text-ink-muted">Nothing needs you yet. Your circles will show up here.</p>
       <WalletSummary onLoaded={onWallet} />
-      <TodaySavings go={walletDone} onUnread={onUnread} />
+      <TodaySavings go={walletDone} onUnread={onUnread} onDone={onSavings} />
+      <TodayFriends go={savingsDone} />
       {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
         <Link
           href="/verify"
