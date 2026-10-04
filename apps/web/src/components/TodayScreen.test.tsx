@@ -43,4 +43,44 @@ describe("TodayScreen", () => {
     await screen.findByRole("heading", { name: "Hello, Ada" });
     expect(screen.queryByRole("link", { name: /second lock/i })).not.toBeInTheDocument();
   });
+
+  it("invites someone to get their passport stamped until they are approved", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url === "/api/me"
+          ? Response.json({
+              displayName: "Ada",
+              email: "a@b.co",
+              onboarded: true,
+              mfaEnabled: true,
+              kycStatus: "in_progress",
+            })
+          : Response.json({ wallets: [] }),
+      ),
+    );
+    render(<TodayScreen />);
+    const card = await screen.findByRole("link", { name: /passport/i });
+    expect(card).toHaveAttribute("href", "/verify");
+  });
+
+  it("stops asking once the passport is approved", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url === "/api/me"
+          ? Response.json({
+              displayName: "Ada",
+              email: "a@b.co",
+              onboarded: true,
+              mfaEnabled: true,
+              kycStatus: "approved",
+            })
+          : Response.json({ wallets: [] }),
+      ),
+    );
+    render(<TodayScreen />);
+    await screen.findByRole("heading", { name: "Hello, Ada" });
+    expect(screen.queryByRole("link", { name: /passport/i })).not.toBeInTheDocument();
+  });
 });

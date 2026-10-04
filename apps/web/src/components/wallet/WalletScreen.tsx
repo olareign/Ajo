@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MeGate } from "@/components/onboarding/MeGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import type { Wallet, WalletTransaction } from "@/lib/wallet";
 import { loadTransactions, loadWallets } from "@/lib/wallet-client";
 import { BalanceCard } from "./BalanceCard";
@@ -92,6 +95,29 @@ function Wallets() {
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-10 pb-28">
       <ScreenHeader title="Wallet" subtitle="Your money, and where it sits." backHref="/today" />
+      <nav aria-label="Money actions" className="mb-8 grid gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          <ButtonLink href="/wallet/add" size="lg">
+            Add money
+          </ButtonLink>
+          <ButtonLink href="/wallet/withdraw" size="lg" variant="quiet">
+            Withdraw
+          </ButtonLink>
+        </div>
+        {[
+          ["/wallet/mandate", "Auto-debit"],
+          ["/wallet/limits", "Your limits"],
+        ].map(([href, label]) => (
+          <Link
+            key={href}
+            href={href!}
+            className="flex items-center justify-between rounded-[var(--radius-l)] bg-surface-raised px-4 py-3.5 text-[15px] font-semibold shadow-lift"
+          >
+            {label}
+            <ChevronRight aria-hidden className="size-5 text-ink-muted" />
+          </Link>
+        ))}
+      </nav>
       {state.phase === "loading" && (
         <p className="sr-only" role="status">
           Loading…

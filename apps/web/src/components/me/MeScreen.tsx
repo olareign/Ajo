@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, ChevronRight, Mail, ShieldCheck } from "lucide-react";
+import { BadgeCheck, BookUser, ChevronRight, Mail, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -54,6 +54,14 @@ function MemberCard({ me }: Readonly<{ me: Me }>) {
   );
 }
 
+const IDENTITY_WORDS = {
+  not_started: "Not started",
+  in_progress: "In progress",
+  pending: "Being checked",
+  approved: "Approved",
+  rejected: "Needs another try",
+} as const;
+
 function Account({ me }: Readonly<{ me: Me }>) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -100,6 +108,19 @@ function Account({ me }: Readonly<{ me: Me }>) {
           <h2 id="security" className="font-display text-[22px] leading-7 font-semibold">
             Security
           </h2>
+          <Link
+            href="/verify"
+            className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"
+          >
+            <p className="flex items-center gap-3 text-[15px] font-semibold">
+              <BookUser aria-hidden className="size-5 text-primary" />
+              Identity
+            </p>
+            <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
+              {IDENTITY_WORDS[me.kycStatus ?? "not_started"]}
+              <ChevronRight aria-hidden className="size-5" />
+            </p>
+          </Link>
           <Link
             href="/me/security"
             className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"

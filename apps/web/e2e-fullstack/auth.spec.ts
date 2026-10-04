@@ -752,3 +752,173 @@ test("a person turns the authenticator app on from Today, is asked for a code on
     ),
   ).toBe("0");
 });
+
+test("the passport and money screens are reachable but locked until partners connect, and a preview walks every step without saving anything", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const email = `e2e+passport${Date.now()}@example.com`;
+  await onboardedAccount(email);
+  const sideways = () =>
+    page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+  const shot = async (name: string) => {
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: `e2e/screenshots/${name}.png` });
+  };
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // Today invites; the passport is there, but every stamp is locked and says why.
+  await page.getByRole("link", { name: /passport/i }).click();
+  await expect(page).toHaveURL(/\/verify$/);
+  await expect(page.getByRole("heading", { name: "Your Àjọ passport" })).toBeVisible();
+  await expect(page.getByText(/isn.t switched on yet/i)).toBeVisible();
+  const passport = page.getByRole("region", { name: "Your Àjọ passport" });
+  await expect(passport.getByRole("link")).toHaveCount(0);
+  expect(await sideways()).toBe(0);
+  await shot("passport-locked");
+
+  // The real API says the same, for this person only.
+  const kyc = await page.evaluate(async () => (await fetch("/api/kyc")).json());
+  expect(kyc).toMatchObject({ connected: false, status: "not_started", country: "NG" });
+  const rails = await page.evaluate(async () => (await fetch("/api/wallet/rails")).json());
+  expect(rails).toEqual({
+    country: "NG",
+    currency: "NGN",
+    kycApproved: false,
+    connected: { fund: false, mandate: false, withdraw: false },
+  });
+
+  await page.goto("/verify/id");
+  await expect(page.getByText("Not switched on yet")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check my ID" })).toHaveCount(0);
+
+  // The preview: every stamp, with nothing sent.
+  await page.getByRole("link", { name: "Preview this step" }).click();
+  await expect(page.getByText(/Preview: nothing here is saved or sent/)).toBeVisible();
+  await page.getByRole("radio", { name: /National ID/ }).click();
+  await page.getByLabel("NIN").fill("12345678901");
+  await page.getByRole("button", { name: "Check my ID" }).click();
+  await expect(page.getByRole("heading", { name: "Your ID stamped" })).toBeVisible();
+  await shot("passport-stamp-moment");
+  await page.getByRole("link", { name: "Next: Your face" }).click();
+
+  await page.getByRole("button", { name: "I'm ready" }).click();
+  await expect(page.getByRole("heading", { name: "Your face stamped" })).toBeVisible({
+    timeout: 20_000,
+  });
+  await page.getByRole("link", { name: "Next: Your address" }).click();
+
+  await page.getByRole("radio", { name: /Bank statement/ }).click();
+  await page.getByLabel(/Choose a photo or PDF/).setInputFiles({
+    name: "statement.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("not really a pdf"),
+  });
+  await page.getByRole("button", { name: "Send document" }).click();
+  await expect(page.getByRole("heading", { name: "Your address stamped" })).toBeVisible();
+  await page.getByRole("link", { name: "Next: Your area" }).click();
+
+  await page.getByRole("button", { name: "Share my location" }).click();
+  await expect(page.getByText("Ikeja, Lagos")).toBeVisible();
+  await page.getByRole("button", { name: "Use this area" }).click();
+  await expect(page.getByRole("heading", { name: "Your area stamped" })).toBeVisible();
+  await page.getByRole("link", { name: "Next: Your bank" }).click();
+
+  await page.getByLabel("Bank").selectOption("058");
+  await page.getByLabel("Account number").fill("0123456789");
+  await page.getByRole("button", { name: "Check the name" }).click();
+  await expect(page.getByText("ADA WALLET")).toBeVisible();
+  await page.getByRole("button", { name: "Use this account" }).click();
+  await expect(page.getByRole("heading", { name: "Your bank stamped" })).toBeVisible();
+  await page.getByRole("link", { name: "See my passport" }).click();
+
+  await expect(page.getByText("Passport approved")).toBeVisible();
+  expect(await sideways()).toBe(0);
+  await shot("passport-approved");
+  await page.getByRole("link", { name: "Add your BVN" }).click();
+  await expect(page).toHaveURL(/\/verify\/national_check/);
+  await page.getByLabel("BVN", { exact: true }).fill("22334455667");
+  await page.getByRole("button", { name: "Add my BVN" }).click();
+  await expect(page.getByRole("heading", { name: "Your BVN stamped" })).toBeVisible();
+
+  // The money screens: locked for real, open in a preview.
+  await page.goto("/wallet");
+  await page.getByRole("link", { name: "Add money" }).click();
+  await expect(page.getByText("Not switched on yet")).toBeVisible();
+  await shot("add-money-locked");
+  await page.getByRole("link", { name: "Preview the flow" }).click();
+  await page.getByRole("radio", { name: /Debit card/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio", { name: "₦10,000" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await shot("add-money-review");
+  await page.getByRole("button", { name: "Add money" }).click();
+  await expect(page.getByRole("heading", { name: "Money added" })).toBeVisible();
+  expect(await sideways()).toBe(0);
+  await shot("add-money-done");
+
+  await page.goto("/wallet/withdraw?preview=1");
+  await page.getByRole("button", { name: "Withdraw everything" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await shot("withdraw-review");
+  await page.getByRole("button", { name: "Continue" }).click();
+  for (const digit of "493817") {
+    await page
+      .getByRole("group", { name: "Transaction PIN" })
+      .getByRole("button", { name: digit, exact: true })
+      .click();
+  }
+  await page.getByRole("button", { name: "Send it" }).click();
+  await expect(page.getByRole("heading", { name: "Money arrived" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await shot("withdraw-arrived");
+
+  await page.goto("/wallet/mandate?preview=1");
+  await page.getByRole("button", { name: "Set up auto-debit" }).click();
+  await expect(page.getByText("Active")).toBeVisible({ timeout: 10_000 });
+  await shot("mandate-active");
+
+  await page.goto("/wallet/limits?preview=1");
+  await expect(page.getByText("You are here")).toBeVisible();
+  expect(await sideways()).toBe(0);
+  await shot("limits");
+
+  // Nothing real happened: the API still knows nothing, and the database holds no verification rows.
+  const after = await page.evaluate(async () => (await fetch("/api/kyc")).json());
+  expect(after).toMatchObject({ connected: false, status: "not_started", tier: 0 });
+  expect(
+    sql(
+      `select count(*) from kyc_steps k join users u on u.id = k.user_id where u.email = '${email}'`,
+    ),
+  ).toBe("0");
+});
+
+test("an approved person sees their result, and Today stops asking", async ({ page }) => {
+  const email = `e2e+approved${Date.now()}@example.com`;
+  await onboardedAccount(email);
+  for (const step of ["id", "selfie", "address", "location", "bank"]) {
+    sql(
+      `insert into kyc_steps (user_id, step, status) select id, '${step}', 'approved' from users where email = '${email}'`,
+    );
+  }
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  await expect(page.getByRole("link", { name: /passport/i })).toHaveCount(0);
+  await page.goto("/verify");
+  await expect(page.getByText("Passport approved")).toBeVisible();
+  const passport = page.getByRole("region", { name: "Your Àjọ passport" });
+  await expect(passport.getByRole("img", { name: /approved/ })).toHaveCount(5);
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: "e2e/screenshots/passport-real-approved.png" });
+});

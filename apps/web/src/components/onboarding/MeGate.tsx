@@ -14,6 +14,8 @@ export type Me = Readonly<{
   hasPin?: boolean;
   emailVerified?: boolean;
   mfaEnabled?: boolean;
+  kycStatus?: "not_started" | "in_progress" | "pending" | "approved" | "rejected";
+  kycTier?: 0 | 1 | 2;
 }>;
 
 type Props = Readonly<{

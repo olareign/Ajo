@@ -69,6 +69,20 @@ describe("MeScreen", () => {
     expect(within(on).getByText("On")).toBeInTheDocument();
   });
 
+  it.each([
+    ["not_started", "Not started"],
+    ["in_progress", "In progress"],
+    ["pending", "Being checked"],
+    ["approved", "Approved"],
+    ["rejected", "Needs another try"],
+  ] as const)("shows verification as %s and leads to the passport", async (kycStatus, word) => {
+    api({}, { ...me, kycStatus });
+    render(<MeScreen />);
+    const row = await screen.findByRole("link", { name: /Identity/ });
+    expect(row).toHaveAttribute("href", "/verify");
+    expect(within(row).getByText(word)).toBeInTheDocument();
+  });
+
   it("leads back to Today", async () => {
     api();
     render(<MeScreen />);
