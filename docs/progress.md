@@ -17,9 +17,9 @@ The live status of every bullet in the [project plan](project-plan.md), by phase
 | Check | Result |
 | --- | --- |
 | Web production (Vercel `ajo-web`) | Ready, serving `main` at `f00625a` (PR #13). Every merge into `main` deploys |
-| Web automated tests | 274 unit and component tests pass; lint, typecheck, format and production build clean |
-| API automated tests (`ajo-api`) | 138 unit and 114 integration tests pass against real Postgres and Redis |
-| Full-stack browser tests | Default mode: 6 pass, 1 skipped. With the bot check on (real Cloudflare test keys): 7 of 7. Needs a dev server with a fixed `SESSION_SECRET` |
+| Web automated tests | 406 unit and component tests pass; lint, typecheck and format clean |
+| API automated tests (`ajo-api`) | 192 unit and 144 integration tests pass against real Postgres and Redis |
+| Full-stack browser tests | Default mode: 6 pass, 1 skipped. With the bot check on (real Cloudflare test keys): 7 of 7. Needs a dev server with a fixed `SESSION_SECRET`. The E1.8 journey (turn on, spare-key sign-in, turn off) passes against the real API and Postgres (Oct 3) |
 | Live database | Has the boolean `email_verified` column (proved through the live API on Oct 3). The other migrations are not individually checked: run `ajo-api/scripts/sql/bring-database-up-to-date.sql` on Neon to be sure |
 | API on Render (`ajo-api`) | Live and healthy (database and Redis up, docs off) at https://ajo-api-78oq.onrender.com, serving `main` at `314be73` (PR #10). Free plan, deploys on every commit to `main`, about 35 s to wake from sleep. No worker service exists |
 | Vercel settings | Production and Preview have `API_BASE_URL` (the Render URL above) and `SESSION_SECRET` |
@@ -57,7 +57,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.5 | Device binding (Should) | ⬜ | | Unblocked: the real address and device now reach the API and new devices are recognised (E1.4). Still to build: asking for the authenticator code on a new device, which needs E1.8 first |
 | E1.6 | Onboarding screens | 🟡 | ☐ | Built: three animated scenes that show how solo saving and èsúsú work, then country, goal, handle and PIN, resumable and saved step by step. **Remaining:** "then led to KYC" (waits for E2) and the country freeze once KYC starts (D4) |
 | E1.7 | Install as app (PWA) | 🟡 | ☐ | Manifest served; icons now show the **whole Àjọ logo** (they used to cut out the "À" and most of the "j"): plain 192 and 512, a separate maskable one with room for Android's circle, the iPhone icon, and the pig-and-coin mark for the browser tab, with a test that fails if the logo is ever cropped again. Android's splash is built from this icon and the white background. **Not built:** iPhone splash screens (they need an image per device size). Installing on Android and iPhone is for your hand test |
-| E1.8 | Authenticator-app second factor | 🟡 | ☐ | API complete (enrol, confirm, recovery codes, disable, encrypted secret). Sign-in code screen works. **Missing:** the screen to turn it on (comes with Me), and "enrolment required before the first money action" |
+| E1.8 | Authenticator-app second factor | ✅ | ☐ | Built Oct 3: the **Second lock** screens (Me, then Authenticator app): a QR code drawn in the browser plus the same key as text, a code to prove it works, then the ten one-use recovery codes on a ticket, shown once, with Copy and Download, and you cannot finish until you tick that you saved them. Turning it off needs your password and a fresh code, and a typo does not sign you out. Today nudges until it is on. On the API, **any route marked `@MoneyAction()` refuses until the app is on (403 `mfa_enrolment_required`) and needs a fresh code in the `X-Ajo-Mfa-Code` header (a code works once; ten wrong ones lock for 15 minutes)**. No money route exists yet, so the gate is proved on a stand-in route: **the first real one (E3.5) must carry `@MoneyAction()`** |
 | E1.9 | Confirm email again | ✅ | ☐ | Resend after a minute, ten a day, `email_verified` boolean kept in step by the database |
 | E1.10 | Housekeeping of sessions and tokens | ✅ | | Job built and tested. Runs only where the worker is deployed |
 
@@ -111,9 +111,12 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 3. E1.6, E1.2 and E1.3: sign up and sign in as a new person. Watch the three scenes (swipe them; try Skip on another account), choose a country and goal, pick a handle (try a taken or reserved one such as `support`: it must be refused), and finish with a PIN (an easy one must be refused). Close the tab part-way and sign in again: it must pick up where you stopped. An older account (set up before handles) should be asked for the handle only.
 4. E1.7: remove any Àjọ icon already on your home screen, then add it again on Android and on iPhone (phones keep the old icon until you do): the whole Àjọ logo must show, not just the ọ.
 5. E3.2: Today shows a wallet card; it opens `/wallet` (empty for a new account; real rows need the ledger seeded).
-6. E1.4: sign in on your phone, then in a different browser or on another device: the owner gets a "New sign-in to your Àjọ account" email naming it. Open Today, tap the round person icon (Me), and use "Sign out of all devices": every other device must lose access.
+6. E1.8: on Today tap "Add a second lock". Install an authenticator app (Google Authenticator, Authy or 1Password), scan the square, type the code. Save the ten spare keys (Copy all or Download), tick the box, Done. Sign out and in: it must ask for a code, and one spare key must work once and then be refused. Then Me, Authenticator app, Turn off: a wrong password must say so and keep you signed in.
+7. E1.4: sign in on your phone, then in a different browser or on another device: the owner gets a "New sign-in to your Àjọ account" email naming it. Open Today, tap the round person icon (Me), and use "Sign out of all devices": every other device must lose access.
 
-**Merge order for E1.4 (this release). Sign-in now writes to a new table, so the database comes first.**
+**Merge order for E1.8 (this release). No new database change and no new setting.** Merge the API pull request first (it adds the error codes the new screen reads; if Render does not deploy within a few minutes, use Manual Deploy), then the web pull request.
+
+**Merge order for E1.4 (done). Sign-in now writes to a new table, so the database comes first.**
 
 1. **Neon SQL editor:** run `ajo-api/scripts/sql/bring-database-up-to-date.sql` again (adds `login_devices`; safe to repeat).
 2. Merge the API pull request; Render deploys it. (Render has not deployed on its own for the last merge: if nothing happens within a few minutes, use Manual Deploy, Deploy latest commit.)
@@ -160,6 +163,6 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 By the book, Phase 1 is open, and its gaps are in this order:
 
-1. Done and waiting for your hand test: P0.4 photos, E1.1 bot protection, E1.2 usernames, E1.4 sessions and alerts, E1.6 scenes and flow, E1.7 icons.
-2. **E1.8** the screen to turn the authenticator on (the Me screen already shows its state), the rule that it is needed before money moves, and then **E1.5** asking for the code on a new device. D3 (per-address limit on reset emails) closes E1.1.
+1. Done and waiting for your hand test: P0.4 photos, E1.1 bot protection, E1.2 usernames, E1.4 sessions and alerts, E1.6 scenes and flow, E1.7 icons, E1.8 second lock.
+2. **E1.5** asking for the authenticator code on a new device (E1.8 is now built). D3 (per-address limit on reset emails) closes E1.1.
 3. **E2 KYC** (E2.1 to E2.8), then **E3.3 to E3.8**. E1.6's "then led to KYC" and D4 land with E2. That closes the Phase 1 gate: a verified user funds and withdraws, and the ledger matches the partner.

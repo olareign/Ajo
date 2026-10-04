@@ -12,7 +12,19 @@ export const json = (status: number, body: unknown, cookies: string[] = []) => {
   return new Response(status === 204 ? null : JSON.stringify(body), { status, headers });
 };
 
-type ApiRequest = Readonly<{ path: string; method: "GET" | "PUT" | "POST"; body?: object }>;
+type ApiRequest = Readonly<{
+  path: string;
+  method: "GET" | "PUT" | "POST" | "DELETE";
+  body?: object;
+}>;
+
+/**
+ * A 401 that carries a `code` is the API refusing an answer (a wrong password or code), not saying the
+ * access token has expired. Refreshing and then clearing the session over a typo would sign the
+ * person out, so these pass straight through.
+ */
+const isExpiredToken = (result: ApiResult) =>
+  result.status === 401 && typeof result.data.code !== "string";
 
 /**
  * Calls the API as the signed-in person. An expired access token is swapped once through the
@@ -35,7 +47,7 @@ export async function withSession(
     accessToken: session.accessToken,
   });
   const cookies: string[] = [];
-  if (result.status === 401) {
+  if (isExpiredToken(result)) {
     const refreshed = await callApi(env, fetchFn, {
       client: clientOf(request),
       path: "/auth/refresh",
@@ -56,7 +68,9 @@ export async function withSession(
     );
     cookies.push(serializeCookie(cookie.name, sealed, cookie.options));
     result = await callApi(env, fetchFn, { ...call, accessToken, client: clientOf(request) });
-    if (result.status === 401) return json(401, { message: "Please sign in again." }, [expire]);
+    if (isExpiredToken(result)) {
+      return json(401, { message: "Please sign in again." }, [expire]);
+    }
   }
   return json(result.status, result.data, cookies);
 }
@@ -77,11 +91,11 @@ async function readObject(request: Request): Promise<Record<string, unknown> | n
 const pick = (body: Record<string, unknown>, keys: string[]) =>
   Object.fromEntries(keys.filter((k) => k in body).map((k) => [k, body[k]]));
 
-async function forward(
+export async function forward(
   request: Request,
   deps: Deps,
   path: string,
-  method: "PUT" | "POST",
+  method: "PUT" | "POST" | "DELETE",
   keys: string[],
 ) {
   if (!isSameOrigin(request))

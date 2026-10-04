@@ -1,6 +1,7 @@
 "use client";
 
-import { BadgeCheck, Mail, ShieldCheck } from "lucide-react";
+import { BadgeCheck, ChevronRight, Mail, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { postJson } from "@/components/auth/post-json";
@@ -96,15 +97,19 @@ function Account({ me }: Readonly<{ me: Me }>) {
           <h2 id="security" className="font-display text-[22px] leading-7 font-semibold">
             Security
           </h2>
-          <div className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift">
+          <Link
+            href="/me/security"
+            className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"
+          >
             <p className="flex items-center gap-3 text-[15px] font-semibold">
               <ShieldCheck aria-hidden className="size-5 text-primary" />
               Authenticator app
             </p>
-            <p className="text-[14px] font-medium text-ink-muted">
-              {me.mfaEnabled ? "On" : "Not set up"}
+            <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
+              {me.mfaEnabled ? "On" : "Set up"}
+              <ChevronRight aria-hidden className="size-5" />
             </p>
-          </div>
+          </Link>
 
           <div className="grid grid-cols-1 gap-3 pt-2">
             <Button

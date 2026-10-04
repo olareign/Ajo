@@ -55,16 +55,18 @@ describe("MeScreen", () => {
     expect(within(card).queryByText("Confirmed")).toBeNull();
   });
 
-  it("says whether the authenticator app is on, without offering what is not built yet", async () => {
+  it("says whether the authenticator app is on, and leads to where it is managed", async () => {
     api();
     const { unmount } = render(<MeScreen />);
-    expect(await screen.findByText("Authenticator app")).toBeInTheDocument();
-    expect(screen.getByText("Not set up")).toBeInTheDocument();
+    const row = await screen.findByRole("link", { name: /Authenticator app/ });
+    expect(row).toHaveAttribute("href", "/me/security");
+    expect(within(row).getByText("Set up")).toBeInTheDocument();
     unmount();
 
     api({}, { ...me, mfaEnabled: true });
     render(<MeScreen />);
-    expect(await screen.findByText("On")).toBeInTheDocument();
+    const on = await screen.findByRole("link", { name: /Authenticator app/ });
+    expect(within(on).getByText("On")).toBeInTheDocument();
   });
 
   it("leads back to Today", async () => {
