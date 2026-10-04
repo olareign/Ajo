@@ -156,18 +156,19 @@ describe("TodayScreen", () => {
       expect(await screen.findByRole("link", { name: "Messages" })).toBeInTheDocument();
     });
 
-    it("asks the server for one thing at a time: the wallet, the savings, the messages, then friends", async () => {
+    it("asks the server for one thing at a time: the wallet, the savings, the messages, friends, then circles", async () => {
       const order: string[] = [];
       api([plan()], 1, order);
       render(<TodayScreen />);
       await screen.findByRole("link", { name: "Messages, 1 unread" });
-      await waitFor(() => expect(order).toHaveLength(5));
+      await waitFor(() => expect(order).toHaveLength(6));
       expect(order).toEqual([
         "/api/me",
         "/api/wallet",
         "/api/savings",
         expect.stringContaining("/api/notifications"),
         "/api/friends",
+        "/api/groups",
       ]);
     });
 

@@ -31,6 +31,7 @@ const person = (username: string, over: object = {}) => ({
   relation: "none",
   mutualFriends: 0,
   tier: 1,
+  trust: { level: "new", score: 0 },
   ...over,
 });
 
@@ -80,6 +81,7 @@ const friend = (username: string, tier = 1) => ({
   displayName: username.toUpperCase(),
   since: "2026-09-01T00:00:00Z",
   tier,
+  trust: { level: "trusted", score: 50 },
 });
 
 describe("the friends home", () => {
@@ -121,6 +123,7 @@ describe("the friends home", () => {
     const mine = screen.getByRole("heading", { name: "Your friends" }).closest("section")!;
     expect(within(mine).getAllByRole("link")).toHaveLength(2);
     expect(within(mine).getByText("Verified +")).toBeInTheDocument();
+    expect(within(mine).getAllByText("Trusted")).toHaveLength(2);
     expect(screen.getByRole("link", { name: "Find people" })).toHaveAttribute(
       "href",
       "/friends/find",
