@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { isFinished, loadPayment, type Failure, type Payment } from "./payments-client";
 
-export const POLL_EVERY_MS = 3_000;
-/** About three minutes: after that the screen stops asking and says it will show up on its own. */
-export const POLL_LIMIT = 60;
+/**
+ * How often to ask, and how many times: about three minutes in all, after which a screen stops asking
+ * and says the result will show up on its own. A plain object so a test can make it quick.
+ */
+export const polling = { everyMs: 3_000, limit: 60 };
 
 export type Watched = Readonly<{
   payment?: Payment;
@@ -32,16 +34,16 @@ export function usePayment(id: string | null): Watched {
       tries += 1;
       if (!result.ok) {
         // A dropped connection is worth another try; anything the API refused is final.
-        if (result.failure.kind === "unreachable" && tries < POLL_LIMIT) {
-          timer = setTimeout(() => void look(), POLL_EVERY_MS);
+        if (result.failure.kind === "unreachable" && tries < polling.limit) {
+          timer = setTimeout(() => void look(), polling.everyMs);
           return;
         }
         return setState({ failure: result.failure, gaveUp: false });
       }
       const done = isFinished(result.data.status);
-      const gaveUp = !done && tries >= POLL_LIMIT;
+      const gaveUp = !done && tries >= polling.limit;
       setState({ payment: result.data, gaveUp });
-      if (!done && !gaveUp) timer = setTimeout(() => void look(), POLL_EVERY_MS);
+      if (!done && !gaveUp) timer = setTimeout(() => void look(), polling.everyMs);
     };
     void look();
     return () => {

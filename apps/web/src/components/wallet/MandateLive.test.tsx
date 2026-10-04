@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Rails } from "@/lib/kyc-client";
 import { Mandate } from "./Mandate";
+import { polling } from "@/lib/use-payment";
 import { MoneyFlow } from "./MoneyFlow";
 
 const replace = vi.fn();
@@ -12,10 +13,6 @@ vi.mock("next/navigation", () => ({
 }));
 const leaveFor = vi.fn<(url: string) => boolean>(() => true);
 vi.mock("@/lib/navigate", () => ({ leaveFor: (url: string) => leaveFor(url) }));
-vi.mock("@/lib/use-payment", async (original) => ({
-  ...(await original<typeof import("@/lib/use-payment")>()),
-  POLL_EVERY_MS: 5,
-}));
 
 const me = { displayName: "Ada Ola", email: "a@b.co", onboarded: true, country: "NG", kycTier: 1 };
 const rails: Rails = {
@@ -57,7 +54,11 @@ const calls = (mock: ReturnType<typeof api>, method: string) =>
     ([url, init]) => url === "/api/payments/mandate" && (init?.method ?? "GET") === method,
   );
 
+beforeEach(() => {
+  polling.everyMs = 5;
+});
 afterEach(() => {
+  polling.everyMs = 3_000;
   vi.unstubAllGlobals();
   replace.mockReset();
   leaveFor.mockClear();

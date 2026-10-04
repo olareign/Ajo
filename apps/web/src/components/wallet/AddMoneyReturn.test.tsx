@@ -1,6 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import type { Rails } from "@/lib/kyc-client";
-import { POLL_EVERY_MS } from "@/lib/use-payment";
 import { AddMoneyReturn } from "./AddMoneyReturn";
 import { MoneyFlow } from "./MoneyFlow";
 
@@ -66,7 +65,6 @@ describe("coming back from the payment partner", () => {
     open();
     expect(await screen.findByText(/updates by itself/)).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Money added" })).not.toBeInTheDocument();
-    expect(POLL_EVERY_MS).toBeGreaterThan(0);
   });
 
   it("says plainly when the payment failed, that nothing was charged, and offers another go", async () => {

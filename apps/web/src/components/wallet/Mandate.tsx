@@ -16,7 +16,7 @@ import {
   type Failure,
   type MandateView,
 } from "@/lib/payments-client";
-import { POLL_EVERY_MS, POLL_LIMIT } from "@/lib/use-payment";
+import { polling } from "@/lib/use-payment";
 import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
 import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
@@ -62,15 +62,15 @@ export function Mandate() {
       if (!live) return;
       tries += 1;
       if (!result.ok) {
-        if (result.failure.kind === "unreachable" && tries < POLL_LIMIT) {
-          timer = setTimeout(() => void look(), POLL_EVERY_MS);
+        if (result.failure.kind === "unreachable" && tries < polling.limit) {
+          timer = setTimeout(() => void look(), polling.everyMs);
           return;
         }
         return problem(result.failure);
       }
       setReal(result.data);
-      if (result.data?.status === "pending" && tries < POLL_LIMIT) {
-        timer = setTimeout(() => void look(), POLL_EVERY_MS);
+      if (result.data?.status === "pending" && tries < polling.limit) {
+        timer = setTimeout(() => void look(), polling.everyMs);
       }
     };
     void look();

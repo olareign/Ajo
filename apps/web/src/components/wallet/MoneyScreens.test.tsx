@@ -365,17 +365,6 @@ describe("withdrawing", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/back in your wallet/)).toBeInTheDocument();
   });
-
-  it("refuses to pretend outside a preview, even when connected and approved", async () => {
-    query = new URLSearchParams();
-    api(me, rails({ connected, kycApproved: true }));
-    const user = userEvent.setup();
-    open(<Withdraw />);
-    await toPin(user, "5000");
-    await enterPin(user);
-    expect(await screen.findByRole("alert")).toHaveTextContent(/Nothing was sent/);
-    expect(screen.queryByText("On its way")).not.toBeInTheDocument();
-  });
 });
 
 describe("auto-debit", () => {

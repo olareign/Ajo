@@ -88,6 +88,18 @@ describe("what went wrong", () => {
     );
   });
 
+  it("treats our server's 502 and 504 as not having reached the API, as a dropped connection is", async () => {
+    stub(502, { message: "We couldn't reach Àjọ." });
+    expect(await loadMandate()).toEqual({
+      ok: false,
+      failure: { kind: "unreachable", message: "We couldn't reach Àjọ." },
+    });
+    stub(504, {});
+    expect(await loadMandate()).toMatchObject({ failure: { kind: "unreachable" } });
+    stub(503, { message: "Not available.", code: "payments_unavailable" });
+    expect(await loadMandate()).toMatchObject({ failure: { kind: "refused", status: 503 } });
+  });
+
   it("says it could not connect, and that nothing moved, when the request never arrives", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
     const result = await startFunding({ amount: "1", method: "card", key: "ajo_key_12345" });

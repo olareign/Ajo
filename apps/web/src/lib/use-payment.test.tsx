@@ -1,5 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
-import { POLL_EVERY_MS, POLL_LIMIT, usePayment } from "./use-payment";
+import { polling, usePayment } from "./use-payment";
+
+const POLL_EVERY_MS = polling.everyMs;
+const POLL_LIMIT = polling.limit;
 
 const payment = (status: string) => ({
   id: "p1",

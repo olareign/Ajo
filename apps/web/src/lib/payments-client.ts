@@ -58,6 +58,16 @@ async function send<T>(
     });
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     if (res.ok) return { ok: true, data: data as T };
+    // Our server's own "I couldn't reach the API": the request may or may not have got through.
+    if (res.status === 502 || res.status === 504) {
+      return {
+        ok: false,
+        failure: {
+          kind: "unreachable",
+          message: typeof data.message === "string" ? data.message : UNREACHABLE,
+        },
+      };
+    }
     const code = typeof data.code === "string" ? data.code : undefined;
     // A 401 that carries a code is the API refusing a code, not an end to the session.
     if (res.status === 401 && !code) return { ok: false, failure: { kind: "signed-out" } };
