@@ -149,12 +149,12 @@ Eleven epics cover version 1. Priority uses Must, Should and Could; every Must f
 
 | ID | Feature | Acceptance criteria | Depends on | Priority |
 | --- | --- | --- | --- | --- |
-| E2.1 | ID verification | User picks their country, then enters a national ID number or uploads a passport or ID accepted there; provider confirms name and date of birth match | P0.3 (KYC) | Must |
-| E2.2 | Selfie and liveness | User takes a live selfie; provider confirms liveness and face match to ID | E2.1 | Must |
-| E2.3 | Proof of address | User uploads a utility bill or similar; reviewed by provider or admin | E2.1 | Must |
-| E2.4 | Location capture | Location captured with consent; stored encrypted; area name derived | E2.1 | Must |
-| E2.5 | Bank account | Account resolved by name; name must match KYC name | P0.3 (payments) | Must |
-| E2.6 | National checks (optional) | Where a country offers one (e.g. BVN in Nigeria), the user may add it; verified by provider; raises KYC tier | E2.1 | Could |
+| E2.1 | ID verification | User picks their country, then enters a national ID number or uploads a passport or ID accepted there; provider confirms name and date of birth match | P0.3 (KYC) | Must (pended by owner, Oct 4) |
+| E2.2 | Selfie and liveness | User takes a live selfie; provider confirms liveness and face match to ID | E2.1 | Must (pended by owner, Oct 4) |
+| E2.3 | Proof of address | User uploads a utility bill or similar; reviewed by provider or admin | E2.1 | Must (pended by owner, Oct 4) |
+| E2.4 | Location capture | Location captured with consent; stored encrypted; area name derived | E2.1 | Must (pended by owner, Oct 4) |
+| E2.5 | Bank account | Account resolved by name; name must match KYC name | P0.3 (payments) | Must (pended by owner, Oct 4) |
+| E2.6 | National checks (optional) | Where a country offers one (e.g. BVN in Nigeria), the user may add it; verified by provider; raises KYC tier | E2.1 | Could (pended by owner, Oct 4) |
 | E2.7 | KYC status and retry | User sees status (pending, approved, rejected with reason) and can retry | E2.1–E2.5 | Must |
 | E2.8 | KYC gate | Saving, joining and creating groups, and adding friends are blocked until approved | E2.7 | Must |
 
@@ -169,7 +169,7 @@ Eleven epics cover version 1. Priority uses Must, Should and Could; every Must f
 | E3.5 | Withdraw to bank | PIN required; transfer sent; status tracked; failures reversed in the ledger | E3.1, E2.5 | Must |
 | E3.6 | Webhook inbox | All provider events stored, de-duplicated and processed by jobs | E3.1 | Must |
 | E3.7 | Daily reconciliation | Ledger compared with partner report; mismatches flagged to admin | E3.1, E9.1 | Must |
-| E3.8 | Limits by KYC tier | Daily and per-transaction limits enforced | E2.7 | Should |
+| E3.8 | Limits by KYC tier | Daily and per-transaction limits enforced | E2.7 | Should (pended by owner, Oct 4) |
 
 ### E4. Solo savings (Phase 2)
 
