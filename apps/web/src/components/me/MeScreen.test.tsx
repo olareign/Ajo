@@ -83,6 +83,28 @@ describe("MeScreen", () => {
     expect(within(row).getByText(word)).toBeInTheDocument();
   });
 
+  it("says plainly when approval was given without the identity checks, and when it is on hold", async () => {
+    api({}, { ...me, kycStatus: "approved", kycTier: 1, kycVia: "waived" });
+    const { unmount } = render(<MeScreen />);
+    const waived = await screen.findByRole("link", { name: /Identity/ });
+    expect(within(waived).getByText("Approved for now")).toBeInTheDocument();
+    expect(within(waived).queryByText("Approved")).toBeNull();
+    unmount();
+
+    api({}, { ...me, kycStatus: "rejected", kycTier: 0, kycVia: "hold" });
+    render(<MeScreen />);
+    const held = await screen.findByRole("link", { name: /Identity/ });
+    expect(within(held).getByText("On hold")).toBeInTheDocument();
+    expect(within(held).queryByText("Needs another try")).toBeNull();
+  });
+
+  it("still says Approved when the real checks approved the person", async () => {
+    api({}, { ...me, kycStatus: "approved", kycTier: 1, kycVia: "checks" });
+    render(<MeScreen />);
+    const row = await screen.findByRole("link", { name: /Identity/ });
+    expect(within(row).getByText("Approved")).toBeInTheDocument();
+  });
+
   it("leads back to Today", async () => {
     api();
     render(<MeScreen />);

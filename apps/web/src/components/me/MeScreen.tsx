@@ -62,6 +62,13 @@ const IDENTITY_WORDS = {
   rejected: "Needs another try",
 } as const;
 
+/** What the identity row says. An approval given without the checks never reads as a plain "Approved". */
+function identityWord(me: Me): string {
+  if (me.kycVia === "hold") return "On hold";
+  if (me.kycVia === "waived" && me.kycStatus === "approved") return "Approved for now";
+  return IDENTITY_WORDS[me.kycStatus ?? "not_started"];
+}
+
 function Account({ me }: Readonly<{ me: Me }>) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -117,7 +124,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
               Identity
             </p>
             <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
-              {IDENTITY_WORDS[me.kycStatus ?? "not_started"]}
+              {identityWord(me)}
               <ChevronRight aria-hidden className="size-5" />
             </p>
           </Link>

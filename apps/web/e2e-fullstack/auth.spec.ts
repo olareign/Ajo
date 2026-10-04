@@ -928,6 +928,70 @@ test("an approved person sees their result, and Today stops asking", async ({ pa
   await page.screenshot({ path: "e2e/screenshots/passport-real-approved.png" });
 });
 
+test("the owner approves someone without the identity checks, holds them back, and clears it again; each change is on record", async ({
+  page,
+}) => {
+  const email = `e2e+waiver${Date.now()}@example.com`;
+  await onboardedAccount(email);
+  const setOverride = (value: string | null) =>
+    sql(
+      `update users set kyc_override = ${value === null ? "null" : `'${value}'`} where email = '${email}'`,
+    );
+  const identityRow = () => page.getByRole("link", { name: /Identity/ });
+  const railsApproved = () =>
+    page.evaluate(async () => (await (await fetch("/api/wallet/rails")).json()).kycApproved);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // Nothing switched on: the passport is still asked for, and money stays closed.
+  await expect(page.getByRole("link", { name: /passport/i })).toBeVisible();
+  expect(await railsApproved()).toBe(false);
+
+  // Approved by hand, with no steps: Today stops asking, money opens, and the app says why.
+  setOverride("approved");
+  await page.goto("/today");
+  await expect(page.getByRole("link", { name: /passport/i })).toHaveCount(0);
+  expect(await railsApproved()).toBe(true);
+  await page.goto("/me");
+  await expect(identityRow()).toContainText("Approved for now");
+  await page.goto("/verify");
+  await expect(page.getByRole("heading", { name: "Approved for now" })).toBeVisible();
+  await expect(page.getByText(/without the identity checks/i)).toBeVisible();
+  await expect(page.getByText("Passport approved")).toHaveCount(0);
+  expect(
+    Number(
+      sql(
+        `select count(*) from kyc_steps where user_id = (select id from users where email = '${email}')`,
+      ),
+    ),
+  ).toBe(0);
+
+  // Held back: closed again, and the person is told it is a hold rather than a failed stamp.
+  setOverride("denied");
+  await page.goto("/me");
+  await expect(identityRow()).toContainText("On hold");
+  await page.goto("/verify");
+  await expect(page.getByRole("heading", { name: "Your verification is on hold" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Try again" })).toHaveCount(0);
+  expect(await railsApproved()).toBe(false);
+
+  // Cleared: back to what the checks say, which is nothing yet.
+  setOverride(null);
+  await page.goto("/today");
+  await expect(page.getByRole("link", { name: /passport/i })).toBeVisible();
+  expect(await railsApproved()).toBe(false);
+
+  // The database wrote down every change by itself.
+  const log = sql(
+    `select coalesce(previous_value,'-') || '>' || coalesce(new_value,'-') from kyc_override_log where user_id = (select id from users where email = '${email}') order by id`,
+  );
+  expect(log.split("\n")).toEqual(["->approved", "approved>denied", "denied>-"]);
+});
+
 const FAKE_WEBHOOK_SECRET = "fake-webhook-secret-for-development-and-tests";
 /** Plays the payment partner: a signed message to the API, the way the real one would send it. */
 async function partnerSays(event: Record<string, string>) {

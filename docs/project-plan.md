@@ -157,6 +157,7 @@ Eleven epics cover version 1. Priority uses Must, Should and Could; every Must f
 | E2.6 | National checks (optional) | Where a country offers one (e.g. BVN in Nigeria), the user may add it; verified by provider; raises KYC tier | E2.1 | Could (pended by owner, Oct 4) |
 | E2.7 | KYC status and retry | User sees status (pending, approved, rejected with reason) and can retry | E2.1–E2.5 | Must |
 | E2.8 | KYC gate | Saving, joining and creating groups, and adding friends are blocked until approved | E2.7 | Must |
+| E2.9 | Approve without the checks, while they are pended | The owner can approve people without the identity checks until the real checks exist: everyone at once with `KYC_AUTO_APPROVE` (switch on or off; refused beside a live payment key), or one person at a time with `users.kyc_override` (`approved` or `denied`; `pnpm kyc:override`). Approved this way is tier 1, is shown to the person as "Approved for now", and never writes verification steps; real checks win once they approve someone; a hold (`denied`) beats everything; every change is logged by the database | E2.8 | Must (interim, until E2.1–E2.5 are live) |
 
 ### E3. Wallet and payments (Phase 1)
 
@@ -319,6 +320,7 @@ Production opens to the public only when every item below is ticked.
 
 **Legal and business**
 
+- [ ] Real identity checks (E2.1–E2.5) live, `KYC_AUTO_APPROVE` off or unset, and nobody left approved by hand (`pnpm kyc:override list` shows nobody approved) unless it was a decision on record in `kyc_override_log`
 - [ ] Partner contracts signed for each launch country (KYC, payments, licensed fund holders, currency exchange, SMS)
 - [ ] Live API keys issued and stored in the secret manager
 - [ ] Terms of service and privacy policy published

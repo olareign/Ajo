@@ -21,6 +21,10 @@ export type KycState = Readonly<{
   status: KycStatus;
   tier: 0 | 1 | 2;
   steps: readonly StepState[];
+  /** Where status comes from: the checks, an approval given without them, or a hold. */
+  via?: "checks" | "waived" | "hold";
+  /** A sentence from the API for when status is not from the checks. */
+  note?: string | null;
 }>;
 
 /**

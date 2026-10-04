@@ -74,6 +74,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E2.6 | National checks (optional) | ⏸ | ⏸ Pended by owner (Oct 4): the real check waits until the tools are chosen. BVN screen built for Nigeria only; raises the tier. Waits for Smile ID |
 | E2.7 | KYC status and retry | 🟡 | Built: a **member passport** with a stamp per step. The API works status and tier out from per-step records (`kyc_steps`); the screen shows not started, in progress, waiting, approved, or refused with the reason and a **Try again** that returns to that stamp. Fills with real results once a partner is connected |
 | E2.8 | KYC gate | ✅ | API: any route marked `@RequiresKyc()` refuses with 403 `kyc_required` until every required step is approved. **It now guards the real money routes** (add money, auto-debit, withdraw and the payout account, through `@MoneyRoute()`), proved in the payments tests. Because the real checks are pended, no ordinary person can pass it yet, so no one but an account you approve by hand (see "Testing payments while KYC is pended") can move money. Web: `KycGate` closes a screen the same way |
+| E2.9 | Approve without the checks, while they are pended | ✅ | ☐ | API: `KYC_AUTO_APPROVE` approves everyone at tier 1 (refused at startup beside a live `sk_live_` key, warns in the log when on); `users.kyc_override` approves (`approved`) or holds (`denied`) one person, logged by the database in `kyc_override_log`; `pnpm kyc:override <email> approve\|deny\|clear` and `list`. Real checks always win once they approve someone; a hold beats everything. Shown as "Approved for now" / "On hold" on Me and the passport, and never writes `kyc_steps`. Unit, integration and a full-stack browser test prove each switch opens and closes the money gate. **Needs `AddKycOverride1790900120000` on the database first** (run `bring-database-up-to-date.sql` on Neon). See "Testing payments while KYC is pended" |
 
 **How the unconnected screens behave (decided Oct 4).** Nothing is connected yet, so the API reports `connected: false` and every step shows a locked "Not switched on yet" with a **Preview the flow** link. The preview (`?preview=1`) is a walk-through with sample data kept in that browser tab only: it never calls the API, the camera, location or the file system, and the database stays empty (a full-stack test proves it). In production a stand-in partner can never approve a real person, because production refuses stand-ins by design. The money screens (add money, withdraw, auto-debit) now make real calls once a partner is connected and the person is approved, and never show a success the API has not given; outside a preview nothing pretends. The identity steps stay locked, because their real checks are pended. Preview-only samples for reviewers: an ID or BVN ending 0000, an account number ending 0000 (someone else's name) or a file called "blurry" shows a refusal; a withdrawal ending 666 shows a bank refusal being reversed. Defect D4 (country can change any time) still stands until the real KYC steps start.
 
@@ -150,16 +151,23 @@ Nothing is real until a person is approved. For your own test account see "Testi
 4. When you are ready to try a partner: in the Render dashboard add `PAYSTACK_SECRET_KEY` (the **secret** test key, `sk_test_...`), then in Paystack set the webhook URL to `https://ajo-api-78oq.onrender.com/api/v1/webhooks/paystack` and turn off OTP for transfers. Confirm Render's `WEB_APP_URL` is the public web address: partners send people back there. Keys go only in the dashboards, never in chat.
 5. Production refuses to start with a Paystack key of the wrong shape (a public key, say) and always refuses the stand-in `PAYMENTS_FAKE`.
 
-**Testing payments while KYC is pended.** The real identity checks are not built, so nobody can pass the money gate. For **your own test accounts only**, on a sandbox or test key, approve the passport by hand in the Neon SQL editor (replace the email):
+**Testing payments while KYC is pended.** The real identity checks are not built, so nobody can pass the money gate on their own. There are two switches, both reversible; use them on a sandbox or test key only.
 
-```sql
-INSERT INTO kyc_steps (user_id, step, status)
-SELECT id, s, 'approved' FROM users, unnest(ARRAY['id','selfie','address','location','bank']) s
-WHERE email = 'you@example.com'
-ON CONFLICT DO NOTHING;
-```
+First, once: on the Neon SQL editor run `ajo-api/scripts/sql/bring-database-up-to-date.sql` (it adds `users.kyc_override` and its log).
 
-Never do this for anyone else, and not on live keys: it skips the very checks the gate exists for.
+- **One person at a time** (the safest). Neon SQL editor, replace the email:
+
+  ```sql
+  UPDATE users SET kyc_override = 'approved' WHERE email = 'you@example.com';  -- approve, tier 1
+  UPDATE users SET kyc_override = 'denied'   WHERE email = 'you@example.com';  -- hold back, beats everything
+  UPDATE users SET kyc_override = NULL       WHERE email = 'you@example.com';  -- back to what the checks say
+  SELECT email, kyc_override FROM users WHERE kyc_override IS NOT NULL;         -- who is switched now
+  ```
+
+  Or from a shell on the API: `pnpm kyc:override you@example.com approve|deny|clear`, and `pnpm kyc:override list`. Takes effect on the person's next request; they do not need to sign in again.
+- **Everyone** (until KYC is ready). In the Render dashboard set `KYC_AUTO_APPROVE` to `true` on `ajo-api`; set it to `false` (or remove it) to turn it off. Render restarts the API when it changes. The API refuses to start if it is `true` while `PAYSTACK_SECRET_KEY` is a live (`sk_live_`) key, and it logs a warning at every start while it is on. A person held with `denied` stays held even while this is on.
+
+Either way the person is shown "Approved for now", not a passport nobody checked, and no verification steps are written. Every change to `kyc_override` is recorded by the database in `kyc_override_log` (what it was, what it became, who changed it, when). **Both switches skip the checks the gate exists for: turn them off, and clear every override, before real money moves** (it is on the go-live checklist).
 
 **Merge order for E1.5, E1.7 install prompt, E1.8, D3 and the E2/E3 screens (this release). Sign-in and the passport now read new tables, so the database comes first.**
 

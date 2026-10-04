@@ -90,6 +90,30 @@ describe("someone already decided on while the partner is not connected", () => 
   });
 });
 
+describe("approval given without the identity checks", () => {
+  const note =
+    "Your account was approved without the identity checks, which are not switched on yet.";
+
+  it("says so, instead of congratulating on a passport nobody checked", async () => {
+    api({ status: "approved", tier: 1, via: "waived", note });
+    screenOf();
+    expect(await screen.findByText("Approved for now")).toBeInTheDocument();
+    expect(screen.getByText(note)).toBeInTheDocument();
+    expect(screen.queryByText("Passport approved")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Add your BVN" })).not.toBeInTheDocument();
+  });
+
+  it("tells someone on hold, with the reason in words, and offers no retry that cannot help", async () => {
+    const hold = "Your verification is on hold. Please contact support.";
+    api({ status: "rejected", tier: 0, via: "hold", note: hold });
+    screenOf();
+    expect(await screen.findByText("Your verification is on hold")).toBeInTheDocument();
+    expect(screen.getByText(hold)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Try again" })).not.toBeInTheDocument();
+    expect(screen.queryByText("A stamp needs another try")).not.toBeInTheDocument();
+  });
+});
+
 describe("the passport once partners are connected", () => {
   it("invites a new person to start, and leads to the first stamp", async () => {
     api({ connected: true });

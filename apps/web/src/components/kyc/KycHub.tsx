@@ -84,6 +84,24 @@ function StatusBanner({
   const next = nextStep(state);
   const refused = state.steps.filter((s) => s.status === "rejected" && s.required);
 
+  if (state.via === "hold") {
+    return (
+      <Banner tone="danger" title="Your verification is on hold">
+        <p>{state.note ?? "Please contact support."}</p>
+      </Banner>
+    );
+  }
+  if (state.via === "waived") {
+    return (
+      <Banner icon tone="leaf" title="Approved for now">
+        <p>{state.note}</p>
+        <p>
+          Saving and payments are open to you. You may be asked to fill your passport later, when
+          the identity checks switch on.
+        </p>
+      </Banner>
+    );
+  }
   if (state.status === "approved") {
     const offerBvn = config?.nationalCheck && state.tier === 1;
     return (

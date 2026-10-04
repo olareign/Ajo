@@ -16,6 +16,8 @@ export type Me = Readonly<{
   mfaEnabled?: boolean;
   kycStatus?: "not_started" | "in_progress" | "pending" | "approved" | "rejected";
   kycTier?: 0 | 1 | 2;
+  /** Whether kycStatus comes from the checks, from an approval given without them, or from a hold. */
+  kycVia?: "checks" | "waived" | "hold";
 }>;
 
 type Props = Readonly<{
