@@ -92,3 +92,22 @@ describe("the app icons show the whole logo", () => {
     expect(m.ink.bottom - m.ink.top + 1).toBeGreaterThanOrEqual(m.picture.height * 0.7);
   });
 });
+
+describe("the logo the emails load", () => {
+  const png = publicFile("/email/logo.png");
+
+  it("is a PNG (email clients cannot show webp or svg), wide enough to stay sharp on a phone", () => {
+    expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    const picture = decodePng(png);
+    expect(picture.width).toBe(480);
+    expect(picture.width / picture.height).toBeGreaterThan(WORDMARK_RATIO[0]);
+    expect(picture.width / picture.height).toBeLessThan(WORDMARK_RATIO[1]);
+  });
+
+  it("is the whole logo with no margin, so the email decides the space around it", () => {
+    const ink = inkBox(decodePng(png));
+    expect(ink.left).toBeLessThanOrEqual(1);
+    expect(ink.top).toBeLessThanOrEqual(1);
+  });
+});
+

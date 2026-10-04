@@ -13,6 +13,9 @@ What it makes, and why each is different:
                                             rounds the corners itself, and fills any transparency with black)
   src/app/icon.png (192)                    the pig-and-coin mark only: the browser tab shows it at 16 to 32
                                             pixels, where a wordmark cannot be read
+  public/email/logo.png (480 wide)          the whole logo, cropped to its ink on a transparent ground, for the
+                                            emails the API sends (they load it from the web app's address; email
+                                            clients cannot show webp or svg)
 
 src/app/icons.test.ts checks the results, so a wrong icon fails the build.
 """
@@ -44,6 +47,7 @@ def on_square(artwork: Image.Image, size: int, width_share: float | None = None,
 
 def save(image: Image.Image, path: str) -> None:
     target = ROOT / path
+    target.parent.mkdir(parents=True, exist_ok=True)
     image.save(target, "PNG", optimize=True)
     print(f"{path:34} {image.width}x{image.height}  {target.stat().st_size:>6} bytes")
 
@@ -56,3 +60,6 @@ save(on_square(whole, 512, width_share=0.76), "public/icons/icon-512.png")
 save(on_square(whole, 512, width_share=0.62), "public/icons/maskable-512.png")
 save(on_square(whole, 180, width_share=0.76), "src/app/apple-icon.png")
 save(on_square(mark, 192, height_share=0.8), "src/app/icon.png")
+
+EMAIL_WIDTH = 480
+save(whole.resize((EMAIL_WIDTH, round(whole.height * EMAIL_WIDTH / whole.width)), Image.LANCZOS), "public/email/logo.png")
