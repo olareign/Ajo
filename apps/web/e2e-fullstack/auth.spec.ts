@@ -15,6 +15,8 @@
  *      TURNSTILE_SITE_KEY, and set E2E_TURNSTILE=1 here. Cloudflare's published test keys work and need no
  *      account: site key 1x00000000000000000000AA, secret 1x0000000000000000000000000000000AA (always pass).
  *      If a dev server already holds this folder, run another from a copy, or set E2E_BASE_URL.
+ *      Saving (optional): also start the API with SWEEP_SECONDS=2, so its scheduled work (taking a
+ *      plan's debit on its day) runs while the test waits. Run with E2E_PAYMENTS=1.
  *      Payments (optional): start the API with PAYMENTS_FAKE=true (a stand-in partner that pretends to move
  *      money) and set E2E_PAYMENTS=1 here to run the add-money and withdraw test. Run it on its own
  *      (--grep payments): the tests about "not switched on yet" expect the API started without it.
@@ -1040,4 +1042,135 @@ test("payments: add money through the partner and watch it land, then withdraw a
   });
   await page.goto("/wallet");
   await expect(page.getByRole("region", { name: "Nigerian Naira wallet" })).toContainText("₦4,000");
+});
+
+test("saving: start a plan, watch the scheduler take a debit into the pot, read the message, then end it early", async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  test.skip(
+    !process.env.E2E_PAYMENTS,
+    "Needs the API started with PAYMENTS_FAKE=true and SWEEP_SECONDS=2; set E2E_PAYMENTS=1.",
+  );
+  const email = `e2e+save${Date.now()}@example.com`;
+  const token = await onboardedAccount(email);
+  for (const step of ["id", "selfie", "address", "location", "bank"]) {
+    sql(
+      `insert into kyc_steps (user_id, step, status) select id, '${step}', 'approved' from users where email = '${email}'`,
+    );
+  }
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // Adding money asks for the authenticator app to be on. It is turned on after signing in, so there is no code screen to get past.
+  const enrol = (await api("/auth/mfa/totp", { token })).data;
+  expect(
+    (
+      await api("/auth/mfa/totp/confirm", {
+        token,
+        body: { code: authenticatorCode(enrol.secret!) },
+      })
+    ).status,
+  ).toBe(200);
+  // Money in the wallet the way it really arrives: a payment, then the partner's message.
+  const fund = await fetch(`${apiUrl}/api/v1/payments/fund`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      "Idempotency-Key": `k_${randomBytes(8).toString("hex")}`,
+      "X-Forwarded-For": `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
+    },
+    body: JSON.stringify({ amount: "500000", method: "card" }),
+  });
+  expect(fund.status).toBe(200);
+  const reference = sql(
+    `select reference from payment_intents where kind = 'funding' and user_id = (select id from users where email = '${email}')`,
+  );
+  await partnerSays({ kind: "funding.succeeded", reference, amount: "500000", currency: "NGN" });
+
+  await page.reload();
+  await expect(page.getByText("Fill your first pot")).toBeVisible({ timeout: 15_000 });
+
+  // The wizard.
+  await page.getByRole("link", { name: /Savings/ }).click();
+  await expect(page.getByText("Your first pot is empty")).toBeVisible({ timeout: 45_000 });
+  await page.getByRole("link", { name: "Start a plan" }).click();
+  await page.getByRole("textbox", { name: "Name your plan" }).fill("Rent");
+  await page.getByRole("button", { name: "Continue" }).click();
+  for (const digit of "1000")
+    await page
+      .getByRole("group", { name: /number pad/i })
+      .getByRole("button", { name: digit, exact: true })
+      .click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio", { name: "4", exact: true }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  const receipt = page.getByRole("region", { name: "Your plan" });
+  await expect(receipt).toContainText("₦4,000");
+  await expect(
+    page.getByRole("region", { name: "Your debit days" }).getByRole("listitem"),
+  ).toHaveCount(4);
+  await page.screenshot({ path: "e2e/screenshots/saving-review.png", fullPage: true });
+  await page.getByRole("button", { name: "Start my plan" }).click();
+  // A dev server compiles each new page the first time it is opened, so allow for that.
+  await expect(page.getByText(/Your pot is ready/)).toBeVisible({ timeout: 45_000 });
+  const planId = sql(
+    `select id from savings_plans where user_id = (select id from users where email = '${email}')`,
+  );
+  await expect(page.getByRole("region", { name: "Debit days" }).getByRole("listitem")).toHaveCount(
+    4,
+  );
+
+  // The day comes: the scheduler takes the first debit from the wallet into the pot.
+  sql(
+    `update savings_debits set next_attempt_at = now() - interval '1 minute' where plan_id = '${planId}' and seq = 1`,
+  );
+  await expect
+    .poll(() => sql(`select status from savings_debits where plan_id = '${planId}' and seq = 1`), {
+      timeout: 30_000,
+    })
+    .toBe("paid");
+  await page.reload();
+  const pot = page.getByRole("region", { name: "Your pot" });
+  await expect(pot).toContainText("₦1,000", { timeout: 30_000 });
+  await expect(pot).toContainText("1 of 4 debits");
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: "e2e/screenshots/saving-plan.png", fullPage: true });
+  expect(
+    sql(
+      `select coalesce(sum(case direction when 'credit' then amount else -amount end), 0) from ledger_entries e join ledger_accounts a on a.id = e.account_id where a.kind = 'available' and a.owner_id = (select id from users where email = '${email}')`,
+    ),
+  ).toBe("400000");
+
+  // The message about it, on Today and in the list.
+  await page.goto("/today");
+  await expect(page.getByRole("link", { name: /Messages, \d+ unread/ })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.screenshot({ path: "e2e/screenshots/saving-today.png" });
+  await page.goto("/notifications");
+  await expect(page.getByText("₦1,000 saved")).toBeVisible({ timeout: 45_000 });
+  await page.getByRole("button", { name: /₦1,000 saved/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/save/${planId}`));
+
+  // Changing their mind: ends it with the PIN, and everything comes back.
+  await page.getByRole("button", { name: "End the plan early" }).click();
+  for (const digit of "493817")
+    await page
+      .getByRole("group", { name: "Your PIN, to be sure" })
+      .getByRole("button", { name: digit, exact: true })
+      .click();
+  await page.getByRole("button", { name: "End it" }).click();
+  await expect(page.getByText(/You ended this plan early/)).toBeVisible({ timeout: 20_000 });
+  expect(sql(`select status from savings_plans where id = '${planId}'`)).toBe("cancelled");
+  expect(
+    sql(
+      `select coalesce(sum(case direction when 'credit' then amount else -amount end), 0) from ledger_entries e join ledger_accounts a on a.id = e.account_id where a.kind = 'available' and a.owner_id = (select id from users where email = '${email}')`,
+    ),
+  ).toBe("500000");
+  await page.screenshot({ path: "e2e/screenshots/saving-ended.png" });
 });
