@@ -64,6 +64,27 @@ describe("handleSignUp", () => {
     expect(new Headers(init!.headers).get("cookie")).toBeNull();
   });
 
+  it("passes a friend's invite code on, and nothing else the browser adds", async () => {
+    const fetchFn = apiReturning(202, {});
+    await handleSignUp(
+      post("/api/auth/sign-up", {
+        email: "a@b.co",
+        password: "pw",
+        displayName: "Ada",
+        invite: "K7M2QH9R",
+        referrer: "x",
+      }),
+      { env, fetchFn },
+    );
+    const [, init] = fetchFn.mock.calls[0]!;
+    expect(JSON.parse(init!.body as string)).toEqual({
+      email: "a@b.co",
+      password: "pw",
+      displayName: "Ada",
+      invite: "K7M2QH9R",
+    });
+  });
+
   it("passes the bot-check token on, and relays a refusal's code", async () => {
     const fetchFn = apiReturning(400, {
       message: "Please complete the check and try again.",

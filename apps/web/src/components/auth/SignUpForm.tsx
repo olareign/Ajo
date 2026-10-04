@@ -12,9 +12,11 @@ const MIN_LENGTH = 12;
 type Props = Readonly<{
   /** Cloudflare Turnstile's public key. Without one there is no check (local work, tests). */
   turnstileSiteKey?: string;
+  /** The code from a friend's invite link, if the person came through one. */
+  invite?: string;
 }>;
 
-export function SignUpForm({ turnstileSiteKey }: Props) {
+export function SignUpForm({ turnstileSiteKey, invite }: Props) {
   const router = useRouter();
   const [botToken, setBotToken] = useState<string | null>(null);
   const [checkAttempt, setCheckAttempt] = useState(0);
@@ -38,6 +40,7 @@ export function SignUpForm({ turnstileSiteKey }: Props) {
       password,
       displayName: name.trim(),
       ...(turnstileSiteKey ? { botToken } : {}),
+      ...(invite ? { invite } : {}),
     });
     if (result.ok) {
       router.push(`/check-email?e=${encodeURIComponent(email.trim())}`);
