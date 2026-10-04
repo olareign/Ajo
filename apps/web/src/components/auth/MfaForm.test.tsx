@@ -31,7 +31,7 @@ describe("MfaForm", () => {
     await userEvent.click(confirm);
     await waitFor(() => expect(push).toHaveBeenCalledWith("/today"));
     expect(fetchMock.mock.calls[0]![0]).toBe("/api/auth/mfa");
-    expect(body(fetchMock)).toEqual({ code: "123456" });
+    expect(body(fetchMock)).toEqual({ code: "123456", trustDevice: true });
   });
 
   it("shows the API's message and clears the boxes after a wrong code", async () => {
@@ -55,7 +55,7 @@ describe("MfaForm", () => {
     await userEvent.type(screen.getByLabelText("Recovery code"), "abcde-fghjk");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/today"));
-    expect(body(fetchMock)).toEqual({ recoveryCode: "abcde-fghjk" });
+    expect(body(fetchMock)).toEqual({ recoveryCode: "abcde-fghjk", trustDevice: true });
   });
 
   it("can go back to the authenticator code from the recovery code", async () => {
@@ -95,5 +95,34 @@ describe("MfaForm", () => {
     render(<MfaForm />);
     await userEvent.click(screen.getByRole("button", { name: "Use a recovery code" }));
     expect(screen.getByLabelText("Recovery code")).toHaveAttribute("placeholder", "xxxxx-xxxxx");
+  });
+
+  it("offers to remember the device, ticked, so the next sign-in here is not asked again", async () => {
+    render(<MfaForm />);
+    const remember = screen.getByRole("checkbox", { name: /Don.t ask again on this device/i });
+    expect(remember).toBeChecked();
+    expect(screen.getByText(/30 days/)).toBeInTheDocument();
+  });
+
+  it("sends the choice not to remember when it is unticked", async () => {
+    const fetchMock = vi.fn<Fetch>(async () => Response.json({ signedIn: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<MfaForm />);
+    await userEvent.click(screen.getByRole("checkbox", { name: /Don.t ask again/i }));
+    await enter("123456");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await waitFor(() => expect(push).toHaveBeenCalled());
+    expect(body(fetchMock)).toEqual({ code: "123456", trustDevice: false });
+  });
+
+  it("applies the choice to a recovery code too", async () => {
+    const fetchMock = vi.fn<Fetch>(async () => Response.json({ signedIn: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<MfaForm />);
+    await userEvent.click(screen.getByRole("button", { name: "Use a recovery code" }));
+    await userEvent.type(screen.getByLabelText("Recovery code"), "abcde-fghjk");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await waitFor(() => expect(push).toHaveBeenCalled());
+    expect(body(fetchMock)).toEqual({ recoveryCode: "abcde-fghjk", trustDevice: true });
   });
 });

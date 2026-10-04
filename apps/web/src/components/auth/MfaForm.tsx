@@ -20,6 +20,8 @@ export function MfaForm() {
   const [recovery, setRecovery] = useState("");
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  // Ticked by default: asking on every sign-in would be the thing people give up on.
+  const [remember, setRemember] = useState(true);
 
   const ready = useRecovery ? recovery.trim().length > 0 : code.length === CODE_LENGTH;
 
@@ -30,7 +32,9 @@ export function MfaForm() {
     setBusy(true);
     const result = await postJson(
       "/api/auth/mfa",
-      useRecovery ? { recoveryCode: recovery.trim() } : { code },
+      useRecovery
+        ? { recoveryCode: recovery.trim(), trustDevice: remember }
+        : { code, trustDevice: remember },
     );
     if (result.ok) {
       router.push("/today");
@@ -74,6 +78,20 @@ export function MfaForm() {
             Back to sign in
           </Link>
         )}
+        <label className="flex items-start gap-3 text-[15px] leading-6">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="mt-1 size-5 shrink-0 accent-[var(--primary)]"
+          />
+          <span>
+            Don&apos;t ask again on this device
+            <span className="block text-[13px] leading-5 text-ink-muted">
+              For 30 days. Money still needs a code every time.
+            </span>
+          </span>
+        </label>
         <button
           type="button"
           onClick={() => switchTo(!useRecovery)}

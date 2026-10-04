@@ -262,6 +262,8 @@ test("a sign-in with the authenticator app on: the code screen, a wrong code, th
     await page.getByLabel("Password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/sign-in\/verify$/);
+    // This test is about the code screen itself, so it declines to be remembered: every sign-in asks.
+    await page.getByRole("checkbox", { name: /Don.t ask again/i }).uncheck();
   };
   await signIn();
   await expect(page.getByRole("heading", { name: "Verify it's you" })).toBeVisible();
@@ -609,7 +611,7 @@ test("the person's own address and device reach the API, and a different kind of
   expect(devices).toBe("Chrome on Android:false ; Safari on iPhone:true");
 });
 
-test("a person turns the authenticator app on from Today, signs in with a spare key, and turns it off", async ({
+test("a person turns the authenticator app on from Today, is asked for a code only on a new device, and turns it off", async ({
   page,
 }) => {
   // A long journey, and the first visit to each page compiles it in a development server.
@@ -636,6 +638,12 @@ test("a person turns the authenticator app on from Today, signs in with a spare 
 
   await signIn();
   await expect(page).toHaveURL(/\/today$/);
+  // Today also offers to put the app on the home screen (and shows the icon people will get).
+  await expect(page.getByRole("region", { name: "Install Àjọ" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "The Àjọ app icon" })).toBeVisible();
+  expect(await sideways()).toBe(0);
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: "e2e/screenshots/today-install.png" });
   // Until it is on, Today says why it matters and leads there.
   await page.getByRole("link", { name: /Add a second lock/ }).click();
   await expect(page).toHaveURL(/\/me\/security$/);
@@ -686,15 +694,42 @@ test("a person turns the authenticator app on from Today, signs in with a spare 
   await expect(page).toHaveURL(/\/me$/);
   await expect(page.getByRole("link", { name: /Authenticator app/ })).toContainText("On");
 
-  // Signing in now asks for a code; a spare key works, once.
+  // The phone that turned it on is remembered: signing in here again does not ask for a code.
+  await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
+  await signIn();
+  await expect(page).toHaveURL(/\/today$/);
+  await expect(page.getByRole("link", { name: /second lock/i })).toHaveCount(0);
+
+  // A device nobody has vouched for is asked. A spare key works once; declining to be remembered
+  // means the next sign-in asks again.
+  const forget = async () => {
+    await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
+    await page.context().clearCookies({ name: "ajo_device" });
+  };
+  await forget();
+  await signIn();
+  await expect(page).toHaveURL(/\/sign-in\/verify$/);
+  await page.getByRole("checkbox", { name: /Don.t ask again/i }).uncheck();
+  await page.getByRole("button", { name: "Use a recovery code" }).click();
+  await page.getByLabel("Recovery code").fill(recoveryCodes[0]!);
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
   await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
   await signIn();
   await expect(page).toHaveURL(/\/sign-in\/verify$/);
   await page.getByRole("button", { name: "Use a recovery code" }).click();
   await page.getByLabel("Recovery code").fill(recoveryCodes[0]!);
   await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(alert(page)).toContainText("That code is incorrect.");
+
+  // This time it is remembered: one spare key, then no more questions on this device.
+  await page.getByLabel("Recovery code").fill(recoveryCodes[1]!);
+  await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page).toHaveURL(/\/today$/);
-  await expect(page.getByRole("link", { name: /second lock/i })).toHaveCount(0);
+  await page.evaluate(() => fetch("/api/auth/sign-out", { method: "POST" }));
+  await signIn();
+  await expect(page).toHaveURL(/\/today$/);
 
   // Turning it off needs the password and a fresh code; a wrong password keeps the person signed in.
   await page.goto("/me/security");

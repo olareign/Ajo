@@ -5,6 +5,8 @@ import { clientOf } from "./client-context";
 import { withSession } from "./me-handlers";
 import { isSameOrigin } from "./same-origin";
 import {
+  deviceCookie,
+  isDeviceToken,
   MFA_TTL_SECONDS,
   mfaCookie,
   openSeal,
@@ -126,11 +128,16 @@ export async function handleSignIn(request: Request, { env, fetchFn }: Deps): Pr
   if (!isSameOrigin(request)) return FORBIDDEN();
   const body = await readObject(request);
   if (!body) return json(400, { message: "Send the form as JSON." });
+  // A device the person asked to be remembered on carries a secret; with it the API skips the code.
+  const device = readCookie(request, deviceCookie(env.production).name);
   const result = await callApi(env, fetchFn, {
     client: clientOf(request),
     path: "/auth/login",
     patient: true,
-    body: pick(body, ["email", "password"]),
+    body: {
+      ...pick(body, ["email", "password"]),
+      ...(isDeviceToken(device) ? { deviceToken: device } : {}),
+    },
   });
 
   if (result.status !== 200) return json(result.status, result.data);
@@ -162,7 +169,11 @@ export async function handleMfaSignIn(request: Request, { env, fetchFn }: Deps):
     client: clientOf(request),
     path: "/auth/login/mfa",
     patient: true,
-    body: { mfaToken: challenge.mfaToken, ...pick(body, ["code", "recoveryCode"]) },
+    body: {
+      mfaToken: challenge.mfaToken,
+      ...pick(body, ["code", "recoveryCode"]),
+      ...(typeof body.trustDevice === "boolean" ? { trustDevice: body.trustDevice } : {}),
+    },
   });
   if (result.status !== 200) return json(result.status, result.data);
   return startSession(env, result.data);
@@ -180,9 +191,14 @@ export async function startSession(
   const cookie = sessionCookie(env.production);
   const sealed = await seal(session, env.sessionSecret, SESSION_TTL_SECONDS);
   const clearMfa = mfaCookie(env.production);
+  const device = deviceCookie(env.production);
   return json(200, { signedIn: true }, [
     serializeCookie(cookie.name, sealed, cookie.options),
     serializeCookie(clearMfa.name, "", { ...clearMfa.options, maxAge: 0 }),
+    // The device's secret goes into its own cookie, never into the page's data.
+    ...(isDeviceToken(data.deviceToken)
+      ? [serializeCookie(device.name, data.deviceToken, device.options)]
+      : []),
   ]);
 }
 

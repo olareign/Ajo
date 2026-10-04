@@ -545,3 +545,89 @@ describe("password recovery", () => {
     expect(fetchFn).not.toHaveBeenCalled();
   });
 });
+
+describe("remembering a device", () => {
+  const DEVICE = "d".repeat(43);
+  const cookieOf = (res: Response, name: string) =>
+    res.headers.getSetCookie().find((c) => c.startsWith(`${name}=`));
+
+  function signInWith(cookie?: string) {
+    return new Request(`${base}/api/auth/sign-in`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Sec-Fetch-Site": "same-origin",
+        ...(cookie ? { Cookie: cookie } : {}),
+      },
+      body: JSON.stringify({ email: "a@b.co", password: "pw" }),
+    });
+  }
+
+  it("sends the device's secret with a sign-in, so the API can skip the code", async () => {
+    const fetchFn = apiReturning(200, { accessToken: "a", refreshToken: "r" });
+    await handleSignIn(signInWith(`__Host-ajo_device=${DEVICE}`), { env, fetchFn });
+    expect(JSON.parse(fetchFn.mock.calls[0]![1]!.body as string)).toEqual({
+      email: "a@b.co",
+      password: "pw",
+      deviceToken: DEVICE,
+    });
+  });
+
+  it("sends nothing extra from a device that has no secret, or a malformed one", async () => {
+    const fetchFn = apiReturning(200, { accessToken: "a", refreshToken: "r" });
+    await handleSignIn(signInWith(), { env, fetchFn });
+    await handleSignIn(signInWith("__Host-ajo_device=not-a-token"), { env, fetchFn });
+    for (const [, init] of fetchFn.mock.calls) {
+      expect(JSON.parse(init!.body as string)).toEqual({ email: "a@b.co", password: "pw" });
+    }
+  });
+
+  async function codeStep(body: unknown) {
+    const sealed = await seal({ mfaToken: "m".repeat(43) }, env.sessionSecret, 60);
+    return new Request(`${base}/api/auth/mfa`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Sec-Fetch-Site": "same-origin",
+        Cookie: `__Host-ajo_mfa=${encodeURIComponent(sealed)}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("asks the API to remember the device only when the person chose to, and keeps its secret in a cookie JavaScript cannot read", async () => {
+    const fetchFn = apiReturning(200, { accessToken: "a", refreshToken: "r", deviceToken: DEVICE });
+    const res = await handleMfaSignIn(await codeStep({ code: "123456", trustDevice: true }), {
+      env,
+      fetchFn,
+    });
+    expect(JSON.parse(fetchFn.mock.calls[0]![1]!.body as string)).toMatchObject({
+      trustDevice: true,
+    });
+    const cookie = cookieOf(res, "__Host-ajo_device")!;
+    expect(decodeURIComponent(cookie.split(";")[0]!.split("=")[1]!)).toBe(DEVICE);
+    expect(cookie).toMatch(/HttpOnly/);
+    expect(cookie).toMatch(/Secure/);
+    expect(cookie).toMatch(/Max-Age=\d{6,}/);
+    // The secret reaches the browser only as that cookie, never in the page's data.
+    expect(JSON.stringify(await res.json())).not.toContain(DEVICE);
+  });
+
+  it("sets no device cookie when the person did not ask to be remembered", async () => {
+    const fetchFn = apiReturning(200, { accessToken: "a", refreshToken: "r" });
+    const res = await handleMfaSignIn(await codeStep({ code: "123456", trustDevice: false }), {
+      env,
+      fetchFn,
+    });
+    expect(cookieOf(res, "__Host-ajo_device")).toBeUndefined();
+  });
+
+  it("only passes a true or false for the choice", async () => {
+    const fetchFn = apiReturning(200, { accessToken: "a", refreshToken: "r" });
+    await handleMfaSignIn(await codeStep({ code: "123456", trustDevice: "yes please" }), {
+      env,
+      fetchFn,
+    });
+    expect(JSON.parse(fetchFn.mock.calls[0]![1]!.body as string)).not.toHaveProperty("trustDevice");
+  });
+});

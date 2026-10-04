@@ -32,7 +32,7 @@ export function MfaOn() {
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       <ScreenHeader
         title="Your second lock is on"
-        subtitle="You enter a code from your phone each time you sign in, and before any money moves."
+        subtitle="You enter a code from your phone when you sign in on a new device, and before any money moves."
         backHref="/me"
       />
       <div className="grid grid-cols-1 gap-6">
