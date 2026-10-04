@@ -188,4 +188,25 @@ describe("WalletScreen", () => {
     render(<WalletScreen />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/onboarding"));
   });
+
+  it("puts adding and withdrawing money, auto-debit and limits within reach", async () => {
+    stubApi({ "/api/wallet": wallets(), "/api/wallet/transactions": history([]) });
+    render(<WalletScreen />);
+    expect(await screen.findByRole("link", { name: "Add money" })).toHaveAttribute(
+      "href",
+      "/wallet/add",
+    );
+    expect(screen.getByRole("link", { name: "Withdraw" })).toHaveAttribute(
+      "href",
+      "/wallet/withdraw",
+    );
+    expect(screen.getByRole("link", { name: /Auto-debit/ })).toHaveAttribute(
+      "href",
+      "/wallet/mandate",
+    );
+    expect(screen.getByRole("link", { name: /Your limits/ })).toHaveAttribute(
+      "href",
+      "/wallet/limits",
+    );
+  });
 });

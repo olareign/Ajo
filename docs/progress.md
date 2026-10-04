@@ -17,7 +17,7 @@ The live status of every bullet in the [project plan](project-plan.md), by phase
 | Check | Result |
 | --- | --- |
 | Web production (Vercel `ajo-web`) | Ready, serving `main` at `f00625a` (PR #13). Every merge into `main` deploys |
-| Web automated tests | 429 unit and component tests pass; lint, typecheck and format clean |
+| Web automated tests | 552 unit and component tests pass; lint, typecheck and format clean |
 | API automated tests (`ajo-api`) | 192 unit and 157 integration tests pass against real Postgres and Redis |
 | Full-stack browser tests | Default mode: 6 pass, 1 skipped. With the bot check on (real Cloudflare test keys): 7 of 7. Needs a dev server with a fixed `SESSION_SECRET`. The E1.8 and E1.5 journey (turn on, remembered phone, new device asked, spare key, untick, turn off) passes against the real API and Postgres, and so do the other eight with per-person limits on (Oct 4) |
 | Live database | Has the boolean `email_verified` column (proved through the live API on Oct 3). The other migrations are not individually checked: run `ajo-api/scripts/sql/bring-database-up-to-date.sql` on Neon to be sure |
@@ -65,20 +65,29 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 | ID | Feature | Mark | Note |
 | --- | --- | --- | --- |
-| E2.1–E2.8 | ID, selfie, address, location, bank, national check, status and retry, KYC gate | ⬜ | Waits on KYC partner sandbox keys (P0.3). Can be built behind a provider interface with a stand-in, as mail is. Note for E2.1: the profile route lets a person change country at any time (defect D4) |
+| E2.1 | ID verification | 🟡 | The screen is built and country-aware (Nigeria: NIN, passport, driver's licence, voter's card; UK: passport, driving licence, residence permit) and **walkable in the Preview**. The real check waits for the identity partner: Smile ID for Nigeria; the UK vendor is undecided |
+| E2.2 | Selfie and liveness | 🟡 | Built as a viewfinder with three movements (look straight, turn, smile); the preview never opens the camera. The capture itself will be the partner's camera component |
+| E2.3 | Proof of address | 🟡 | Built: choose the document, pick a file (a preview never reads or sends it). Needs a place to keep documents (see the accounts list) |
+| E2.4 | Location capture | 🟡 | Built with a plain explanation of what is kept; the preview shows a sample area and never asks the browser. Needs a geocoding account for the area name |
+| E2.5 | Bank account | 🟡 | Built: bank and account number (UK: sort code), the bank's name for the account is shown and **must match the ID name** (rule built and tested). The lookup waits for Paystack (Nigeria) or Modulr (UK) |
+| E2.6 | National checks (optional) | 🟡 | BVN screen built for Nigeria only; raises the tier. Waits for Smile ID |
+| E2.7 | KYC status and retry | 🟡 | Built: a **member passport** with a stamp per step. The API works status and tier out from per-step records (`kyc_steps`); the screen shows not started, in progress, waiting, approved, or refused with the reason and a **Try again** that returns to that stamp. Fills with real results once a partner is connected |
+| E2.8 | KYC gate | ✅ | API: any route marked `@RequiresKyc()` refuses with 403 `kyc_required` until every required step is approved (tested on a stand-in route). Web: `KycGate` closes a screen the same way. The first real users are Phase 2 saving, joining, groups and friends, which must carry them |
+
+**How the unconnected screens behave (decided Oct 4).** Nothing is connected yet, so the API reports `connected: false` and every step shows a locked "Not switched on yet" with a **Preview the flow** link. The preview (`?preview=1`) is a walk-through with sample data kept in that browser tab only: it never calls the API, the camera, location or the file system, and the database stays empty (a full-stack test proves it). In production a stand-in partner can never approve a real person, because production refuses stand-ins by design. Each money action also refuses to pretend outside a preview, even once a partner is connected, until its real call is wired. Preview-only samples for reviewers: an ID or BVN ending 0000, an account number ending 0000 (someone else's name) or a file called "blurry" shows a refusal; a withdrawal ending 666 shows a bank refusal being reversed. Defect D4 (country can change any time) still stands until the real KYC steps start.
 
 ### E3. Wallet and payments
 
 | ID | Feature | Mark | Hand test | Note |
 | --- | --- | --- | --- | --- |
 | E3.1 | Ledger core | ✅ | | Double entry, database-level safeguards, idempotency, tests including real Postgres |
-| E3.2 | Wallet view | ✅ | ☐ | API and screens (`/wallet`, summary on Today): balances per currency, paged history. **Built and tested on this branch; not yet merged or deployed** |
-| E3.3 | Fund wallet | ⬜ | | Needs payment partner sandbox |
-| E3.4 | Auto-debit mandate | ⬜ | | Needs payment partner sandbox |
-| E3.5 | Withdraw to bank | ⬜ | | Needs E2.5 |
+| E3.2 | Wallet view | ✅ | ☐ | Balances per currency and paged history, now with Add money, Withdraw, Auto-debit and Your limits within reach |
+| E3.3 | Fund wallet | 🟡 | ☐ | Screens built (`/wallet/add`): card, bank transfer (your own account details) and USSD in Nigeria; bank transfer and Direct Debit in the UK; amount pad, receipt, coin landing in the wallet. Walkable in the Preview; the real payment waits for Paystack (Nigeria) and GoCardless or Modulr (UK). Whether the UK needs card funding is an open question |
+| E3.4 | Auto-debit mandate | 🟡 | ☐ | Screen built (`/wallet/mandate`): a standing-permission ticket with Not set up, Waiting for your bank, Active and Cancelled, in each country's own words (NIBSS Direct Debit, Bacs Direct Debit); cancel explains it is blocked while a plan or circle needs it (that rule comes with Phase 2). Walkable in the Preview; real mandates wait for Paystack and GoCardless |
+| E3.5 | Withdraw to bank | 🟡 | ☐ | Screens built (`/wallet/withdraw`): amount against what is available, receipt, **PIN pad**, then a ticket that follows the money (Received, Sent to your bank, Arrived or Sent back with the reversal shown). Walkable in the Preview (any PIN works there). The real transfer, the real PIN check and `@MoneyAction()` on the route wait for Paystack or Modulr |
 | E3.6 | Webhook inbox | ⬜ | | The ledger cannot join an outer database transaction today; settle that design here |
 | E3.7 | Daily reconciliation | ⬜ | | Needs E9.1 |
-| E3.8 | Limits by KYC tier | ⬜ | | Needs E2.7 |
+| E3.8 | Limits by KYC tier | 🟡 | ☐ | The ladder screen is built (`/wallet/limits`): not verified, passport stamped, BVN added (Nigeria only), with your rung marked. **The numbers shown in the preview are samples; the real limits are a business decision (P0.1, E11.10) and nothing enforces limits yet** |
 
 ## Phases 2 to 6
 
@@ -112,11 +121,12 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 4. E1.7: remove any Àjọ icon already on your home screen, then add it again on Android and on iPhone (phones keep the old icon until you do): the whole Àjọ logo must show, not just the ọ. Use the card on Today, or Me → Install Àjọ on this phone, which stays until installed (Chrome shows its own prompt rarely, so do not wait for it). On iPhone the card shows the Share-sheet steps.
 5. E3.2: Today shows a wallet card; it opens `/wallet` (empty for a new account; real rows need the ledger seeded).
 6. E1.8: on Today tap "Add a second lock". Install an authenticator app (Google Authenticator, Authy or 1Password), scan the square, type the code. Save the ten spare keys (Copy all or Download), tick the box, Done. Sign out and in on the same phone: it must NOT ask for a code. Then sign in from a different browser or device: it must ask, a spare key must work once and then be refused, and with "Don't ask again" ticked that device is not asked next time. Then Me, Authenticator app, Turn off: a wrong password must say so and keep you signed in.
-7. E1.4: sign in on your phone, then in a different browser or on another device: the owner gets a "New sign-in to your Àjọ account" email naming it. Open Today, tap the round person icon (Me), and use "Sign out of all devices": every other device must lose access.
+7. E2 and E3 screens: on Today tap "Get your passport stamped". The passport must show every stamp locked and say verification isn't switched on. Tap **Preview the flow** and walk all five stamps (and the BVN), watching each stamp land; then try the refusals (see "How the unconnected screens behave"). Open Wallet and try Add money, Withdraw, Auto-debit and Your limits: each is locked for real and fully walkable in the Preview. Look for anything that overflows sideways or reads oddly on your phone. Nothing you do in a preview is saved.
+8. E1.4: sign in on your phone, then in a different browser or on another device: the owner gets a "New sign-in to your Àjọ account" email naming it. Open Today, tap the round person icon (Me), and use "Sign out of all devices": every other device must lose access.
 
-**Merge order for E1.5, E1.7 install prompt and E1.8 (this release). Sign-in now reads a new table, so the database comes first.**
+**Merge order for E1.5, E1.7 install prompt, E1.8, D3 and the E2/E3 screens (this release). Sign-in and the passport now read new tables, so the database comes first.**
 
-1. **Neon SQL editor:** run `ajo-api/scripts/sql/bring-database-up-to-date.sql` again (adds `trusted_devices`; verified identical to the migrations and safe to repeat). Without it, signing in with the authenticator on fails.
+1. **Neon SQL editor:** run `ajo-api/scripts/sql/bring-database-up-to-date.sql` again. It adds `trusted_devices` (E1.5) and `kyc_steps` (E2.7); verified identical to the migrations and safe to repeat. Without it, signing in with the authenticator on, and the passport, fail.
 2. Merge the API pull request; Render deploys it. (If nothing starts within a few minutes, use Manual Deploy, Deploy latest commit.)
 3. Merge the web pull request; Vercel deploys it.
 4. People who already turned the authenticator on will be asked for a code once on each device, then not again for 30 days.
@@ -148,6 +158,28 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 - **Cloudflare, Turnstile, your widget, Hostname management:** add `ajo-web-dusky.vercel.app` (and `ajo-web-abdulrasaq-taofeeqs-projects.vercel.app`; add `localhost` for local work). Until you do, Cloudflare refuses the page (console error 110200) and sign-up cannot complete. Preview URLs change per build and are not covered: test on the production address.
 - **Vercel:** a variable you add reaches only *new* deployments, so redeploy after adding or changing one.
 
+**Partner accounts for E2 and E3 (researched Oct 4; prices from public pages, so confirm before signing).** Sandboxes are free and self-serve for most; live keys need a registered business in that country (Paystack's Direct Debit is Nigeria-based businesses only). Never paste a key anywhere but the Render and Vercel dashboards.
+
+| Need | Option | Tag | Why |
+| --- | --- | --- | --- |
+| Identity, Nigeria (E2.1, E2.2, E2.6) | **Smile ID** | **Recommended**, free sandbox, paid usage | One vendor for ID document, selfie and liveness, and BVN and NIN lookups |
+| Identity, Nigeria | Dojah or Prembly | Alternative, paid | May be cheaper for NIN and BVN lookups alone; two integrations |
+| Identity, UK | Sumsub | **Recommended**, 14-day trial of 50 free checks, then about $1.35–1.85 a verification | Self-serve; can also screen sanctions later |
+| Identity, UK | Veriff | Alternative, free sandbox, about $0.80 a check | Cheapest published entry. **Decision: UK vendor left open (Oct 4)** |
+| Identity, UK | Onfido (now Entrust) | **Not recommended yet**, paid, sales-led, annual contract | Your documented choice, but quote-only now |
+| Document storage (E2.3, E9.2) | **Cloudflare R2** | **Recommended**, free to 10 GB, no egress fees | You already use Cloudflare; S3-compatible |
+| Area name from location (E2.4) | **LocationIQ** | **Recommended**, free to 5,000 requests a day | Confirm its terms allow storing the area name. Mapbox and Google restrict storing results unless you pay for permanent geocoding |
+| Nigeria money (E2.5, E3.3, E3.4, E3.5, E3.6) | **Paystack** | **Recommended**, free test mode, per-transaction fees | Name check, card, transfer and USSD funding, NIBSS direct debit, payouts and webhooks in one account. Live needs a verified Nigerian business (confirm documents) |
+| Nigeria second provider | Flutterwave or Monnify | Later, paid usage | The plan asks for a second adapter per market |
+| Nigeria fund holder | A CBN-licensed banking-as-a-service partner | **Do not choose yet**, paid | A legal decision (P0.2) |
+| UK collections (E3.3, E3.4) | **GoCardless** | **Recommended**, free sandbox, then about 1% + 20p capped at £4 | Bacs Direct Debit |
+| UK holding, payouts, name check (E2.5, E3.5) | **Modulr** | **Recommended**, paid, contract needed (confirm sandbox access) | The plan's fund holder; Confirmation of Payee for the name check |
+| UK card funding | Stripe or similar | **Open question**, paid usage | The plan names no UK card provider |
+| Background worker for webhooks (E3.6) | Render worker | Needed before E3.6 goes live, paid | The worker is not deployed today |
+| Not needed yet | ComplyAdvantage (E11.9), Wise Platform (cross-border), Termii and Twilio (E8) | Defer | |
+
+Create them in this order: Smile ID sandbox, Paystack test mode, GoCardless sandbox, Sumsub trial, R2 bucket, LocationIQ, Modulr.
+
 **Setup only you can do**
 
 - Vercel: decide whether `*.vercel.app` stays behind Vercel sign-in (it is on today, so testers must be signed in to Vercel). `API_BASE_URL` and `SESSION_SECRET` are already set.
@@ -166,8 +198,9 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 ## What is next
 
-By the book, Phase 1 is open, and its gaps are in this order:
+By the book, Phase 1 is open. What remains needs outside input:
 
-1. Done and waiting for your hand test: P0.4 photos, E1.1 bot protection, E1.2 usernames, E1.4 sessions and alerts, E1.6 scenes and flow, E1.7 icons and install prompt, E1.8 second lock, E1.5 new-device code.
-2. Phase 1's remaining engineering needs outside input: **E2 KYC** and **E3.3 to E3.8** wait on partner sandbox keys (P0.3 and the payment partner).
-3. **E2 KYC** (E2.1 to E2.8), then **E3.3 to E3.8**. E1.6's "then led to KYC" and D4 land with E2. That closes the Phase 1 gate: a verified user funds and withdraws, and the ledger matches the partner.
+1. Done and waiting for your hand test: P0.4 photos, E1.1 bot protection and reset limits, E1.2 usernames, E1.4 sessions and alerts, E1.5 new-device code, E1.6 scenes and flow, E1.7 icons and install prompt, E1.8 second lock, and the E2 and E3 screens in Preview.
+2. **You:** create the partner accounts above and put each key in Render and Vercel yourself. As each one arrives, I build its adapter behind the existing interface and switch its screens from locked to live, one partner at a time, with its tests against the sandbox: Smile ID first (E2.1, E2.2, E2.6), then Paystack (E2.5, E3.3 to E3.6), then GoCardless and the UK vendor.
+3. **Decisions I need from you:** the real limits per tier and country (E3.8, P0.1), whether the UK needs card funding, the UK identity vendor, and the Nigerian fund holder after legal advice (P0.2).
+4. Then **E3.6** webhook inbox, **E3.7** reconciliation (needs the admin console, E9.1), and D4 (freeze the country once KYC starts). That closes the Phase 1 gate: a verified user funds and withdraws, and the ledger matches the partner.

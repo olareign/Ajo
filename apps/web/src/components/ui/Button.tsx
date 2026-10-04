@@ -24,6 +24,23 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   block?: boolean;
 };
 
+/** The look of a button, for a link that should look like one. */
+export function buttonClass({
+  variant = "primary",
+  size = "md",
+  block = false,
+  className,
+}: Pick<ButtonProps, "variant" | "size" | "block" | "className">): string {
+  return cn(
+    "inline-flex items-center justify-center gap-2 rounded-m font-semibold transition-[background-color,transform] duration-150 ease-out active:translate-y-px",
+    "disabled:cursor-not-allowed disabled:opacity-45 disabled:active:translate-y-0",
+    variants[variant],
+    sizes[size],
+    block && "w-full",
+    className,
+  );
+}
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -37,14 +54,7 @@ export function Button({
       type={type}
       data-variant={variant}
       data-size={size}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-m font-semibold transition-[background-color,transform] duration-150 ease-out active:translate-y-px",
-        "disabled:cursor-not-allowed disabled:opacity-45 disabled:active:translate-y-0",
-        variants[variant],
-        sizes[size],
-        block && "w-full",
-        className,
-      )}
+      className={buttonClass({ variant, size, block, className })}
       {...props}
     />
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ShieldAlert } from "lucide-react";
+import { BookUser, ChevronRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { InstallCard } from "@/components/install/InstallCard";
 import { MeGate } from "@/components/onboarding/MeGate";
@@ -28,6 +28,25 @@ export function TodayScreen() {
             Nothing needs you yet. Your circles will show up here.
           </p>
           <WalletSummary />
+          {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
+            <Link
+              href="/verify"
+              className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] bg-primary-deep p-4 text-on-primary"
+            >
+              <BookUser aria-hidden className="size-7 shrink-0 text-oro" />
+              <span className="grid gap-0.5">
+                <span className="text-[15px] font-semibold">Get your passport stamped</span>
+                <span className="text-[14px] leading-5 text-on-primary/85">
+                  {me.kycStatus === "rejected"
+                    ? "A stamp needs another try."
+                    : me.kycStatus === "pending"
+                      ? "We're checking your details."
+                      : "Five short steps open saving, circles and friends."}
+                </span>
+              </span>
+              <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
+            </Link>
+          )}
           {me.mfaEnabled === false && (
             <Link
               href="/me/security"

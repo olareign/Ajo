@@ -282,6 +282,39 @@ body {
 .slide-from-left {
   animation: slide-from-left 0.35s ease-out both;
 }
+/* The passport stamp: pressed down with a thunk, and a gentle wait while it is being checked. */
+@keyframes stamp-thunk {
+  0% {
+    opacity: 0;
+    transform: scale(1.9) rotate(calc(var(--tilt, 0deg) - 16deg));
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.93) rotate(var(--tilt, 0deg));
+  }
+  78% {
+    transform: scale(1.04) rotate(var(--tilt, 0deg));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(var(--tilt, 0deg));
+  }
+}
+@keyframes stamp-wait {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.stamp-thunk {
+  animation: stamp-thunk 0.7s cubic-bezier(0.3, 0.1, 0.4, 1) both;
+}
+.stamp-wait {
+  animation: stamp-wait 2.2s ease-in-out infinite;
+}
 .logo-pop {
   animation:
     fade-in 0.5s ease-out 0.5s both,
@@ -310,7 +343,9 @@ body {
   .slide-from-left,
   .logo-pop,
   .logo-coin,
-  .logo-rays {
+  .logo-rays,
+  .stamp-thunk,
+  .stamp-wait {
     animation: none !important;
   }
 }
