@@ -1,47 +1,125 @@
 "use client";
 
 import { CalendarClock, Landmark, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { cn } from "@/lib/cn";
 import { mandateCopy, SAMPLE } from "@/lib/money-flow";
+import { leaveFor } from "@/lib/navigate";
+import {
+  cancelMandate,
+  loadMandate,
+  startMandate,
+  type Failure,
+  type MandateView,
+} from "@/lib/payments-client";
+import { POLL_EVERY_MS, POLL_LIMIT } from "@/lib/use-payment";
 import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
 import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
 
-type State = "none" | "pending" | "active" | "cancelled";
+type State = "none" | "pending" | "active" | "cancelled" | "failed";
 
 const LOOK: Record<State, { word: string; tone: string }> = {
   none: { word: "Not set up", tone: "bg-surface-sunken text-ink-muted" },
   pending: { word: "Waiting for your bank", tone: "bg-tertiary-tint text-tertiary" },
   active: { word: "Active", tone: "bg-leaf-tint text-leaf" },
   cancelled: { word: "Cancelled", tone: "bg-danger-tint text-danger" },
+  failed: { word: "Didn't go through", tone: "bg-danger-tint text-danger" },
 };
 
 /** Auto-debit: one permission, given once, so saving and circle payments can be collected on time. */
 export function Mandate() {
   const { preview, country, lock } = useMoneyFlow();
-  const [state, setState] = useState<State>("none");
+  const router = useRouter();
+  const [pretend, setPretend] = useState<State>("none");
+  // Live: what the API says. `undefined` is "not asked yet"; `null` is "none, ever".
+  const [real, setReal] = useState<MandateView | null>();
   const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
-
   const closed = lock("mandate");
+
+  function problem(failure: Failure) {
+    if (failure.kind === "signed-out") return router.replace("/sign-in");
+    setError(failure.message);
+  }
+
+  // Live: ask what the person's auto-debit is, and keep asking while the bank has not confirmed (the
+  // partner returns the person here, and tells our server by itself when it is done).
+  const watching = !preview && !closed;
+  const pending = real?.status === "pending";
+  useEffect(() => {
+    if (!watching || (real !== undefined && !pending)) return;
+    let live = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let tries = 0;
+    const look = async () => {
+      const result = await loadMandate();
+      if (!live) return;
+      tries += 1;
+      if (!result.ok) {
+        if (result.failure.kind === "unreachable" && tries < POLL_LIMIT) {
+          timer = setTimeout(() => void look(), POLL_EVERY_MS);
+          return;
+        }
+        return problem(result.failure);
+      }
+      setReal(result.data);
+      if (result.data?.status === "pending" && tries < POLL_LIMIT) {
+        timer = setTimeout(() => void look(), POLL_EVERY_MS);
+      }
+    };
+    void look();
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+    // `problem` only reads stable setters and the router; the loop restarts when the status changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watching, pending, real === undefined]);
+
   if (closed) return <FlowLocked lock={closed} title="Auto-debit" path="/wallet/mandate" />;
 
+  const state: State = preview
+    ? pretend
+    : real === null || real === undefined
+      ? "none"
+      : real.status;
   const copy = mandateCopy(country);
   const account = SAMPLE.account[country];
 
   async function setUp() {
     setError(undefined);
-    // A real mandate is set up with the bank through the partner. Until that is wired to this
-    // screen, only a preview may pretend.
-    if (!preview)
-      return setError("Auto-debit isn't switched on for this screen yet. Nothing was set up.");
-    setState("pending");
-    await pause(PREVIEW_CHECK_MS * 1.5);
-    setState("active");
+    if (preview) {
+      setPretend("pending");
+      await pause(PREVIEW_CHECK_MS * 1.5);
+      return setPretend("active");
+    }
+    setBusy(true);
+    const result = await startMandate();
+    if (!result.ok) {
+      setBusy(false);
+      return problem(result.failure);
+    }
+    setReal(result.data);
+    // The bank's own page is where permission is given; the person comes back to this screen.
+    if (result.data.action && leaveFor(result.data.action.url)) return;
+    setBusy(false);
+  }
+
+  async function cancel() {
+    setError(undefined);
+    setConfirming(false);
+    if (preview) return setPretend("cancelled");
+    setBusy(true);
+    const result = await cancelMandate();
+    setBusy(false);
+    if (!result.ok) return problem(result.failure);
+    setReal(result.data);
   }
 
   return (
@@ -71,7 +149,7 @@ export function Mandate() {
           </div>
           <p className="flex items-center gap-3 font-display text-[22px] leading-7 font-semibold">
             <Landmark aria-hidden className="size-6 text-primary" />
-            {account.bank} •••• {account.last4}
+            {preview ? `${account.bank} •••• ${account.last4}` : "Your bank account"}
           </p>
           <p className="border-t-2 border-dashed border-line pt-4 text-[14px] leading-5 text-ink-muted">
             {copy.scheme}
@@ -88,15 +166,32 @@ export function Mandate() {
             {error}
           </p>
         )}
-        {state === "none" && (
-          <Button size="lg" block onClick={() => void setUp()}>
-            Set up auto-debit
+        {!preview && real === undefined && !error && (
+          <p role="status" className="text-center text-[15px] text-ink-muted">
+            Loading…
+          </p>
+        )}
+        {state === "none" && (!preview ? real !== undefined : true) && (
+          <Button size="lg" block disabled={busy} onClick={() => void setUp()}>
+            {busy ? "Taking you to your bank…" : "Set up auto-debit"}
           </Button>
         )}
         {state === "pending" && (
-          <p role="status" className="text-center text-[15px] text-ink-muted">
-            Waiting for your bank to confirm…
-          </p>
+          <div className="grid gap-3">
+            <p role="status" className="text-center text-[15px] text-ink-muted">
+              Waiting for your bank to confirm…
+            </p>
+            {!preview && real?.action && (
+              <Button
+                variant="quiet"
+                onClick={() => {
+                  if (real.action) leaveFor(real.action.url);
+                }}
+              >
+                Open my bank&apos;s page again
+              </Button>
+            )}
+          </div>
         )}
         {state === "active" && (
           <div className="grid gap-3">
@@ -120,13 +215,7 @@ export function Mandate() {
                   <Button variant="quiet" onClick={() => setConfirming(false)}>
                     Keep it
                   </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => {
-                      setConfirming(false);
-                      setState("cancelled");
-                    }}
-                  >
+                  <Button variant="danger" disabled={busy} onClick={() => void cancel()}>
                     Cancel it
                   </Button>
                 </div>
@@ -134,9 +223,9 @@ export function Mandate() {
             )}
           </div>
         )}
-        {state === "cancelled" && (
-          <Button size="lg" block onClick={() => void setUp()}>
-            Set it up again
+        {(state === "cancelled" || state === "failed") && (
+          <Button size="lg" block disabled={busy} onClick={() => void setUp()}>
+            {state === "failed" ? "Try again" : "Set it up again"}
           </Button>
         )}
       </div>
