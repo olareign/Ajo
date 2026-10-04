@@ -23,9 +23,9 @@ describe("toMinor", () => {
 });
 
 describe("what each country can use", () => {
-  it("offers Nigeria card, transfer and USSD, and the UK transfer and Direct Debit", () => {
+  it("offers Nigeria card, transfer and USSD, and the UK bank transfer only (Direct Debit funding comes later)", () => {
     expect(FUND_METHODS.NG.map((m) => m.value)).toEqual(["card", "transfer", "ussd"]);
-    expect(FUND_METHODS.GB.map((m) => m.value)).toEqual(["transfer", "direct_debit"]);
+    expect(FUND_METHODS.GB.map((m) => m.value)).toEqual(["transfer"]);
   });
   it("has quick amounts in ascending order for each", () => {
     for (const country of ["NG", "GB"] as const) {

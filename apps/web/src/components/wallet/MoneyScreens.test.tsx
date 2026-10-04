@@ -14,6 +14,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => router,
   useSearchParams: () => query,
 }));
+const leaveFor = vi.fn<(url: string) => boolean>(() => true);
+vi.mock("@/lib/navigate", () => ({ leaveFor: (url: string) => leaveFor(url) }));
 vi.mock("@/lib/preview", async (original) => ({
   ...(await original<typeof import("@/lib/preview")>()),
   pause: async () => undefined,
@@ -82,19 +84,6 @@ describe("money screens that cannot open yet", () => {
       "/verify",
     );
   });
-
-  it("refuses to pretend once connected and approved: no fake success outside a preview", async () => {
-    api(me, rails({ connected, kycApproved: true }));
-    const user = userEvent.setup();
-    open(<AddMoney />);
-    await user.click(await screen.findByRole("radio", { name: /Debit card/ }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-    await user.click(screen.getByRole("radio", { name: "₦5,000" }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-    await user.click(screen.getByRole("button", { name: "Add money" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(/Nothing was charged/);
-    expect(screen.queryByRole("heading", { name: "Money added" })).not.toBeInTheDocument();
-  });
 });
 
 describe("adding money", () => {
@@ -149,12 +138,13 @@ describe("adding money", () => {
     expect(screen.queryByRole("group", { name: /number pad/ })).not.toBeInTheDocument();
   });
 
-  it("offers the UK transfer and Direct Debit, with a sort code, and no cards", async () => {
+  it("offers only the UK bank transfer, with a sort code, and no cards or Direct Debit", async () => {
     api({ ...me, country: "GB" });
     const user = userEvent.setup();
     open(<AddMoney />);
-    await screen.findByRole("radio", { name: /Direct Debit/ });
+    await screen.findByRole("radio", { name: /Bank transfer/ });
     expect(screen.queryByRole("radio", { name: /Debit card/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /Direct Debit/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: /Bank transfer/ }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByText("04-00-04")).toBeInTheDocument();
@@ -167,6 +157,146 @@ describe("adding money", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("heading", { name: "Add money" })).toBeInTheDocument();
+  });
+});
+
+describe("adding money for real", () => {
+  type Reply = { status: number; body: unknown };
+  let fund: ReturnType<typeof vi.fn<(init?: RequestInit) => void>>;
+
+  function live(replies: Reply[], state: Rails = rails({ connected, kycApproved: true })) {
+    query = new URLSearchParams();
+    fund = vi.fn<(init?: RequestInit) => void>();
+    const queue = [...replies];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/me") return Response.json(me);
+        if (url === "/api/wallet/rails") return Response.json(state);
+        if (url === "/api/payments/fund") {
+          fund(init);
+          const next = queue.shift() ?? replies.at(-1)!;
+          return Response.json(next.body, { status: next.status });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+  }
+  const pending = (over: object = {}) => ({
+    status: 200,
+    body: {
+      id: "p1",
+      status: "pending",
+      action: { type: "redirect", url: "https://checkout.paystack.com/abc" },
+      ...over,
+    },
+  });
+  async function toReview(user: ReturnType<typeof userEvent.setup>, method = /Debit card/) {
+    await user.click(await screen.findByRole("radio", { name: method }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("radio", { name: "₦5,000" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+  }
+  afterEach(() => leaveFor.mockClear());
+
+  it("sends the amount in kobo, then leaves for the partner's page, charging nothing here", async () => {
+    live([pending()]);
+    const user = userEvent.setup();
+    open(<AddMoney />);
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+
+    await waitFor(() => expect(leaveFor).toHaveBeenCalledWith("https://checkout.paystack.com/abc"));
+    const init = fund.mock.calls[0]![0] as RequestInit;
+    expect(JSON.parse(init.body as string)).toEqual({ amount: "500000", method: "card" });
+    expect((init.headers as Record<string, string>)["Idempotency-Key"]).toMatch(/^ajo_/);
+    expect(screen.queryByRole("heading", { name: "Money added" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Taking you to pay…" })).toBeDisabled();
+  });
+
+  it("repeats the same key when the same payment is tried again after a failure, so it cannot be charged twice", async () => {
+    live([{ status: 502, body: { message: "We couldn't reach Àjọ." } }, pending()]);
+    const user = userEvent.setup();
+    open(<AddMoney />);
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn.t reach/);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    await waitFor(() => expect(fund).toHaveBeenCalledTimes(2));
+    const keys = fund.mock.calls.map(
+      ([init]) => ((init as RequestInit).headers as Record<string, string>)["Idempotency-Key"],
+    );
+    expect(keys[0]).toBe(keys[1]);
+  });
+
+  it("makes a new key when the amount changes", async () => {
+    live([{ status: 502, body: { message: "Try again." } }, pending()]);
+    const user = userEvent.setup();
+    open(<AddMoney />);
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    await screen.findByRole("alert");
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await user.click(screen.getByRole("radio", { name: "₦10,000" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    await waitFor(() => expect(fund).toHaveBeenCalledTimes(2));
+    const keys = fund.mock.calls.map(
+      ([init]) => ((init as RequestInit).headers as Record<string, string>)["Idempotency-Key"],
+    );
+    expect(keys[0]).not.toBe(keys[1]);
+  });
+
+  it("goes straight to the amount for a bank transfer, with no pretend account", async () => {
+    live([pending()]);
+    const user = userEvent.setup();
+    open(<AddMoney />);
+    await user.click(await screen.findByRole("radio", { name: /Bank transfer/ }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByRole("group", { name: /number pad/ })).toBeInTheDocument();
+    expect(screen.queryByText("7812345678")).not.toBeInTheDocument();
+  });
+
+  it("says why when the API refuses, and points to the passport when verification is missing", async () => {
+    live([{ status: 403, body: { message: "Finish verification first.", code: "kyc_required" } }]);
+    const user = userEvent.setup();
+    open(<AddMoney />);
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Finish verification first.");
+    expect(screen.getByRole("link", { name: "Go to my passport" })).toHaveAttribute(
+      "href",
+      "/verify",
+    );
+    expect(leaveFor).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Add money" })).toBeEnabled();
+  });
+
+  it("sends a signed-out person to sign in", async () => {
+    live([{ status: 401, body: { message: "Please sign in." } }]);
+    const user = userEvent.setup();
+    open(<AddMoney />);
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/sign-in"));
+  });
+
+  it("follows the payment on the return screen when there is no page to leave for, or it is not secure", async () => {
+    live([pending({ action: null })]);
+    const user = userEvent.setup();
+    const { unmount } = open(<AddMoney />);
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/wallet/add/return?id=p1"));
+    unmount();
+    replace.mockReset();
+
+    leaveFor.mockReturnValueOnce(false);
+    live([pending({ action: { type: "redirect", url: "http://evil.example" } })]);
+    open(<AddMoney />);
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Add money" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/wallet/add/return?id=p1"));
   });
 });
 

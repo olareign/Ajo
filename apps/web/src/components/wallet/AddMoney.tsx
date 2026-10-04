@@ -1,7 +1,9 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Amount } from "@/components/ui/Amount";
 import { AmountPad } from "@/components/ui/AmountPad";
@@ -11,31 +13,44 @@ import { OptionCards } from "@/components/ui/OptionCards";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { Receipt } from "@/components/ui/Receipt";
 import { FUND_METHODS, QUICK_AMOUNTS, SAMPLE, toMinor } from "@/lib/money-flow";
+import { leaveFor } from "@/lib/navigate";
+import { newAttemptKey, startFunding } from "@/lib/payments-client";
 import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
 import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
-
-const NOT_WIRED = "Adding money isn't switched on for this screen yet. Nothing was charged.";
 
 type Step = "method" | "details" | "amount" | "review" | "done";
 
 const ARRIVES: Record<string, string> = {
   card: "Straight away",
   ussd: "Within a few minutes",
-  direct_debit: "In a few working days",
   transfer: "When your bank confirms",
 };
 
 /** Adding money: pick how, say how much, look it over, and watch the coin land. */
 export function AddMoney() {
   const flow = useMoneyFlow();
+  const router = useRouter();
   const { preview, country, currency, locale, lock } = flow;
+  // One key for as long as the person is making the same payment: tapping twice, or trying again
+  // after the connection dropped, is answered with the first result instead of charging twice.
+  const attempt = useRef({ signature: "", key: "" });
   const [step, setStep] = useState<Step>("method");
   const [method, setMethod] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string>();
+  const [needsKyc, setNeedsKyc] = useState(false);
+
+  // Coming back with the browser's back button restores this page as it was, still "taking you to pay".
+  useEffect(() => {
+    const restored = (event: PageTransitionEvent) => {
+      if (event.persisted) setBusy(false);
+    };
+    window.addEventListener("pageshow", restored);
+    return () => window.removeEventListener("pageshow", restored);
+  }, []);
 
   const closed = lock("fund");
   if (closed) return <FlowLocked lock={closed} title="Add money" path="/wallet/add" />;
@@ -53,13 +68,35 @@ export function AddMoney() {
 
   async function add() {
     setError(undefined);
-    // Real payments go through the connected partner and our server. Until that is wired to this
-    // screen, only a preview may pretend; anything else says so and moves nothing.
-    if (!preview) return setError(NOT_WIRED);
+    setNeedsKyc(false);
     setBusy(true);
-    await pause(PREVIEW_CHECK_MS);
-    setBusy(false);
-    setStep("done");
+    if (preview) {
+      await pause(PREVIEW_CHECK_MS);
+      setBusy(false);
+      return setStep("done");
+    }
+    if (!chosen) return setBusy(false);
+    const signature = `${chosen.value}:${minor}`;
+    if (attempt.current.signature !== signature) {
+      attempt.current = { signature, key: newAttemptKey() };
+    }
+    const result = await startFunding({
+      amount: minor,
+      method: chosen.value,
+      key: attempt.current.key,
+    });
+    if (!result.ok) {
+      setBusy(false);
+      if (result.failure.kind === "signed-out") return router.replace("/sign-in");
+      if (result.failure.kind === "refused" && result.failure.code === "kyc_required") {
+        setNeedsKyc(true);
+      }
+      return setError(result.failure.message);
+    }
+    // The partner hosts the step where the person pays; they come back to a screen that follows it.
+    const { id, action } = result.data;
+    if (action && leaveFor(action.url)) return; // stays busy: the page is going away
+    router.push(`/wallet/add/return?id=${encodeURIComponent(id)}`);
   }
 
   async function copy(text: string) {
@@ -129,7 +166,9 @@ export function AddMoney() {
             size="lg"
             block
             disabled={!method}
-            onClick={() => setStep(method === "transfer" ? "details" : "amount")}
+            // A live bank transfer is set up on the partner's page, so only a preview shows the
+            // sample account here.
+            onClick={() => setStep(method === "transfer" && preview ? "details" : "amount")}
           >
             Continue
           </Button>
@@ -224,11 +263,25 @@ export function AddMoney() {
           {error && (
             <p role="alert" className="text-center text-[15px] font-medium text-danger">
               {error}
+              {needsKyc && (
+                <>
+                  {" "}
+                  <Link href="/verify" className="underline underline-offset-4">
+                    Go to my passport
+                  </Link>
+                </>
+              )}
             </p>
           )}
           <Button size="lg" block disabled={busy} onClick={() => void add()}>
-            {busy ? "Adding…" : "Add money"}
+            {busy ? (preview ? "Adding…" : "Taking you to pay…") : "Add money"}
           </Button>
+          {!preview && (
+            <p className="text-center text-[12px] leading-5 text-ink-muted">
+              You&apos;ll finish paying on our payment partner&apos;s secure page, then come back
+              here.
+            </p>
+          )}
         </div>
       )}
     </main>
