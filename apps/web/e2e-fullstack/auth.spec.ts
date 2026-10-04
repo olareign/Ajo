@@ -17,6 +17,7 @@
  *      If a dev server already holds this folder, run another from a copy, or set E2E_BASE_URL.
  *      Saving (optional): also start the API with SWEEP_SECONDS=2, so its scheduled work (taking a
  *      plan's debit on its day) runs while the test waits. Run with E2E_PAYMENTS=1.
+ *      Friends (optional): needs nothing extra beyond E2E_PAYMENTS=1 (it only needs accounts and verified identity).
  *      Payments (optional): start the API with PAYMENTS_FAKE=true (a stand-in partner that pretends to move
  *      money) and set E2E_PAYMENTS=1 here to run the add-money and withdraw test. Run it on its own
  *      (--grep payments): the tests about "not switched on yet" expect the API started without it.
@@ -1173,4 +1174,81 @@ test("saving: start a plan, watch the scheduler take a debit into the pot, read 
     ),
   ).toBe("500000");
   await page.screenshot({ path: "e2e/screenshots/saving-ended.png" });
+});
+
+test("friends: find someone by username, ask, be accepted, see them in the circle, and open an invite link", async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  test.skip(
+    !process.env.E2E_PAYMENTS,
+    "Set E2E_PAYMENTS=1 (these accounts are approved straight in the database).",
+  );
+  const mine = `e2e+fa${Date.now()}@example.com`;
+  const theirs = `e2e+fb${Date.now()}@example.com`;
+  const myToken = await onboardedAccount(mine);
+  const theirToken = await onboardedAccount(theirs);
+  for (const email of [mine, theirs]) {
+    for (const step of ["id", "selfie", "address", "location", "bank"]) {
+      sql(
+        `insert into kyc_steps (user_id, step, status) select id, '${step}', 'approved' from users where email = '${email}'`,
+      );
+    }
+  }
+  const myName = sql(`select username from users where email = '${mine}'`);
+  const theirName = sql(`select username from users where email = '${theirs}'`);
+  expect(myToken).toBeTruthy();
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(mine);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // Finding someone: three letters, a pause, and a verified person appears (and not the person searching).
+  await page.goto("/friends/find");
+  await page.getByRole("textbox", { name: "Username" }).fill(theirName.slice(0, 8));
+  const results = page.getByRole("list", { name: "Results" });
+  await expect(results.getByText(`@${theirName}`)).toBeVisible({ timeout: 45_000 });
+  await expect(results.getByText(`@${myName}`)).toHaveCount(0);
+  await page.getByRole("button", { name: /^Add / }).click();
+  await expect(page.getByRole("button", { name: /Cancel your request/ })).toBeVisible();
+  expect(
+    sql(
+      `select status from friendships where requester_id = (select id from users where email = '${mine}')`,
+    ),
+  ).toBe("pending");
+
+  // They say yes, from their side.
+  const accept = await api(`/friends/requests/${myName}/accept`, { token: theirToken });
+  expect(accept.status).toBe(200);
+  expect(
+    sql(
+      `select count(*) from notifications where user_id = (select id from users where email = '${mine}') and kind = 'friend.accepted'`,
+    ),
+  ).toBe("1");
+
+  await page.goto("/friends");
+  await expect(page.getByRole("region", { name: "Your circle" })).toBeVisible({ timeout: 45_000 });
+  const friends = page
+    .getByRole("heading", { name: "Your friends" })
+    .locator("xpath=ancestor::section");
+  await expect(friends).toContainText(`@${theirName}`);
+  await page.screenshot({ path: "e2e/screenshots/friends-home.png", fullPage: true });
+
+  // Their card, from a friend's point of view.
+  await friends.getByRole("link").first().click();
+  await expect(page.getByText("You're friends.")).toBeVisible({ timeout: 30_000 });
+
+  // The invite link.
+  await page.goto("/friends/invite");
+  const code = (await page.locator("p.font-mono").innerText()).trim();
+  expect(code).toMatch(/^[A-Z0-9]{8}$/);
+  await page.goto(`/join/${code}`);
+  await expect(page.getByRole("heading", { name: /invited you to Àjọ/ })).toBeVisible({
+    timeout: 45_000,
+  });
+  await page.getByRole("link", { name: "Create my account" }).click();
+  await expect(page).toHaveURL(new RegExp(`/sign-up\\?invite=${code}`), { timeout: 45_000 });
+  await page.screenshot({ path: "e2e/screenshots/friends-invite-join.png" });
 });

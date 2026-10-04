@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { TodayScreen } from "./TodayScreen";
 
 const router = { replace: vi.fn() };
@@ -156,17 +156,65 @@ describe("TodayScreen", () => {
       expect(await screen.findByRole("link", { name: "Messages" })).toBeInTheDocument();
     });
 
-    it("asks the server for one thing at a time: the wallet, then the savings, then the messages", async () => {
+    it("asks the server for one thing at a time: the wallet, the savings, the messages, then friends", async () => {
       const order: string[] = [];
       api([plan()], 1, order);
       render(<TodayScreen />);
       await screen.findByRole("link", { name: "Messages, 1 unread" });
+      await waitFor(() => expect(order).toHaveLength(5));
       expect(order).toEqual([
         "/api/me",
         "/api/wallet",
         "/api/savings",
         expect.stringContaining("/api/notifications"),
+        "/api/friends",
       ]);
+    });
+
+    it("shows how many friends there are, and that someone is waiting", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) => {
+          if (url === "/api/me")
+            return Response.json({
+              displayName: "Ada",
+              email: "a@b.co",
+              onboarded: true,
+              mfaEnabled: true,
+            });
+          if (url === "/api/wallet") return Response.json({ wallets: [] });
+          if (url === "/api/savings") return Response.json({ plans: [] });
+          if (url.startsWith("/api/notifications"))
+            return Response.json({ items: [], next: null, unread: 0 });
+          if (url === "/api/friends")
+            return Response.json({
+              friends: [
+                { username: "a_b", displayName: "A B", since: "2026-10-01T00:00:00Z", tier: 1 },
+                { username: "c_d", displayName: "C D", since: "2026-10-01T00:00:00Z", tier: 1 },
+              ],
+            });
+          if (url === "/api/friends/requests")
+            return Response.json({
+              incoming: [
+                { username: "x_y", displayName: "X Y", sentAt: "2026-10-01T00:00:00Z", tier: 1 },
+              ],
+              outgoing: [],
+            });
+          return new Response(null, { status: 404 });
+        }),
+      );
+      render(<TodayScreen />);
+      const card = await screen.findByRole("link", { name: /Friends/ });
+      expect(card).toHaveAttribute("href", "/friends");
+      expect(card).toHaveTextContent("2 friends");
+      expect(card).toHaveTextContent("1 request is waiting");
+    });
+
+    it("shows no friends card when friends cannot be had", async () => {
+      api([], 0);
+      render(<TodayScreen />);
+      await screen.findByText("Fill your first pot");
+      expect(screen.queryByRole("link", { name: /Friends/ })).not.toBeInTheDocument();
     });
 
     it("shows less, quietly, when savings or messages cannot be had", async () => {

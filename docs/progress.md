@@ -18,8 +18,8 @@ The live status of every bullet in the [project plan](project-plan.md), by phase
 | Check | Result |
 | --- | --- |
 | Web production (Vercel `ajo-web`) | Ready, serving `main` at `f00625a` (PR #13). Every merge into `main` deploys |
-| Web automated tests | 699 unit and component tests pass; lint, typecheck and format clean |
-| API automated tests (`ajo-api`) | 297 unit and 362 integration tests pass against real Postgres and Redis, including payments under concurrency: the same webhook delivered many times at once, contradicting webhooks, a double-tapped withdrawal, two withdrawals against one balance, a withdrawal racing a payment, and auto-debit set up, activated and cancelled at once. The books balance after every one |
+| Web automated tests | 749 unit and component tests pass; lint, typecheck and format clean |
+| API automated tests (`ajo-api`) | 297 unit and 399 integration tests pass against real Postgres and Redis, including payments under concurrency: the same webhook delivered many times at once, contradicting webhooks, a double-tapped withdrawal, two withdrawals against one balance, a withdrawal racing a payment, and auto-debit set up, activated and cancelled at once. The books balance after every one |
 | Full-stack browser tests | **Payments (Oct 4): add money, the partner's message, withdraw with PIN and authenticator code, and the arrival pass against the real API and Postgres with the stand-in partner (`E2E_PAYMENTS=1`, API started with `PAYMENTS_FAKE=true`).** Default mode: 6 pass, 1 skipped. With the bot check on (real Cloudflare test keys): 7 of 7. Needs a dev server with a fixed `SESSION_SECRET`. The E1.8 and E1.5 journey (turn on, remembered phone, new device asked, spare key, untick, turn off) passes against the real API and Postgres, and so do the other eight with per-person limits on (Oct 4) |
 | Live database | Has the boolean `email_verified` column (proved through the live API on Oct 3). The other migrations are not individually checked: run `ajo-api/scripts/sql/bring-database-up-to-date.sql` on Neon to be sure |
 | API on Render (`ajo-api`) | Live and healthy (database and Redis up, docs off) at https://ajo-api-78oq.onrender.com, serving `main` at `314be73` (PR #10). Free plan, deploys on every commit to `main`, about 35 s to wake from sleep. No worker service exists |
@@ -106,12 +106,28 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 
 Nothing is real until a person is approved. For your own test account see "Testing payments while KYC is pended"; the savings screens are also walkable with `?preview=1` (a pretend plan in the tab, with a "take the next debit" button to watch the pot fill).
 
+### E5. Friends and discovery (Phase 3, built Oct 4)
+
+| ID | Feature | Mark | Hand test | Note |
+| --- | --- | --- | --- | --- |
+| E5.1 | Find people | 🟡 | ☐ | Search by the **start of a username** (three letters, a pause, then the results), and by **invite link** (E5.9). Only verified, active people appear, never yourself, never anyone blocked either way, and only ten at a time, so it cannot list everyone. A person's card shows a first name, handle, badge and friends in common, never an email. **Searching by phone is pended** (see E5.6). The searcher must be verified too |
+| E5.2 | Friend requests | 🟡 | ☐ | Send, accept, say not now (quietly), take back; the person asked is told in the app, and so is the asker when accepted. Asking twice is one request; **two people asking each other at the same moment become friends, with one row**; asking someone who already asked you accepts. Up to 50 requests waiting and 500 friends, even when made all at once (tested) |
+| E5.3 | Friend list | 🟡 | ☐ | "Your circle" drawn as a ring with the count, the list with badges (**Verified**, or **Verified +** with a national check) and "friends since", and removing a friend (they are not told). Trust badges from the trust score arrive with E7 |
+| E5.4 | Block and report | 🟡 | ☐ | Blocking ends any friendship or request, hides each of you from the other everywhere, and the blocked person is never told; "no such person" is the same answer for someone missing, unverified or blocked, so it cannot be used to learn who blocked whom. A block that lands while a request is in flight wins (tested). Reports pick a reason and go to the admin queue (one open per person); there is no admin screen to read them until E9 |
+| E5.5 | Mutual friend suggestions | 🟡 | ☐ | "People you may know": friends of friends, most in common first, naming two, never anyone you already have a request with, blocked or unverified; plus whoever invited you and whoever you invited |
+| E5.6 | Contact matching | ⏸ | | **Pended by design.** Matching contacts needs a **verified phone number**, and there is no SMS partner to verify one. Without verification someone could claim another person's number and intercept their requests, so the app does not collect phone numbers at all yet. The Find screen says so. Resumes when you choose an SMS provider (Termii or Twilio) |
+| E5.7 | Nearby people | ⏸ | | **Pended** with the location step of KYC (E2.4): it needs a verified location to measure from. Says so on the Find screen; will only ever show an area name |
+| E5.8 | Group discovery | ⬜ | | Built with groups in Phase 4 (it needs E6.1) |
+| E5.9 | Invite to app | 🟡 | ☐ | Your own invite link and code, to send by **WhatsApp, text message, copy or the phone's share sheet**. The page it opens (`/join/<code>`) shows only the inviter's first name and handle, then leads to sign-up with the code carried through. Joining through it **suggests** each to the other; it never makes anyone a friend. A wrong code is ignored without a word at sign-up |
+
+Nothing here works until a person is approved. For your own test accounts see "Testing payments while KYC is pended"; the friends screens are also walkable with `?preview=1` (a pretend circle in the tab).
+
 ## Phases 2 to 6
 
 | Phase | Epics | Mark |
 | --- | --- | --- |
 | 2 Solo savings | E4 (with E8.1 to E8.3) | 🟡 Built Oct 4, waiting for your hand test |
-| 3 Friends and discovery | E5 | ⬜ |
+| 3 Friends and discovery | E5 | 🟡 Built Oct 4 (phone search, contacts and nearby pended), waiting for your hand test |
 | 4 Èsúsú groups | E6, E7 | ⬜ |
 | 5 Launch readiness | E10 | ⬜ |
 | 6 Mobile and new countries | React Native | ⬜ |

@@ -53,7 +53,7 @@ export async function handleSignUp(request: Request, { env, fetchFn }: Deps): Pr
     client: clientOf(request),
     path: "/auth/sign-up",
     patient: true,
-    body: pick(body, ["email", "password", "displayName", "botToken"]),
+    body: pick(body, ["email", "password", "displayName", "botToken", "invite"]),
   });
   return json(result.status, result.data);
 }

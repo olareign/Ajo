@@ -124,6 +124,29 @@ describe("SignUpForm", () => {
     );
   });
 
+  describe("coming from a friend's invite link", () => {
+    it("sends the code with the sign-up, and sends none when there was none", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => Response.json({}, { status: 202 })),
+      );
+      const { unmount } = render(<SignUpForm invite="K7M2QH9R" />);
+      await fill("ada@example.com", "correct horse battery");
+      await waitFor(() => expect(push).toHaveBeenCalled());
+      const sent = (n: number) =>
+        JSON.parse(
+          (vi.mocked(fetch).mock.calls[n] as unknown as [string, RequestInit])[1].body as string,
+        );
+      expect(sent(0)).toMatchObject({ invite: "K7M2QH9R" });
+      unmount();
+      push.mockReset();
+      render(<SignUpForm />);
+      await fill("bola@example.com", "correct horse battery");
+      await waitFor(() => expect(push).toHaveBeenCalled());
+      expect(sent(1)).not.toHaveProperty("invite");
+    });
+  });
+
   describe("with the bot check turned on", () => {
     it("shows no check, and sends no token, when no site key is set", async () => {
       const { api } = stubTurnstile();

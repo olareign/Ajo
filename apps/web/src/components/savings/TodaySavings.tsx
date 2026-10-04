@@ -18,7 +18,8 @@ import { ratioOf } from "./SavingsHome";
 export function TodaySavings({
   go,
   onUnread,
-}: Readonly<{ go: boolean; onUnread: (count: number) => void }>) {
+  onDone,
+}: Readonly<{ go: boolean; onUnread: (count: number) => void; onDone?: () => void }>) {
   const router = useRouter();
   const [plans, setPlans] = useState<readonly Plan[]>();
 
@@ -30,16 +31,17 @@ export function TodaySavings({
       if (!live) return;
       if (!result.ok) {
         if (result.failure.kind === "signed-out") router.replace("/sign-in");
-        return;
+        return onDone?.();
       }
       setPlans(result.data);
       const notices = await loadNotices();
       if (live && notices.ok) onUnread(notices.data.unread);
+      if (live) onDone?.();
     })();
     return () => {
       live = false;
     };
-  }, [go, router, onUnread]);
+  }, [go, router, onUnread, onDone]);
 
   if (!plans) return null;
   const open = plans.filter((p) => p.status === "active" || p.status === "paused");

@@ -110,4 +110,3 @@ describe("the logo the emails load", () => {
     expect(ink.top).toBeLessThanOrEqual(1);
   });
 });
-
