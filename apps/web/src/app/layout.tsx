@@ -6,6 +6,7 @@ import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { InstallCapture } from "@/components/install/InstallCapture";
 
 // Every page gets a fresh CSP nonce (src/proxy.ts), which requires dynamic rendering.
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <body>
+        <InstallCapture />
         {/* Mobile-first: phones get the full width, larger screens a phone-sized column. */}
         <div className="mx-auto min-h-dvh max-w-md bg-surface">{children}</div>
       </body>

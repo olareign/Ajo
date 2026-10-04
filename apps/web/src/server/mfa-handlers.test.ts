@@ -58,6 +58,18 @@ describe("turning on the authenticator app", () => {
     expect(JSON.parse(init!.body as string)).toEqual({ code: "123456" });
   });
 
+  it("keeps the secret of the phone that turned it on in a cookie, out of the page's data", async () => {
+    const device = "d".repeat(43);
+    const fetchFn = vi.fn<Fetch>(async () =>
+      reply(200, { recoveryCodes: ["a", "b"], deviceToken: device }),
+    );
+    const res = await handleMfaConfirm(await req("POST", { code: "123456" }), { env, fetchFn });
+    expect(await res.json()).toEqual({ recoveryCodes: ["a", "b"] });
+    const cookie = res.headers.getSetCookie().find((c) => c.startsWith("__Host-ajo_device="))!;
+    expect(decodeURIComponent(cookie.split(";")[0]!.split("=")[1]!)).toBe(device);
+    expect(cookie).toMatch(/HttpOnly/);
+  });
+
   it("refuses requests that did not come from our own pages", async () => {
     const fetchFn = vi.fn<Fetch>();
     const a = await handleMfaEnrol(await req("POST", undefined, "cross-site"), { env, fetchFn });

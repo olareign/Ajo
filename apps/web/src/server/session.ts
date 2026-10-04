@@ -35,6 +35,28 @@ export function sessionCookie(production: boolean, maxAge = SESSION_TTL_SECONDS)
   };
 }
 
+/** The API forgets a device after 30 unused days; the cookie outlives that so the API decides. */
+export const DEVICE_TTL_SECONDS = 90 * 24 * 60 * 60;
+const DEVICE_TOKEN = /^[A-Za-z0-9_-]{43}$/;
+
+/** Holds the secret of a device the person asked to be remembered on. Never readable by scripts. */
+export function deviceCookie(production: boolean): CookieSpec {
+  return {
+    name: production ? "__Host-ajo_device" : "ajo_device",
+    options: {
+      httpOnly: true,
+      secure: production,
+      sameSite: "strict",
+      path: "/",
+      maxAge: DEVICE_TTL_SECONDS,
+    },
+  };
+}
+
+/** Only a well-formed secret is passed on: anything else in the cookie is ignored. */
+export const isDeviceToken = (value: unknown): value is string =>
+  typeof value === "string" && DEVICE_TOKEN.test(value);
+
 export function mfaCookie(production: boolean): CookieSpec {
   return {
     name: production ? "__Host-ajo_mfa" : "ajo_mfa",

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { postJson } from "@/components/auth/post-json";
+import { InstallRow } from "@/components/install/InstallRow";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Avatar } from "@/components/ui/Avatar";
@@ -92,6 +93,8 @@ function Account({ me }: Readonly<{ me: Me }>) {
       />
       <div className="grid grid-cols-1 gap-8">
         <MemberCard me={me} />
+
+        <InstallRow />
 
         <section aria-labelledby="security" className="grid grid-cols-1 gap-3">
           <h2 id="security" className="font-display text-[22px] leading-7 font-semibold">
