@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Avatar } from "@/components/ui/Avatar";
+import { TrustBadge } from "@/components/ui/TrustBadge";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { ChoiceChips } from "@/components/ui/ChoiceChips";
@@ -118,8 +119,9 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
         <Avatar size={96} />
         <div className="grid gap-1">
           <p className="text-[15px] text-ink-muted">@{shown.username}</p>
-          <div className="flex justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
             <TierBadge tier={shown.tier} />
+            <TrustBadge level={shown.trust.level} />
           </div>
         </div>
         <p className="flex items-center gap-2 text-[14px] text-ink-muted">

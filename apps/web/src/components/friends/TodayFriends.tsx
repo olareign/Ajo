@@ -10,7 +10,7 @@ import { loadFriends, loadRequests } from "@/lib/friends-client";
  * Today's glance at friends: how many, and whether anyone is waiting for an answer. It waits for its
  * turn (`go`), and shows nothing at all if it cannot be had (for instance before the passport is approved).
  */
-export function TodayFriends({ go }: Readonly<{ go: boolean }>) {
+export function TodayFriends({ go, onDone }: Readonly<{ go: boolean; onDone?: () => void }>) {
   const router = useRouter();
   const [state, setState] = useState<{ friends: number; waiting: number }>();
 
@@ -22,7 +22,7 @@ export function TodayFriends({ go }: Readonly<{ go: boolean }>) {
       if (!live) return;
       if (!friends.ok) {
         if (friends.failure.kind === "signed-out") router.replace("/sign-in");
-        return;
+        return onDone?.();
       }
       const requests = await loadRequests();
       if (!live) return;
@@ -34,7 +34,7 @@ export function TodayFriends({ go }: Readonly<{ go: boolean }>) {
     return () => {
       live = false;
     };
-  }, [go, router]);
+  }, [go, router, onDone]);
 
   if (!state) return null;
   return (

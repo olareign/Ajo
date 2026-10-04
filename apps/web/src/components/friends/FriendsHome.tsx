@@ -8,6 +8,7 @@ import { CircleRing } from "@/components/CircleRing";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
+import { TrustBadge } from "@/components/ui/TrustBadge";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { FlowLocked } from "@/components/wallet/FlowLocked";
 import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
@@ -197,8 +198,9 @@ export function FriendsHome() {
                           Friends since {dayText(f.since.slice(0, 10))}
                         </span>
                       </span>
-                      <span className="ml-auto shrink-0">
+                      <span className="ml-auto grid shrink-0 justify-items-end gap-1">
                         <TierBadge tier={f.tier} />
+                        <TrustBadge level={f.trust.level} />
                       </span>
                     </Link>
                   </li>

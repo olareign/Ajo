@@ -10,6 +10,7 @@ import type {
   ReportReason,
   Requests,
   Suggestion,
+  Trust,
 } from "./friends-client";
 
 /** What the friends screens ask for: the server, or in a preview a pretend one that lives in this tab. */
@@ -58,11 +59,13 @@ type Pretend = {
   relation: Relation;
   blocked: boolean;
   knows: string[];
+  trust: Trust;
 };
 
 const SAMPLE: readonly Pretend[] = [
   {
     username: "chidi_o",
+    trust: { level: "trusted", score: 85 },
     displayName: "Chidi Okafor",
     tier: 2,
     relation: "friend",
@@ -71,6 +74,7 @@ const SAMPLE: readonly Pretend[] = [
   },
   {
     username: "funmi_a",
+    trust: { level: "trusted", score: 60 },
     displayName: "Funmi Adeyemi",
     tier: 1,
     relation: "friend",
@@ -79,6 +83,7 @@ const SAMPLE: readonly Pretend[] = [
   },
   {
     username: "tunde_b",
+    trust: { level: "building", score: 25 },
     displayName: "Tunde Bakare",
     tier: 1,
     relation: "incoming",
@@ -87,6 +92,7 @@ const SAMPLE: readonly Pretend[] = [
   },
   {
     username: "ngozi_e",
+    trust: { level: "trusted", score: 45 },
     displayName: "Ngozi Eze",
     tier: 1,
     relation: "none",
@@ -95,6 +101,7 @@ const SAMPLE: readonly Pretend[] = [
   },
   {
     username: "kemi_s",
+    trust: { level: "new", score: 0 },
     displayName: "Kemi Salako",
     tier: 2,
     relation: "none",
@@ -103,6 +110,7 @@ const SAMPLE: readonly Pretend[] = [
   },
   {
     username: "sade_k",
+    trust: { level: "building", score: 15 },
     displayName: "Sade Kehinde",
     tier: 1,
     relation: "none",
@@ -111,6 +119,7 @@ const SAMPLE: readonly Pretend[] = [
   },
   {
     username: "emeka_o",
+    trust: { level: "new", score: 0 },
     displayName: "Emeka Obi",
     tier: 1,
     relation: "none",
@@ -140,6 +149,7 @@ export function previewFriends(): FriendsGateway {
   const person = (p: Pretend): Person => ({
     username: p.username,
     displayName: p.displayName,
+    trust: p.trust,
     relation: p.relation,
     mutualFriends: mutual(p),
     tier: p.tier,
@@ -162,6 +172,7 @@ export function previewFriends(): FriendsGateway {
             displayName: p.displayName,
             since: when(10 + i * 7),
             tier: p.tier,
+            trust: p.trust,
           })),
       ),
     requests: async () => {

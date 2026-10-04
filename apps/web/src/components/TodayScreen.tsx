@@ -7,6 +7,7 @@ import { InstallCard } from "@/components/install/InstallCard";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { Avatar } from "@/components/ui/Avatar";
 import { TodayFriends } from "@/components/friends/TodayFriends";
+import { TodayCircles } from "@/components/circles/TodayCircles";
 import { TodaySavings } from "@/components/savings/TodaySavings";
 import { WalletSummary } from "@/components/wallet/WalletSummary";
 
@@ -16,11 +17,13 @@ export function TodayScreen() {
 
 function Today({ me }: Readonly<{ me: Me }>) {
   // Today asks the server for one thing after another (the session's refresh token is single-use):
-  // the wallet first, then the savings and the unread count, then friends.
+  // the wallet first, then the savings and the unread count, then friends, then circles.
   const [walletDone, setWalletDone] = useState(false);
   const [savingsDone, setSavingsDone] = useState(false);
+  const [friendsDone, setFriendsDone] = useState(false);
   const [unread, setUnread] = useState(0);
   const onWallet = useCallback(() => setWalletDone(true), []);
+  const onFriends = useCallback(() => setFriendsDone(true), []);
   const onSavings = useCallback(() => setSavingsDone(true), []);
   const onUnread = useCallback((n: number) => setUnread(n), []);
   return (
@@ -53,7 +56,8 @@ function Today({ me }: Readonly<{ me: Me }>) {
       <p className="mt-3 text-ink-muted">Nothing needs you yet. Your circles will show up here.</p>
       <WalletSummary onLoaded={onWallet} />
       <TodaySavings go={walletDone} onUnread={onUnread} onDone={onSavings} />
-      <TodayFriends go={savingsDone} />
+      <TodayFriends go={savingsDone} onDone={onFriends} />
+      <TodayCircles go={friendsDone} />
       {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
         <Link
           href="/verify"

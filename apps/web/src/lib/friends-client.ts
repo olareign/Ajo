@@ -2,6 +2,8 @@ import { send, type Outcome } from "./api-send";
 
 export type Relation = "none" | "friend" | "requested" | "incoming";
 
+export type Trust = Readonly<{ level: "new" | "building" | "trusted"; score: number }>;
+
 export type Person = Readonly<{
   username: string;
   displayName: string;
@@ -9,6 +11,7 @@ export type Person = Readonly<{
   mutualFriends: number;
   /** 1 passport stamped; 2 with a national check too. */
   tier: 1 | 2;
+  trust: Trust;
 }>;
 
 export type Suggestion = Person &
@@ -19,6 +22,7 @@ export type Friend = Readonly<{
   displayName: string;
   since: string;
   tier: 1 | 2;
+  trust: Trust;
 }>;
 export type FriendRequest = Readonly<{
   username: string;
