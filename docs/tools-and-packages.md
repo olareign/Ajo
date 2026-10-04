@@ -144,7 +144,7 @@ Layout: one NestJS application with one module per bounded context (identity, KY
 | --- | --- | --- |
 | `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | Private KYC files (S3 or Cloudflare R2) with short-lived signed links | Both |
 | `sharp` | Compress uploads and strip image metadata (e.g. GPS) | Both |
-| Provider SDKs (`stripe`, `gocardless-nodejs`, `twilio`, `resend`, KYC SDKs) | Called only from adapters, routed by country | Both |
+| Provider SDKs (`stripe`, `twilio`, `resend`, KYC SDKs) | Called only from adapters, routed by country | Both |
 | `web-push` | Web Push notifications | Both |
 
 ### Testing (API)
@@ -191,7 +191,7 @@ Partners selected for Nigeria (NGN) and the United Kingdom (GBP). Contracts, pri
 | --- | --- | --- | --- |
 | KYC and identity (ID documents, selfie and liveness; NIN and BVN in Nigeria) | Smile ID | Onfido | REST API and web SDK |
 | AML and sanctions screening, ongoing monitoring | ComplyAdvantage | ComplyAdvantage | REST API and webhooks |
-| Collections and auto-debit | Paystack (NIBSS Direct Debit, cards, transfers in) | GoCardless (Bacs Direct Debit) | REST API and webhooks |
+| Collections and auto-debit | Paystack (NIBSS Direct Debit, cards, transfers in) | UK partner to be chosen (GoCardless dropped) | REST API and webhooks |
 | Payouts to bank accounts | Paystack Transfers | Modulr (Faster Payments from the safeguarded account) | REST API and webhooks |
 | Licensed fund holding | To be chosen with Nigerian legal counsel after the CBN review (P0.2): a partner bank or banking-as-a-service provider | Modulr (FCA e-money institution, safeguarded) at launch; ClearBank (licensed bank, FSCS-protected deposits) when scale requires | Partner API |
 | Currency exchange and cross-border transfers | Wise Platform | Wise Platform | REST API and webhooks |

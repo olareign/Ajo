@@ -192,7 +192,7 @@ Selected partners (contracts and pricing still to arrange in P0.3):
 | --- | --- | --- |
 | KYC and identity | Smile ID | Onfido |
 | AML and sanctions screening | ComplyAdvantage | ComplyAdvantage |
-| Collections and auto-debit | Paystack | GoCardless |
+| Collections and auto-debit | Paystack | To be chosen |
 | Payouts to bank | Paystack Transfers | Modulr |
 | Holding funds (licensed) | Chosen with legal counsel after the CBN review | Modulr at launch, ClearBank later |
 | Currency exchange and cross-border | Wise Platform | Wise Platform |

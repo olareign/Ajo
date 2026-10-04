@@ -15,6 +15,9 @@
  *      TURNSTILE_SITE_KEY, and set E2E_TURNSTILE=1 here. Cloudflare's published test keys work and need no
  *      account: site key 1x00000000000000000000AA, secret 1x0000000000000000000000000000000AA (always pass).
  *      If a dev server already holds this folder, run another from a copy, or set E2E_BASE_URL.
+ *      Payments (optional): start the API with PAYMENTS_FAKE=true (a stand-in partner that pretends to move
+ *      money) and set E2E_PAYMENTS=1 here to run the add-money and withdraw test. Run it on its own
+ *      (--grep payments): the tests about "not switched on yet" expect the API started without it.
  *   3. Run it, telling it how to reach the database (the real email links only exist in the API's outbox,
  *      so the test does what a link does in the database). The command gets SQL on standard input:
  *        E2E_PSQL_COMMAND='docker exec -i <postgres> psql -U ajo -d ajo -tA' pnpm test:e2e:fullstack
@@ -921,4 +924,120 @@ test("an approved person sees their result, and Today stops asking", async ({ pa
   await expect(passport.getByRole("img", { name: /approved/ })).toHaveCount(5);
   await page.waitForTimeout(800);
   await page.screenshot({ path: "e2e/screenshots/passport-real-approved.png" });
+});
+
+const FAKE_WEBHOOK_SECRET = "fake-webhook-secret-for-development-and-tests";
+/** Plays the payment partner: a signed message to the API, the way the real one would send it. */
+async function partnerSays(event: Record<string, string>) {
+  const body = JSON.stringify({
+    events: [{ eventId: `evt_${randomBytes(8).toString("hex")}`, type: event.kind, ...event }],
+  });
+  const res = await fetch(`${apiUrl}/api/v1/webhooks/fake`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Fake-Signature": createHmac("sha256", FAKE_WEBHOOK_SECRET).update(body).digest("hex"),
+      "X-Forwarded-For": `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
+    },
+    body,
+  });
+  expect(res.status).toBe(200);
+}
+
+test("payments: add money through the partner and watch it land, then withdraw and watch it arrive", async ({
+  page,
+}) => {
+  test.skip(
+    !process.env.E2E_PAYMENTS,
+    "Needs the API started with PAYMENTS_FAKE=true; set E2E_PAYMENTS=1.",
+  );
+  const email = `e2e+pay${Date.now()}@example.com`;
+  const token = await onboardedAccount(email);
+  for (const step of ["id", "selfie", "address", "location", "bank"]) {
+    sql(
+      `insert into kyc_steps (user_id, step, status) select id, '${step}', 'approved' from users where email = '${email}'`,
+    );
+  }
+  // Signed in before the authenticator app is turned on, so there is no code screen to get past.
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  const enrol = (await api("/auth/mfa/totp", { token })).data;
+  expect(
+    (
+      await api("/auth/mfa/totp/confirm", {
+        token,
+        body: { code: authenticatorCode(enrol.secret!) },
+      })
+    ).status,
+  ).toBe(200);
+
+  // The partner's own page is somewhere else: stand in for it, and play its message by hand.
+  await page.route("https://fake-pay.test/**", (route) =>
+    route.fulfill({ contentType: "text/html", body: "<h1>Pretend payment page</h1>" }),
+  );
+  await page.goto("/wallet/add");
+  await page.getByRole("radio", { name: /Debit card/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio", { name: "₦5,000" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Add money" }).click();
+  await expect(page).toHaveURL(/fake-pay\.test\/pay\//);
+
+  const [id, reference] = sql(
+    `select id, reference from payment_intents where kind = 'funding' and user_id = (select id from users where email = '${email}')`,
+  ).split("|");
+  // Coming back before the partner has spoken is not the same as having paid.
+  await page.goto(`/wallet/add/return?id=${id}`);
+  await expect(page.getByText(/Waiting for your bank to confirm/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Money added" })).toHaveCount(0);
+  await partnerSays({
+    kind: "funding.succeeded",
+    reference: reference!,
+    amount: "500000",
+    currency: "NGN",
+  });
+  await expect(page.getByRole("heading", { name: "Money added" })).toBeVisible({ timeout: 15_000 });
+  await page.goto("/wallet");
+  await expect(page.getByRole("region", { name: "Nigerian Naira wallet" })).toContainText("₦5,000");
+
+  // Where the money goes. (Setting the account asks the bank to name its owner; a stand-in cannot, so it is seeded.)
+  sql(
+    `insert into payout_accounts (user_id, provider, bank_code, bank_name, last4, account_name, recipient_code)
+     select id, 'fake', '058', 'GTBank', '6789', 'ADA WALLET', 'RCP_e2e' from users where email = '${email}'`,
+  );
+  await page.goto("/wallet/withdraw");
+  const pad = page.getByRole("group", { name: /number pad/i });
+  for (const digit of "1000") await pad.getByRole("button", { name: digit, exact: true }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  const receipt = page.getByRole("region", { name: "You're withdrawing" });
+  await expect(receipt).toContainText("GTBank •••• 6789");
+  await expect(receipt).toContainText("ADA WALLET");
+  await page.getByRole("button", { name: "Continue" }).click();
+  for (const digit of "493817")
+    await page
+      .getByRole("group", { name: "Transaction PIN" })
+      .getByRole("button", { name: digit, exact: true })
+      .click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  // The next step's code: the first was used to turn the app on, and a code works once.
+  for (const digit of authenticatorCode(enrol.secret!, 1))
+    await page
+      .getByRole("group", { name: "Number pad" })
+      .getByRole("button", { name: digit, exact: true })
+      .click();
+  await page.getByRole("button", { name: "Send it" }).click();
+  await expect(page.getByRole("heading", { name: "On its way" })).toBeVisible();
+
+  const withdrawalReference = sql(
+    `select reference from payment_intents where kind = 'withdrawal' and user_id = (select id from users where email = '${email}')`,
+  );
+  await partnerSays({ kind: "payout.succeeded", reference: withdrawalReference });
+  await expect(page.getByRole("heading", { name: "Money arrived" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.goto("/wallet");
+  await expect(page.getByRole("region", { name: "Nigerian Naira wallet" })).toContainText("₦4,000");
 });

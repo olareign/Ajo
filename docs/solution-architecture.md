@@ -243,7 +243,7 @@ Each integration sits behind an adapter interface, routed by the user's country,
 | --- | --- | --- | --- |
 | Identity checks (documents, selfie and liveness; NIN and BVN) | Smile ID | Onfido | `verifyId`, `verifySelfie`, `verifyNationalCheck`, `verifyAddress` |
 | AML and sanctions screening | ComplyAdvantage | ComplyAdvantage | `screenPerson`, `monitorPerson` |
-| Collections and auto-debit | Paystack | GoCardless | `createMandate`, `chargeMandate`, `verifyWebhook` |
+| Collections and auto-debit | Paystack | To be chosen | `createMandate`, `chargeMandate`, `verifyWebhook` |
 | Payouts to bank | Paystack Transfers | Modulr | `resolveAccount`, `transfer`, `getTransferStatus` |
 | Currency exchange and cross-border | Wise Platform | Wise Platform | `quote`, `convert`, `getSettlementReport` |
 | Fund holding (licensed) | Chosen with legal counsel | Modulr, later ClearBank | `createAccount`, `getBalance`, `getSettlementReport` |

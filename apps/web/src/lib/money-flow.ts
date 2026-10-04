@@ -6,7 +6,7 @@ export function toMinor(whole: string): string {
 }
 
 export type FundMethod = Readonly<{
-  value: "card" | "transfer" | "ussd" | "direct_debit";
+  value: "card" | "transfer" | "ussd";
   title: string;
   detail: string;
 }>;
@@ -30,11 +30,6 @@ export const FUND_METHODS: Readonly<Record<Country, readonly FundMethod[]>> = {
       value: "transfer",
       title: "Bank transfer",
       detail: "Faster Payments from your bank app to your own Àjọ account",
-    },
-    {
-      value: "direct_debit",
-      title: "Direct Debit",
-      detail: "We collect it from your bank, protected by the Direct Debit Guarantee",
     },
   ],
 };

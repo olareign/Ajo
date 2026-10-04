@@ -16,6 +16,7 @@ type ApiRequest = Readonly<{
   path: string;
   method: "GET" | "PUT" | "POST" | "DELETE";
   body?: object;
+  headers?: Readonly<Record<string, string>>;
 }>;
 
 /**

@@ -23,11 +23,13 @@ export async function callApi(
     accessToken?: string;
     /** Wait for a cold start instead of giving up after 10 seconds. */
     patient?: boolean;
+    /** Extra headers the API needs for this one call (named by the caller, never copied from the browser). */
+    headers?: Readonly<Record<string, string>>;
     /** The visitor behind this call, passed to the API when the shared secret is configured. */
     client?: ClientContext;
   }>,
 ): Promise<ApiResult> {
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = { Accept: "application/json", ...request.headers };
   if (request.body) headers["Content-Type"] = "application/json";
   if (request.accessToken) headers.Authorization = `Bearer ${request.accessToken}`;
   // Only with something to say, and only server to server: the secret is never sent to the browser.
