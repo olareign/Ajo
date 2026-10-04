@@ -51,4 +51,16 @@ describe("ForgotPasswordForm", () => {
     render(<ForgotPasswordForm />);
     expect(screen.getByLabelText("Email")).toHaveAttribute("placeholder", "name@example.com");
   });
+
+  it("tells the person what to do if the email does not arrive, since a link is sent once a minute", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ message: "ok" }, { status: 202 })),
+    );
+    render(<ForgotPasswordForm />);
+    await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
+    await userEvent.click(screen.getByRole("button", { name: "Send me email" }));
+    expect(await screen.findByText(/Check your spam folder/)).toBeInTheDocument();
+    expect(screen.getByText(/another link in a minute/)).toBeInTheDocument();
+  });
 });

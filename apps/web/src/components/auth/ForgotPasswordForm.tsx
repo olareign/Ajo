@@ -37,6 +37,9 @@ export function ForgotPasswordForm() {
             If {sentTo} has an account, we&apos;ve sent a link to choose a new password. It works
             for 1 hour.
           </p>
+          <p className="text-[15px] leading-6 text-ink-muted">
+            Nothing yet? Check your spam folder, then ask for another link in a minute.
+          </p>
         </div>
         <Link
           href="/sign-in"
