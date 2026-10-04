@@ -9,7 +9,7 @@ import type { Wallet } from "@/lib/wallet";
 import { loadWallets } from "@/lib/wallet-client";
 
 /** Today's glance at the wallet: what is available, one line per currency, leading to the full screen. */
-export function WalletSummary() {
+export function WalletSummary({ onLoaded }: Readonly<{ onLoaded?: () => void }> = {}) {
   const router = useRouter();
   // undefined while loading, null when it could not be loaded.
   const [wallets, setWallets] = useState<Wallet[] | null>();
@@ -21,11 +21,12 @@ export function WalletSummary() {
       if (!live) return;
       if (result.status === "signed-out") return router.replace("/sign-in");
       setWallets(result.status === "ok" ? result.data : null);
+      onLoaded?.();
     })();
     return () => {
       live = false;
     };
-  }, [router]);
+  }, [router, onLoaded]);
 
   return (
     <Link

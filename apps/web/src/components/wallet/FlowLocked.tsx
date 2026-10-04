@@ -43,6 +43,9 @@ export function FlowLocked({ lock, title, path }: Props) {
               Money only moves once your identity is verified. It takes about five minutes.
             </p>
             <ButtonLink href="/verify">Go to my passport</ButtonLink>
+            <ButtonLink href={`${path}?preview=1`} variant="quiet">
+              Preview the flow
+            </ButtonLink>
           </>
         )}
       </div>

@@ -18,8 +18,8 @@ The live status of every bullet in the [project plan](project-plan.md), by phase
 | Check | Result |
 | --- | --- |
 | Web production (Vercel `ajo-web`) | Ready, serving `main` at `f00625a` (PR #13). Every merge into `main` deploys |
-| Web automated tests | 626 unit and component tests pass; lint, typecheck and format clean |
-| API automated tests (`ajo-api`) | 310 unit and 320 integration tests pass against real Postgres and Redis, including payments under concurrency: the same webhook delivered many times at once, contradicting webhooks, a double-tapped withdrawal, two withdrawals against one balance, a withdrawal racing a payment, and auto-debit set up, activated and cancelled at once. The books balance after every one |
+| Web automated tests | 699 unit and component tests pass; lint, typecheck and format clean |
+| API automated tests (`ajo-api`) | 297 unit and 362 integration tests pass against real Postgres and Redis, including payments under concurrency: the same webhook delivered many times at once, contradicting webhooks, a double-tapped withdrawal, two withdrawals against one balance, a withdrawal racing a payment, and auto-debit set up, activated and cancelled at once. The books balance after every one |
 | Full-stack browser tests | **Payments (Oct 4): add money, the partner's message, withdraw with PIN and authenticator code, and the arrival pass against the real API and Postgres with the stand-in partner (`E2E_PAYMENTS=1`, API started with `PAYMENTS_FAKE=true`).** Default mode: 6 pass, 1 skipped. With the bot check on (real Cloudflare test keys): 7 of 7. Needs a dev server with a fixed `SESSION_SECRET`. The E1.8 and E1.5 journey (turn on, remembered phone, new device asked, spare key, untick, turn off) passes against the real API and Postgres, and so do the other eight with per-person limits on (Oct 4) |
 | Live database | Has the boolean `email_verified` column (proved through the live API on Oct 3). The other migrations are not individually checked: run `ajo-api/scripts/sql/bring-database-up-to-date.sql` on Neon to be sure |
 | API on Render (`ajo-api`) | Live and healthy (database and Redis up, docs off) at https://ajo-api-78oq.onrender.com, serving `main` at `314be73` (PR #10). Free plan, deploys on every commit to `main`, about 35 s to wake from sleep. No worker service exists |
@@ -90,16 +90,32 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E3.7 | Daily reconciliation | ⬜ | | Needs E9.1 |
 | E3.8 | Limits by KYC tier | ⏸ | ☐ | **Pended by owner (Oct 4): enforcement waits until the identity tools and the real limits are decided.** The ladder screen is built (`/wallet/limits`): not verified, passport stamped, BVN added (Nigeria only), with your rung marked. **The numbers shown in the preview are samples; the real limits are a business decision (P0.1, E11.10) and nothing enforces limits yet** |
 
+### E4. Solo savings (Phase 2, built Oct 4)
+
+| ID | Feature | Mark | Hand test | Note |
+| --- | --- | --- | --- | --- |
+| E4.1 | Create plan | 🟡 | ☐ | A five-step wizard (what for, how much, how often and how many times, first day, look it over) with the pot that will hold it growing as you answer. The server works out the debit days (`POST /savings/preview`) and the review shows them as beads before anything is saved. One plan per request key, at most ten going at once, even when made all at once (tested). Needs approved identity, not a payment partner |
+| E4.2 | Scheduled debits | 🟡 | ☐ | Each debit is taken from the **wallet** at 8am (Lagos or London time) on its day. If the wallet is short it tries again each day for three misses, tells the person (in-app and email), then skips that debit and carries on. If the person chose "top up from my bank", it collects only the shortfall under their auto-debit and waits for the bank without counting that as a miss. Reminders go out a day ahead, by email too when the wallet will not cover it. Each debit happens once, however many sweeps race for it (tested). **Runs on the shared scheduler inside the API, so it only fires while the API is awake; on the free plan that means it can be late. It is on time on the always-on server you plan to move to** |
+| E4.3 | Plan progress | 🟡 | ☐ | The pot fills with what the ledger says is saved; progress, next debit with whether the wallet covers it, the debits as a string of beads (paid, coming, missed, skipped), and the plan's own history |
+| E4.4 | Maturity payout | 🟡 | ☐ | After the last debit is settled everything saved goes back to the **wallet** (from there you can withdraw to your bank) and the plan completes, once, with an email |
+| E4.5 | Early withdrawal | 🟡 | ☐ | Ends the plan now with the PIN, brings back what is saved, skips the rest. **The charge for ending early is a setting, `EARLY_WITHDRAWAL_PENALTY_BPS`, set to 0 (free) until you decide**; the screen shows the real figure before you confirm. Ending twice, or all at once, pays out once (tested) |
+| E4.6 | Pause or top up | 🟡 | ☐ | Pause stops the debits; starting again moves any debit whose day went by to today and keeps the rest in step. A top-up moves money from the wallet into the pot now, once per key |
+| E8.1 | Notification service | ✅ | | One service saves a message once per key, in the app and optionally by email from a queue that survives a mail outage and gives up after five tries. Push and SMS are not built |
+| E8.2 | Reminders | 🟡 | | Before each debit, when one is missed, when the wallet is short, at maturity or early end. Before payout is part of Phase 4 |
+| E8.3 | Notification centre | ✅ | ☐ | A Messages screen from the bell on Today (with an unread count), paged, mark one or all as read |
+
+Nothing is real until a person is approved. For your own test account see "Testing payments while KYC is pended"; the savings screens are also walkable with `?preview=1` (a pretend plan in the tab, with a "take the next debit" button to watch the pot fill).
+
 ## Phases 2 to 6
 
 | Phase | Epics | Mark |
 | --- | --- | --- |
-| 2 Solo savings | E4 | ⬜ |
+| 2 Solo savings | E4 (with E8.1 to E8.3) | 🟡 Built Oct 4, waiting for your hand test |
 | 3 Friends and discovery | E5 | ⬜ |
 | 4 Èsúsú groups | E6, E7 | ⬜ |
 | 5 Launch readiness | E10 | ⬜ |
 | 6 Mobile and new countries | React Native | ⬜ |
-| Alongside | E8 notifications: only the email sender exists (⬜ as a service). E9 admin: ⬜. E11 multi-currency: ledger and wallet screens hold several currencies (🟡); the rest ⬜ | |
+| Alongside | E8 notifications: **service, reminders and the in-app messages screen built (Oct 4)**; push and SMS are ⬜ until you create those accounts. E9 admin: ⬜. E11 multi-currency: ledger and wallet screens hold several currencies (🟡); the rest ⬜ | |
 
 ## Defects found in review
 

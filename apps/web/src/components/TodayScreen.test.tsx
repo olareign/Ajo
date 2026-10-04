@@ -83,4 +83,111 @@ describe("TodayScreen", () => {
     await screen.findByRole("heading", { name: "Hello, Ada" });
     expect(screen.queryByRole("link", { name: /passport/i })).not.toBeInTheDocument();
   });
+
+  describe("saving and messages", () => {
+    const naira = (amount: string) => ({ amount, currency: "NGN" });
+    const plan = (over: object = {}) => ({
+      id: "p1",
+      name: "Rent",
+      status: "active",
+      saved: naira("500000"),
+      target: naira("2000000"),
+      nextDebit: { dueOn: "2026-11-08", amount: naira("500000") },
+      ...over,
+    });
+    function api(plans: object[], unread: number, order: string[] = []) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) => {
+          order.push(url);
+          if (url === "/api/me")
+            return Response.json({
+              displayName: "Ada",
+              email: "a@b.co",
+              onboarded: true,
+              mfaEnabled: true,
+            });
+          if (url === "/api/wallet") return Response.json({ wallets: [] });
+          if (url === "/api/savings") return Response.json({ plans });
+          if (url.startsWith("/api/notifications"))
+            return Response.json({ items: [], next: null, unread });
+          return new Response(null, { status: 404 });
+        }),
+      );
+    }
+
+    it("shows what is saved and when the next debit is, and a way into savings", async () => {
+      api(
+        [
+          plan(),
+          plan({
+            id: "p2",
+            saved: naira("100000"),
+            nextDebit: { dueOn: "2026-11-02", amount: naira("100000") },
+          }),
+        ],
+        0,
+      );
+      render(<TodayScreen />);
+      const card = await screen.findByRole("link", { name: /Savings/ });
+      expect(card).toHaveAttribute("href", "/save");
+      expect(card).toHaveTextContent("₦6,000");
+      expect(card).toHaveTextContent("in 2 pots");
+      expect(card).toHaveTextContent("next Mon 2 Nov");
+    });
+
+    it("invites a first plan when there is none", async () => {
+      api([], 0);
+      render(<TodayScreen />);
+      expect(await screen.findByText("Fill your first pot")).toBeInTheDocument();
+    });
+
+    it("shows how many messages are unread on the bell, and caps it", async () => {
+      api([], 14);
+      render(<TodayScreen />);
+      const bell = await screen.findByRole("link", { name: "Messages, 14 unread" });
+      expect(bell).toHaveAttribute("href", "/notifications");
+      expect(bell).toHaveTextContent("9+");
+    });
+
+    it("has a plain bell when everything is read", async () => {
+      api([], 0);
+      render(<TodayScreen />);
+      expect(await screen.findByRole("link", { name: "Messages" })).toBeInTheDocument();
+    });
+
+    it("asks the server for one thing at a time: the wallet, then the savings, then the messages", async () => {
+      const order: string[] = [];
+      api([plan()], 1, order);
+      render(<TodayScreen />);
+      await screen.findByRole("link", { name: "Messages, 1 unread" });
+      expect(order).toEqual([
+        "/api/me",
+        "/api/wallet",
+        "/api/savings",
+        expect.stringContaining("/api/notifications"),
+      ]);
+    });
+
+    it("shows less, quietly, when savings or messages cannot be had", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) => {
+          if (url === "/api/me")
+            return Response.json({
+              displayName: "Ada",
+              email: "a@b.co",
+              onboarded: true,
+              mfaEnabled: true,
+            });
+          if (url === "/api/wallet") return Response.json({ wallets: [] });
+          return Response.json({}, { status: 502 });
+        }),
+      );
+      render(<TodayScreen />);
+      await screen.findByRole("heading", { name: "Hello, Ada" });
+      expect(screen.queryByRole("link", { name: /Savings/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+    });
+  });
 });
