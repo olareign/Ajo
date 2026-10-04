@@ -2,6 +2,7 @@
 
 import { ChevronRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
+import { InstallCard } from "@/components/install/InstallCard";
 import { MeGate } from "@/components/onboarding/MeGate";
 import { Avatar } from "@/components/ui/Avatar";
 import { WalletSummary } from "@/components/wallet/WalletSummary";
@@ -42,6 +43,7 @@ export function TodayScreen() {
               <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
             </Link>
           )}
+          <InstallCard />
         </main>
       )}
     </MeGate>
