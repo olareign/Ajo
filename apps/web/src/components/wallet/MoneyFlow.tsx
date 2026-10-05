@@ -6,6 +6,8 @@ import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { Button } from "@/components/ui/Button";
 import { countryConfig, type Country } from "@/lib/kyc-config";
 import { loadRails, type Rails } from "@/lib/kyc-client";
+import { forgetAll, recall, remember } from "@/lib/visit-cache";
+import { ScreenSkeleton } from "@/components/ui/ScreenSkeleton";
 
 export type Lock = "soon" | "kyc" | null;
 type Capability = keyof Rails["connected"];
@@ -43,7 +45,8 @@ function Loader({ me, children }: Readonly<{ me: Me; children: ReactNode }>) {
   const router = useRouter();
   const preview = useSearchParams().get("preview") === "1";
   const config = countryConfig(me.country);
-  const [live, setLive] = useState<Rails | "failed">();
+  // What is connected rarely changes within a visit: show the last answer at once, refresh behind.
+  const [live, setLive] = useState<Rails | "failed" | undefined>(() => recall<Rails>("rails"));
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -52,8 +55,14 @@ function Loader({ me, children }: Readonly<{ me: Me; children: ReactNode }>) {
     (async () => {
       const result = await loadRails();
       if (!current) return;
-      if (result.status === "signed-out") return router.replace("/sign-in");
-      setLive(result.status === "ok" ? result.data : "failed");
+      if (result.status === "signed-out") {
+        forgetAll();
+        return router.replace("/sign-in");
+      }
+      if (result.status === "ok") remember("rails", result.data);
+      setLive((was) =>
+        result.status === "ok" ? result.data : was && was !== "failed" ? was : "failed",
+      );
     })();
     return () => {
       current = false;
@@ -104,12 +113,6 @@ function Loader({ me, children }: Readonly<{ me: Me; children: ReactNode }>) {
       </main>
     );
   }
-  if (!value) {
-    return (
-      <p role="status" className="mx-auto max-w-md px-4 pt-10 text-ink-muted">
-        Loading…
-      </p>
-    );
-  }
+  if (!value) return <ScreenSkeleton />;
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

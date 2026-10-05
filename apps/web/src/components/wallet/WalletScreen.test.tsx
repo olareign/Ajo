@@ -44,9 +44,22 @@ function stubApi(routes: Routes) {
     "/api/me": () => Response.json({ displayName: "Ada", email: "a@b.co", onboarded: true }),
     ...routes,
   };
-  const fetchMock = vi.fn(async (url: string) => {
-    const handler = all[new URL(url, "http://app").pathname];
+  const answer = async (path: string) => {
+    const handler = all[path];
     return handler ? handler() : Response.json({}, { status: 404 });
+  };
+  const fetchMock = vi.fn(async (url: string) => {
+    const path = new URL(url, "http://app").pathname;
+    // The wallet screen's one request: the server asks for both parts and returns each answer.
+    if (path === "/api/screens/wallet") {
+      const parts = await Promise.all([answer("/api/wallet"), answer("/api/wallet/transactions")]);
+      if (parts.some((r) => r.status === 401)) return Response.json({}, { status: 401 });
+      const [wallets, transactions] = await Promise.all(
+        parts.map(async (r) => ({ status: r.status, data: await r.json() })),
+      );
+      return Response.json({ wallets, transactions });
+    }
+    return answer(path);
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
@@ -123,23 +136,14 @@ describe("WalletScreen", () => {
     expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
   });
 
-  it("asks for balances and history one after the other, never together", async () => {
-    // The session's refresh token is single-use: two calls racing on an expired token would each
-    // try to swap it, and the second would end the session.
-    let balancesDone = false;
-    stubApi({
-      "/api/wallet": async () => {
-        await new Promise((r) => setTimeout(r, 20));
-        balancesDone = true;
-        return Response.json({ wallets: [naira] });
-      },
-      "/api/wallet/transactions": () => {
-        expect(balancesDone).toBe(true);
-        return Response.json({ items: [], next: null });
-      },
+  it("asks for balances and history in one request", async () => {
+    const fetchMock = stubApi({
+      "/api/wallet": wallets(naira),
+      "/api/wallet/transactions": history([]),
     });
     render(<WalletScreen />);
     await screen.findByText("No activity yet.");
+    expect(fetchMock.mock.calls.map(([u]) => u)).toEqual(["/api/me", "/api/screens/wallet"]);
   });
 
   it("says so when it cannot load, and tries again when asked", async () => {

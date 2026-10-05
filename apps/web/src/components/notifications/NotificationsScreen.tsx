@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { loadNotices, readAllNotices, readNotice, type Notice } from "@/lib/savings-client";
+import { recall, remember } from "@/lib/visit-cache";
 
 export function NotificationsScreen() {
   return <MeGate needs="onboarded">{() => <Messages />}</MeGate>;
@@ -63,7 +64,10 @@ function byDay(items: readonly Notice[], now: Date = new Date()) {
 
 function Messages() {
   const router = useRouter();
-  const [state, setState] = useState<State>({ phase: "loading" });
+  // Within a visit the last copy shows at once while a fresh one loads.
+  const [state, setState] = useState<State>(
+    () => recall<State>("screen:messages") ?? { phase: "loading" },
+  );
   const [attempt, setAttempt] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const mounted = useRef(true);
@@ -82,15 +86,17 @@ function Messages() {
       if (!live) return;
       if (!result.ok) {
         if (result.failure.kind === "signed-out") return router.replace("/sign-in");
-        return setState({ phase: "failed" });
+        return setState((was) => (was.phase === "ready" ? was : { phase: "failed" }));
       }
-      setState({
+      const next: State = {
         phase: "ready",
         items: result.data.items,
         next: result.data.next,
         unread: result.data.unread,
         moreFailed: false,
-      });
+      };
+      remember("screen:messages", next);
+      setState(next);
     })();
     return () => {
       live = false;

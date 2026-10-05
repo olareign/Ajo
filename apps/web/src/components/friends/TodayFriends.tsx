@@ -2,40 +2,14 @@
 
 import { ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { loadFriends, loadRequests } from "@/lib/friends-client";
+
+export type FriendsGlance = Readonly<{ friends: number; waiting: number }>;
 
 /**
- * Today's glance at friends: how many, and whether anyone is waiting for an answer. It waits for its
- * turn (`go`), and shows nothing at all if it cannot be had (for instance before the passport is approved).
+ * Today's glance at friends: how many, and whether anyone is waiting for an answer. Nothing at all
+ * when friends cannot be had (for instance before the passport is approved).
  */
-export function TodayFriends({ go, onDone }: Readonly<{ go: boolean; onDone?: () => void }>) {
-  const router = useRouter();
-  const [state, setState] = useState<{ friends: number; waiting: number }>();
-
-  useEffect(() => {
-    if (!go) return;
-    let live = true;
-    (async () => {
-      const friends = await loadFriends();
-      if (!live) return;
-      if (!friends.ok) {
-        if (friends.failure.kind === "signed-out") router.replace("/sign-in");
-        return onDone?.();
-      }
-      const requests = await loadRequests();
-      if (!live) return;
-      setState({
-        friends: friends.data.length,
-        waiting: requests.ok ? requests.data.incoming.length : 0,
-      });
-    })();
-    return () => {
-      live = false;
-    };
-  }, [go, router, onDone]);
-
+export function TodayFriends({ state }: Readonly<{ state: FriendsGlance | null | undefined }>) {
   if (!state) return null;
   return (
     <Link

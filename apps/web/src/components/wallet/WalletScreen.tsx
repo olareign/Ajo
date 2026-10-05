@@ -8,7 +8,9 @@ import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Gauge, Landmark } from 
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import type { Wallet, WalletTransaction } from "@/lib/wallet";
-import { loadTransactions, loadWallets } from "@/lib/wallet-client";
+import { loadScreen, partData } from "@/lib/screen-client";
+import { recall, remember } from "@/lib/visit-cache";
+import { loadTransactions, type TransactionPage } from "@/lib/wallet-client";
 import { BalanceCard } from "./BalanceCard";
 import { TransactionList } from "./TransactionList";
 
@@ -29,7 +31,10 @@ export function WalletScreen() {
 
 function Wallets() {
   const router = useRouter();
-  const [state, setState] = useState<State>({ phase: "loading" });
+  // Within a visit the last copy shows at once while a fresh one loads.
+  const [state, setState] = useState<State>(
+    () => recall<State>("screen:wallet") ?? { phase: "loading" },
+  );
   const [attempt, setAttempt] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const mounted = useRef(true);
@@ -44,23 +49,25 @@ function Wallets() {
   useEffect(() => {
     let live = true;
     (async () => {
-      // One call at a time: the session's refresh token is single-use, so two calls racing on an
-      // expired access token would each try to swap it, and the second would end the session.
-      const balances = await loadWallets();
+      // Balances and the first page of activity come in one request.
+      const result = await loadScreen("wallet");
       if (!live) return;
-      if (balances.status === "signed-out") return router.replace("/sign-in");
-      if (balances.status === "failed") return setState({ phase: "failed" });
-      const history = await loadTransactions();
-      if (!live) return;
-      if (history.status === "signed-out") return router.replace("/sign-in");
-      if (history.status === "failed") return setState({ phase: "failed" });
-      setState({
+      if (result.status === "signed-out") return router.replace("/sign-in");
+      const balances = result.status === "ok" ? partData(result.data.wallets) : null;
+      const history = result.status === "ok" ? partData(result.data.transactions) : null;
+      const page = history as TransactionPage | null;
+      if (!Array.isArray(balances?.wallets) || !Array.isArray(page?.items)) {
+        return setState((was) => (was.phase === "ready" ? was : { phase: "failed" }));
+      }
+      const next: State = {
         phase: "ready",
-        wallets: balances.data,
-        items: history.data.items,
-        next: history.data.next,
+        wallets: balances.wallets as Wallet[],
+        items: page.items,
+        next: typeof page.next === "string" ? page.next : null,
         moreFailed: false,
-      });
+      };
+      remember("screen:wallet", next);
+      setState(next);
     })();
     return () => {
       live = false;

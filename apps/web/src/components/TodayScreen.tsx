@@ -11,31 +11,75 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { InstallCard } from "@/components/install/InstallCard";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { Avatar } from "@/components/ui/Avatar";
-import { TodayFriends } from "@/components/friends/TodayFriends";
+import { TodayFriends, type FriendsGlance } from "@/components/friends/TodayFriends";
 import { TodayCircles } from "@/components/circles/TodayCircles";
 import { TodaySavings } from "@/components/savings/TodaySavings";
 import { WalletSummary } from "@/components/wallet/WalletSummary";
+import type { GroupSummary } from "@/lib/groups-client";
 import { countryConfig } from "@/lib/kyc-config";
+import type { Plan } from "@/lib/savings-client";
+import { loadScreen, partData, type ScreenData } from "@/lib/screen-client";
+import { recall, remember } from "@/lib/visit-cache";
+import type { Wallet } from "@/lib/wallet";
 
 export function TodayScreen() {
   return <MeGate needs="onboarded">{(me) => <Today me={me} />}</MeGate>;
 }
 
+/** What Today shows. Each part is null when it could not be had: Today then simply shows less. */
+type TodayData = Readonly<{
+  wallets: readonly Wallet[] | null;
+  plans: readonly Plan[] | null;
+  unread: number;
+  friends: FriendsGlance | null;
+  groups: readonly GroupSummary[] | null;
+}>;
+
+const list = <T,>(body: Record<string, unknown> | null, key: string): readonly T[] | null =>
+  body && Array.isArray(body[key]) ? (body[key] as T[]) : null;
+
+export function readToday(parts: ScreenData): TodayData {
+  const friends = list<unknown>(partData(parts.friends), "friends");
+  const incoming = list<unknown>(partData(parts.requests), "incoming");
+  const notices = partData(parts.notices);
+  return {
+    wallets: list<Wallet>(partData(parts.wallets), "wallets"),
+    plans: list<Plan>(partData(parts.plans), "plans"),
+    unread: typeof notices?.unread === "number" ? notices.unread : 0,
+    friends: friends ? { friends: friends.length, waiting: incoming?.length ?? 0 } : null,
+    groups: list<GroupSummary>(partData(parts.groups), "groups"),
+  };
+}
+
+const NOTHING: TodayData = { wallets: null, plans: null, unread: 0, friends: null, groups: null };
+
 function Today({ me }: Readonly<{ me: Me }>) {
-  // Today asks the server for one thing after another (the session's refresh token is single-use):
-  // the wallet first, then the savings and the unread count, then friends, then circles.
-  const [walletDone, setWalletDone] = useState(false);
-  const [savingsDone, setSavingsDone] = useState(false);
-  const [friendsDone, setFriendsDone] = useState(false);
-  const [unread, setUnread] = useState(0);
-  const onWallet = useCallback(() => setWalletDone(true), []);
-  const onFriends = useCallback(() => setFriendsDone(true), []);
-  const onSavings = useCallback(() => setSavingsDone(true), []);
-  const onUnread = useCallback((n: number) => setUnread(n), []);
+  const router = useRouter();
+  // Everything Today shows comes in one request; within a visit the last copy shows at once.
+  const [data, setData] = useState<TodayData | undefined>(() => recall<TodayData>("screen:today"));
+
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const result = await loadScreen("today");
+      if (!live) return;
+      if (result.status === "signed-out") return router.replace("/sign-in");
+      if (result.status === "failed") return setData((was) => was ?? NOTHING);
+      const next = readToday(result.data);
+      remember("screen:today", next);
+      setData(next);
+    })();
+    return () => {
+      live = false;
+    };
+  }, [router]);
+
+  const unread = data?.unread ?? 0;
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       <header className="flex items-center justify-between gap-3">
@@ -70,7 +114,7 @@ function Today({ me }: Readonly<{ me: Me }>) {
           )}
         </Link>
       </header>
-      <WalletSummary onLoaded={onWallet} currency={countryConfig(me.country)?.currency} />
+      <WalletSummary wallets={data?.wallets} currency={countryConfig(me.country)?.currency} />
       <QuickActions />
       {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
         <Link
@@ -110,9 +154,9 @@ function Today({ me }: Readonly<{ me: Me }>) {
           <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
         </Link>
       )}
-      <TodaySavings go={walletDone} onUnread={onUnread} onDone={onSavings} />
-      <TodayCircles go={friendsDone} />
-      <TodayFriends go={savingsDone} onDone={onFriends} />
+      <TodaySavings plans={data?.plans} />
+      <TodayCircles groups={data?.groups} />
+      <TodayFriends state={data?.friends} />
       <InstallCard />
     </main>
   );

@@ -42,6 +42,25 @@ function api(routes: Routes, state: Rails = rails()) {
     const u = new URL(url, "http://app");
     if (u.pathname === "/api/me") return Response.json(me);
     if (u.pathname === "/api/wallet/rails") return Response.json(state);
+    // The friends home's one request: the server asks for each part and returns each answer.
+    if (u.pathname === "/api/screens/friends") {
+      const parts: Record<string, Reply> = {};
+      for (const [key, path] of [
+        ["friends", "/api/friends"],
+        ["requests", "/api/friends/requests"],
+        ["suggestions", "/api/friends/suggestions"],
+      ] as const) {
+        const handler = routes[`GET ${path}`];
+        parts[key] = handler ? await handler() : { status: 404, body: {} };
+      }
+      if (Object.values(parts).some((p) => p.status === 401))
+        return Response.json({}, { status: 401 });
+      return Response.json(
+        Object.fromEntries(
+          Object.entries(parts).map(([k, p]) => [k, { status: p.status, data: p.body ?? {} }]),
+        ),
+      );
+    }
     const handler = routes[`${init?.method ?? "GET"} ${u.pathname}`];
     if (!handler) return new Response(null, { status: 404 });
     const reply = await handler(init, url);
@@ -142,19 +161,16 @@ describe("the friends home", () => {
     expect(screen.queryByRole("heading", { name: "Your friends" })).not.toBeInTheDocument();
   });
 
-  it("asks for one thing after another, never together", async () => {
-    const order: string[] = [];
-    api({
-      "GET /api/friends": () => (order.push("friends"), { status: 200, body: { friends: [] } }),
-      "GET /api/friends/requests": () => (
-        order.push("requests"),
-        { status: 200, body: { incoming: [], outgoing: [] } }
-      ),
-      "GET /api/friends/suggestions": () => (order.push("suggestions"), { status: 200, body: [] }),
+  it("asks for friends, requests and suggestions in one request", async () => {
+    const mock = api({
+      "GET /api/friends": () => ({ status: 200, body: { friends: [] } }),
+      "GET /api/friends/requests": () => ({ status: 200, body: { incoming: [], outgoing: [] } }),
+      "GET /api/friends/suggestions": () => ({ status: 200, body: [] }),
     });
     open(<FriendsHome />);
     await screen.findByText(/Your circle is empty/);
-    expect(order).toEqual(["friends", "requests", "suggestions"]);
+    expect(sent(mock, "GET /api/screens/friends")).toHaveLength(1);
+    expect(sent(mock, "GET /api/friends")).toHaveLength(0);
   });
 
   it("is locked until the passport is approved, with a preview; says when it cannot load; signs out the signed out", async () => {

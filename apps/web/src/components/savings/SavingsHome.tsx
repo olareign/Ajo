@@ -13,6 +13,7 @@ import { FlowLocked } from "@/components/wallet/FlowLocked";
 import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import { cn } from "@/lib/cn";
 import { dayText } from "@/lib/schedule";
+import { recall, remember } from "@/lib/visit-cache";
 import type { Plan } from "@/lib/savings-client";
 import { Pot } from "./Pot";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
@@ -55,7 +56,11 @@ export function SavingsHome() {
   const gateway = useSavings();
   const router = useRouter();
   const lock = useSavingsLock();
-  const [plans, setPlans] = useState<readonly Plan[] | "failed">();
+  // Within a visit the last copy shows at once while a fresh one loads (never in a preview).
+  const cacheKey = preview ? null : "screen:save";
+  const [plans, setPlans] = useState<readonly Plan[] | "failed" | undefined>(() =>
+    cacheKey ? recall<readonly Plan[]>(cacheKey) : undefined,
+  );
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -66,14 +71,15 @@ export function SavingsHome() {
       if (!live) return;
       if (!result.ok) {
         if (result.failure.kind === "signed-out") return router.replace("/sign-in");
-        return setPlans("failed");
+        return setPlans((was) => (Array.isArray(was) ? was : "failed"));
       }
+      if (cacheKey) remember(cacheKey, result.data);
       setPlans(result.data);
     })();
     return () => {
       live = false;
     };
-  }, [gateway, lock, router, attempt]);
+  }, [gateway, lock, router, attempt, cacheKey]);
 
   if (lock) return <FlowLocked lock={lock} title="Savings" path="/save" />;
 

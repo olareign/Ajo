@@ -677,34 +677,27 @@ describe("a circle", () => {
 });
 
 describe("the circles card on Today", () => {
-  it("shows the circle under way and where your turn is", async () => {
-    api({
-      "GET /api/groups": () => ({
-        status: 200,
-        body: { groups: [summary({ status: "running", memberCount: 4, mySpot: 3 })] },
-      }),
-    });
-    render(<TodayCircles go />);
-    expect(await screen.findByText("Sunday circle")).toBeInTheDocument();
+  it("shows the circle under way and where your turn is", () => {
+    render(
+      <TodayCircles
+        groups={[summary({ status: "running", memberCount: 4, mySpot: 3 })] as never}
+      />,
+    );
+    expect(screen.getByText("Sunday circle")).toBeInTheDocument();
     expect(screen.getByText(/Your turn is 3 of 4/)).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "/circles");
   });
 
-  it("invites you to start one when you have none, and waits for its turn", async () => {
-    const mock = api({ "GET /api/groups": () => ({ status: 200, body: { groups: [] } }) });
-    const idle = render(<TodayCircles go={false} />);
-    expect(sent(mock, "GET /api/groups")).toHaveLength(0);
-    idle.unmount();
-    render(<TodayCircles go />);
-    expect(await screen.findByText("Save together")).toBeInTheDocument();
+  it("invites you to start one when you have none", () => {
+    render(<TodayCircles groups={[]} />);
+    expect(screen.getByText("Save together")).toBeInTheDocument();
   });
 
-  it("shows nothing when circles cannot be had", async () => {
-    api({
-      "GET /api/groups": () => ({ status: 403, body: { message: "no", code: "kyc_required" } }),
-    });
-    const { container } = render(<TodayCircles go />);
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
+  it("shows nothing while loading or when circles cannot be had", () => {
+    const loading = render(<TodayCircles groups={undefined} />);
+    expect(loading.container).toBeEmptyDOMElement();
+    loading.unmount();
+    const { container } = render(<TodayCircles groups={null} />);
     expect(container).toBeEmptyDOMElement();
   });
 });

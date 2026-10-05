@@ -2,47 +2,14 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Amount } from "@/components/ui/Amount";
 import { dayText } from "@/lib/schedule";
-import { loadNotices, loadPlans, type Plan } from "@/lib/savings-client";
+import type { Plan } from "@/lib/savings-client";
 import { Pot } from "./Pot";
 import { ratioOf } from "./SavingsHome";
 
-/**
- * Today's glance at saving. It waits for its turn (`go`) so Today's calls to the server go one after
- * another, and it also learns how many messages are unread, for the bell. Both are optional: if either
- * cannot be had, Today simply shows less.
- */
-export function TodaySavings({
-  go,
-  onUnread,
-  onDone,
-}: Readonly<{ go: boolean; onUnread: (count: number) => void; onDone?: () => void }>) {
-  const router = useRouter();
-  const [plans, setPlans] = useState<readonly Plan[]>();
-
-  useEffect(() => {
-    if (!go) return;
-    let live = true;
-    (async () => {
-      const result = await loadPlans();
-      if (!live) return;
-      if (!result.ok) {
-        if (result.failure.kind === "signed-out") router.replace("/sign-in");
-        return onDone?.();
-      }
-      setPlans(result.data);
-      const notices = await loadNotices();
-      if (live && notices.ok) onUnread(notices.data.unread);
-      if (live) onDone?.();
-    })();
-    return () => {
-      live = false;
-    };
-  }, [go, router, onUnread, onDone]);
-
+/** Today's glance at saving. Nothing at all when plans cannot be had (say, before the passport). */
+export function TodaySavings({ plans }: Readonly<{ plans: readonly Plan[] | null | undefined }>) {
   if (!plans) return null;
   const open = plans.filter((p) => p.status === "active" || p.status === "paused");
   const next = open

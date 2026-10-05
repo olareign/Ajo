@@ -13,6 +13,7 @@ import { FlowLocked } from "@/components/wallet/FlowLocked";
 import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import { CircleRing } from "@/components/CircleRing";
 import { dayText } from "@/lib/schedule";
+import { recall, remember } from "@/lib/visit-cache";
 import type { GroupSummary } from "@/lib/groups-client";
 import { FREQ_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
 
@@ -30,7 +31,11 @@ export function CirclesHome() {
   const gateway = useCircles();
   const router = useRouter();
   const lock = useCirclesLock();
-  const [groups, setGroups] = useState<readonly GroupSummary[] | "failed">();
+  // Within a visit the last copy shows at once while a fresh one loads (never in a preview).
+  const cacheKey = preview ? null : "screen:circles";
+  const [groups, setGroups] = useState<readonly GroupSummary[] | "failed" | undefined>(() =>
+    cacheKey ? recall<readonly GroupSummary[]>(cacheKey) : undefined,
+  );
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -41,14 +46,15 @@ export function CirclesHome() {
       if (!live) return;
       if (!result.ok) {
         if (result.failure.kind === "signed-out") return router.replace("/sign-in");
-        return setGroups("failed");
+        return setGroups((was) => (Array.isArray(was) ? was : "failed"));
       }
+      if (cacheKey) remember(cacheKey, result.data);
       setGroups(result.data);
     })();
     return () => {
       live = false;
     };
-  }, [gateway, lock, router, attempt]);
+  }, [gateway, lock, router, attempt, cacheKey]);
 
   if (lock) return <FlowLocked lock={lock} title="Circles" path="/circles" />;
 

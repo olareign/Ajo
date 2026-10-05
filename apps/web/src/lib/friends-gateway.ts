@@ -1,5 +1,6 @@
 import type { Failure, Outcome } from "./api-send";
 import * as live from "./friends-client";
+import { loadScreen, partData, type Part } from "./screen-client";
 import type {
   Blocked,
   Friend,
@@ -14,7 +15,16 @@ import type {
 } from "./friends-client";
 
 /** What the friends screens ask for: the server, or in a preview a pretend one that lives in this tab. */
+/** Everything the friends home shows. */
+export type FriendsHomeData = Readonly<{
+  friends: readonly Friend[];
+  requests: Requests;
+  suggestions: readonly Suggestion[];
+}>;
+
 export type FriendsGateway = Readonly<{
+  /** The friends home in one go (one request when live). */
+  home: () => Promise<Outcome<FriendsHomeData>>;
   friends: () => Promise<Outcome<readonly Friend[]>>;
   requests: () => Promise<Outcome<Requests>>;
   suggestions: () => Promise<Outcome<readonly Suggestion[]>>;
@@ -32,7 +42,50 @@ export type FriendsGateway = Readonly<{
   report: (username: string, reason: ReportReason, details?: string) => Promise<Outcome<unknown>>;
 }>;
 
+const refusedPart = (part: Part | undefined): Outcome<never> => ({
+  ok: false,
+  failure: {
+    kind: "refused",
+    status: part?.status ?? 502,
+    code: typeof part?.data.code === "string" ? part.data.code : undefined,
+    message:
+      typeof part?.data.message === "string"
+        ? part.data.message
+        : "We couldn't load your friends. Check your connection and try again.",
+  },
+});
+
+async function liveHome(): Promise<Outcome<FriendsHomeData>> {
+  const result = await loadScreen("friends");
+  if (result.status === "signed-out") return { ok: false, failure: { kind: "signed-out" } };
+  if (result.status === "failed")
+    return {
+      ok: false,
+      failure: { kind: "unreachable", message: "We couldn't reach Àjọ. Check your connection." },
+    };
+  const { friends, requests, suggestions } = result.data;
+  const f = partData(friends);
+  const r = partData(requests);
+  const s = partData(suggestions);
+  if (!f) return refusedPart(friends);
+  if (!r) return refusedPart(requests);
+  if (!s) return refusedPart(suggestions);
+  return {
+    ok: true,
+    data: {
+      friends: Array.isArray(f.friends) ? (f.friends as Friend[]) : [],
+      requests: {
+        incoming: Array.isArray(r.incoming) ? (r.incoming as FriendRequest[]) : [],
+        outgoing: Array.isArray(r.outgoing) ? (r.outgoing as FriendRequest[]) : [],
+      },
+      // The API answers suggestions as a bare list.
+      suggestions: Array.isArray(s) ? (s as Suggestion[]) : [],
+    },
+  };
+}
+
 export const liveFriends: FriendsGateway = {
+  home: liveHome,
   friends: live.loadFriends,
   requests: live.loadRequests,
   suggestions: live.loadSuggestions,
@@ -162,7 +215,7 @@ export function previewFriends(): FriendsGateway {
     return ok({ relation });
   };
 
-  return {
+  const gateway: Omit<FriendsGateway, "home"> = {
     friends: async () =>
       ok(
         visible()
@@ -255,5 +308,19 @@ export function previewFriends(): FriendsGateway {
       return ok({});
     },
     report: async (username) => (find(username) ? ok({}) : missing()),
+  };
+  return {
+    ...gateway,
+    home: async () => {
+      const [friends, requests, suggestions] = await Promise.all([
+        gateway.friends(),
+        gateway.requests(),
+        gateway.suggestions(),
+      ]);
+      if (!friends.ok) return friends;
+      if (!requests.ok) return requests;
+      if (!suggestions.ok) return suggestions;
+      return ok({ friends: friends.data, requests: requests.data, suggestions: suggestions.data });
+    },
   };
 }

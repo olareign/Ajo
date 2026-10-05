@@ -2,12 +2,9 @@
 
 import { ArrowDownToLine, ArrowUpFromLine, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Amount } from "@/components/ui/Amount";
 import { useHiddenBalance } from "@/lib/hidden-balance";
 import type { Wallet } from "@/lib/wallet";
-import { loadWallets } from "@/lib/wallet-client";
 import { BalanceEye, HiddenAmount, SIGN } from "./BalanceEye";
 
 /**
@@ -15,31 +12,15 @@ import { BalanceEye, HiddenAmount, SIGN } from "./BalanceEye";
  * actions people reach for most. The balance itself leads to the wallet.
  */
 export function WalletSummary({
-  onLoaded,
+  wallets,
   currency,
 }: Readonly<{
-  onLoaded?: () => void;
+  /** undefined while loading, null when it could not be loaded. */
+  wallets: readonly Wallet[] | null | undefined;
   /** The person's own currency: an empty wallet then reads as zero in it, as money apps do. */
   currency?: string;
-}> = {}) {
-  const router = useRouter();
+}>) {
   const [hidden, toggle] = useHiddenBalance();
-  // undefined while loading, null when it could not be loaded.
-  const [wallets, setWallets] = useState<Wallet[] | null>();
-
-  useEffect(() => {
-    let live = true;
-    (async () => {
-      const result = await loadWallets();
-      if (!live) return;
-      if (result.status === "signed-out") return router.replace("/sign-in");
-      setWallets(result.status === "ok" ? result.data : null);
-      onLoaded?.();
-    })();
-    return () => {
-      live = false;
-    };
-  }, [router, onLoaded]);
 
   return (
     <section

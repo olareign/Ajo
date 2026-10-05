@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ago, NotificationsScreen } from "./NotificationsScreen";
+import { forgetAll } from "@/lib/visit-cache";
 
 const replace = vi.fn();
 const push = vi.fn();
@@ -120,6 +121,8 @@ describe("the messages screen", () => {
     const { unmount } = render(<NotificationsScreen />);
     expect(await screen.findByText("Nothing yet")).toBeInTheDocument();
     unmount();
+    // A new visit: nothing remembered to fall back on.
+    forgetAll();
     let calls = 0;
     api({
       "GET /api/notifications": () =>
