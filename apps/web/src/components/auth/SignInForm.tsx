@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { messageOf, postJson } from "./post-json";
+import { takeReturn } from "@/lib/return-to";
 
 export function SignInForm() {
   const router = useRouter();
@@ -20,7 +21,9 @@ export function SignInForm() {
     setBusy(true);
     const result = await postJson("/api/auth/sign-in", { email: email.trim(), password });
     if (result.ok) {
-      router.push(result.data.mfaRequired === true ? "/sign-in/verify" : "/today");
+      router.push(
+        result.data.mfaRequired === true ? "/sign-in/verify" : (takeReturn() ?? "/today"),
+      );
       return;
     }
     if (result.status === 403 && result.data.code === "email_not_verified") {

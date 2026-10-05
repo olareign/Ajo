@@ -65,6 +65,15 @@ export const loadBlocks = async (): Promise<Outcome<readonly Blocked[]>> => {
   return r.ok ? { ok: true, data: Array.isArray(r.data) ? r.data : [] } : r;
 };
 export const loadInvite = () => send<Invite>("GET", "/api/friends/invite");
+export const setInviteCode = (code: string) =>
+  send<Invite>("PUT", "/api/friends/invite", { body: { code } });
+
+/** Someone who joined through your invite. */
+export type Referral = Readonly<{ displayName: string; username: string | null; joinedAt: string }>;
+export const loadReferrals = async (): Promise<Outcome<readonly Referral[]>> => {
+  const r = await send<Referral[] | Record<string, never>>("GET", "/api/friends/referrals");
+  return r.ok ? { ok: true, data: Array.isArray(r.data) ? r.data : [] } : r;
+};
 
 export const sendRequest = (username: string) =>
   send<{ relation: Relation }>("POST", "/api/friends/requests", { body: { username } });

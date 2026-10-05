@@ -6,6 +6,7 @@ import type {
   Friend,
   FriendRequest,
   Invite,
+  Referral,
   Person,
   Relation,
   ReportReason,
@@ -32,6 +33,8 @@ export type FriendsGateway = Readonly<{
   person: (username: string) => Promise<Outcome<Person>>;
   blocks: () => Promise<Outcome<readonly Blocked[]>>;
   invite: () => Promise<Outcome<Invite>>;
+  setInvite: (code: string) => Promise<Outcome<Invite>>;
+  referrals: () => Promise<Outcome<readonly Referral[]>>;
   request: (username: string) => Promise<Outcome<{ relation: Relation }>>;
   accept: (username: string) => Promise<Outcome<{ relation: Relation }>>;
   decline: (username: string) => Promise<Outcome<unknown>>;
@@ -93,6 +96,8 @@ export const liveFriends: FriendsGateway = {
   person: live.loadPerson,
   blocks: live.loadBlocks,
   invite: live.loadInvite,
+  setInvite: live.setInviteCode,
+  referrals: live.loadReferrals,
   request: live.sendRequest,
   accept: live.acceptRequest,
   decline: live.declineRequest,
@@ -207,6 +212,7 @@ export function previewFriends(): FriendsGateway {
     mutualFriends: mutual(p),
     tier: p.tier,
   });
+  let inviteCode = "PREVIEW1";
   const when = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
   const set = (username: string, relation: Relation) => {
     const p = find(username);
@@ -282,7 +288,27 @@ export function previewFriends(): FriendsGateway {
             blockedAt: when(0),
           })),
       ),
-    invite: async () => ok({ code: "PREVIEW1", link: "https://ajo.example/join/PREVIEW1" }),
+    invite: async () => ok({ code: inviteCode, link: `https://ajo.example/join/${inviteCode}` }),
+    setInvite: async (code) => {
+      const next = code.trim().toUpperCase();
+      if (!/^[A-Z0-9][A-Z0-9_-]{2,18}[A-Z0-9]$/.test(next))
+        return {
+          ok: false,
+          failure: {
+            kind: "refused",
+            status: 400,
+            code: "code_invalid",
+            message: "Use 4 to 20 letters or numbers; - and _ are fine in the middle.",
+          },
+        };
+      inviteCode = next;
+      return ok({ code: next, link: `https://ajo.example/join/${next}` });
+    },
+    referrals: async () =>
+      ok([
+        { displayName: "Kemi Salako", username: "kemi_s", joinedAt: when(2) },
+        { displayName: "Sade Kehinde", username: null, joinedAt: when(9) },
+      ]),
     request: async (username) => {
       const p = find(username);
       if (!p || p.blocked) return missing();

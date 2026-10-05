@@ -236,7 +236,7 @@ describe("an invite to a circle", () => {
     expect(screen.getByText(/Chidi Okafor invited you/)).toBeInTheDocument();
     expect(screen.getByText(/Trusted members lock nothing/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Join this circle" }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/circles/g9"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/circles/g9?joined=1"));
     expect(json(sent(mock, "POST /api/groups/join")[0]!)).toEqual({ code: "ABCD1234" });
   });
 
@@ -438,6 +438,13 @@ describe("a circle", () => {
     await user.click(screen.getByRole("button", { name: "Send invite" }));
     expect(await screen.findByText("Invite sent to @funmi_a.")).toBeInTheDocument();
     expect(json(sent(mock, "POST /api/groups/g1/invite")[0]!)).toEqual({ username: "funmi_a" });
+  });
+
+  it("says you're in after joining through an invite", async () => {
+    query = new URLSearchParams("joined=1");
+    api({ "GET /api/groups/g1": () => ({ status: 200, body: detail() }) });
+    open(<CircleScreen id="g1" />);
+    expect(await screen.findByText(/You.re in/)).toBeInTheDocument();
   });
 
   it("asks before calling off a circle you made, then does it and shows it called off", async () => {

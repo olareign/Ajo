@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ScreenSkeleton } from "@/components/ui/ScreenSkeleton";
 import { forgetAll, recall, remember } from "@/lib/visit-cache";
+import { rememberReturn } from "@/lib/return-to";
 
 export type Me = Readonly<{
   displayName: string;
@@ -50,13 +51,18 @@ export function MeGate({ needs, children }: Props) {
         if (!live) return;
         if (res.status === 401) {
           forgetAll();
+          // An invite opened while signed out is where the person comes back to after signing in.
+          rememberReturn(window.location.pathname);
           return router.replace("/sign-in");
         }
         if (!res.ok) return setFailed(true);
         const data = (await res.json()) as Me;
         remember("me", data);
         if (data.onboarded && needs === "not-onboarded") return router.replace("/today");
-        if (!data.onboarded && needs === "onboarded") return router.replace("/onboarding");
+        if (!data.onboarded && needs === "onboarded") {
+          rememberReturn(window.location.pathname);
+          return router.replace("/onboarding");
+        }
         setMe(data);
       } catch {
         if (live) setFailed(true);

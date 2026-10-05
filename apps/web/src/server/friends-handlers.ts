@@ -3,9 +3,9 @@ import { proxy } from "./api-proxy";
 import type { Deps } from "./auth-handlers";
 import { clientOf } from "./client-context";
 import { json, withSession } from "./me-handlers";
+import { INVITE_CODE } from "@/lib/invite-code";
 
 const USERNAME = /^[A-Za-z][A-Za-z0-9_]{2,19}$/;
-const INVITE = /^[A-Za-z0-9]{8}$/;
 const notFound = () => Promise.resolve(json(404, { message: "We couldn't find that person." }));
 
 const get = (path: string) => (request: Request, deps: Deps) =>
@@ -16,6 +16,11 @@ export const handleFriendRequests = get("/friends/requests");
 export const handleSuggestions = get("/friends/suggestions");
 export const handleMyInvite = get("/friends/invite");
 export const handleBlocks = get("/friends/blocks");
+export const handleReferrals = get("/friends/referrals");
+
+/** Choosing your own invite code: only the code is sent on, and the API decides what is allowed. */
+export const handleSetInvite = (request: Request, deps: Deps) =>
+  proxy(request, deps, "/friends/invite", "PUT", { keys: ["code"] });
 
 /** The start of a username, tidied. Only a well-formed one reaches the API's address. */
 export function handleSearch(request: Request, deps: Deps): Promise<Response> {
@@ -76,7 +81,7 @@ export async function handleInvite(
   { env, fetchFn }: Deps,
   code: string,
 ): Promise<Response> {
-  if (!INVITE.test(code)) return json(404, { message: "That invite isn't valid." });
+  if (!INVITE_CODE.test(code)) return json(404, { message: "That invite isn't valid." });
   const result = await callApi(env, fetchFn, {
     client: clientOf(request),
     path: `/invites/${code}`,

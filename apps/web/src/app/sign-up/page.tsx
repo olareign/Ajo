@@ -4,6 +4,7 @@ import { AuthScreen } from "@/components/auth/AuthScreen";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { loadServerEnv } from "@/server/env";
+import { INVITE_CODE } from "@/lib/invite-code";
 
 export const metadata: Metadata = { title: "Create account" };
 
@@ -16,7 +17,7 @@ export default async function SignUpPage({
   const { turnstileSiteKey } = loadServerEnv(process.env);
   const { invite } = await searchParams;
   // Only the shape an invite code has; anything else is dropped here, not sent on.
-  const code = typeof invite === "string" && /^[A-Za-z0-9]{8}$/.test(invite) ? invite : undefined;
+  const code = typeof invite === "string" && INVITE_CODE.test(invite) ? invite : undefined;
   return (
     <AuthScreen
       footer={

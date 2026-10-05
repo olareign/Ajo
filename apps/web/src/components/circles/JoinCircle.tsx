@@ -88,7 +88,8 @@ export function JoinCircle({ code }: Readonly<{ code: string }>) {
       setErrorCode(result.failure.kind === "refused" ? result.failure.code : undefined);
       return setError(result.failure.message);
     }
-    router.push(href(`/circles/${result.data.id}`));
+    // The circle page says "you're in" and offers to install the app: after joining, never before.
+    router.push(`${href(`/circles/${result.data.id}`)}${preview ? "&" : "?"}joined=1`);
   }
 
   return (
