@@ -1,6 +1,16 @@
 "use client";
 
-import { BadgeCheck, BookUser, ChevronRight, Mail, ShieldCheck } from "lucide-react";
+import {
+  BadgeCheck,
+  BookUser,
+  ChevronRight,
+  History,
+  KeyRound,
+  Mail,
+  MonitorSmartphone,
+  ShieldCheck,
+  SquareAsterisk,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -54,6 +64,14 @@ function MemberCard({ me }: Readonly<{ me: Me }>) {
     </section>
   );
 }
+
+/** The rest of Security on Me: each opens its own screen. */
+const SECURITY_ROWS = [
+  { href: "/me/password", label: "Password", Icon: KeyRound },
+  { href: "/me/pin", label: "Transaction PIN", Icon: SquareAsterisk },
+  { href: "/me/devices", label: "Devices", Icon: MonitorSmartphone },
+  { href: "/me/activity", label: "Security activity", Icon: History },
+] as const;
 
 const IDENTITY_WORDS = {
   not_started: "Not started",
@@ -136,6 +154,21 @@ function Account({ me }: Readonly<{ me: Me }>) {
                 <ChevronRight aria-hidden className="size-5" />
               </p>
             </Link>
+            {SECURITY_ROWS.map(({ href, label, Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
+              >
+                <p className="flex items-center gap-3 text-[15px] font-semibold">
+                  <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
+                    <Icon aria-hidden className="size-5" />
+                  </span>
+                  {label}
+                </p>
+                <ChevronRight aria-hidden className="size-5 text-ink-muted" />
+              </Link>
+            ))}
           </div>
         </section>
 
