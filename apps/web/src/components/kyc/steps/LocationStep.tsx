@@ -54,7 +54,7 @@ export function LocationStep({ config, submit }: StepProps) {
         </p>
       )}
       {shared ? (
-        <Button size="lg" block disabled={busy} onClick={() => void send()}>
+        <Button size="lg" block loading={busy} disabled={busy} onClick={() => void send()}>
           {busy ? "Saving…" : "Use this area"}
         </Button>
       ) : (

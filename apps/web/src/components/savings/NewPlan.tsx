@@ -286,7 +286,7 @@ export function NewPlan() {
               {error}
             </p>
           )}
-          <Button size="lg" block disabled={busy} onClick={() => void toReview()}>
+          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void toReview()}>
             {busy ? "One moment…" : "Continue"}
           </Button>
         </div>
@@ -367,7 +367,14 @@ export function NewPlan() {
               )}
             </p>
           )}
-          <Button size="lg" block variant="money" disabled={busy} onClick={() => void start()}>
+          <Button
+            size="lg"
+            block
+            variant="money"
+            loading={busy}
+            disabled={busy}
+            onClick={() => void start()}
+          >
             {busy ? "Starting…" : "Start my plan"}
           </Button>
         </div>

@@ -49,7 +49,7 @@ export function IdStep({ country, config, submit }: StepProps) {
           inputMode={chosen.pattern.source.startsWith("^\\d") ? "numeric" : "text"}
         />
       )}
-      <Button size="lg" block disabled={!ready || busy} onClick={() => void send()}>
+      <Button size="lg" block loading={busy} disabled={!ready || busy} onClick={() => void send()}>
         {busy ? "Checking…" : "Check my ID"}
       </Button>
     </div>

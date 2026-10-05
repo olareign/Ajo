@@ -273,7 +273,7 @@ export function AddMoney() {
               )}
             </p>
           )}
-          <Button size="lg" block disabled={busy} onClick={() => void add()}>
+          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void add()}>
             {busy ? (preview ? "Adding…" : "Taking you to pay…") : "Add money"}
           </Button>
           {!preview && (

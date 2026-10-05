@@ -212,7 +212,13 @@ export function Onboarding({ me, photos }: Props) {
           </p>
         )}
         <div className="mt-auto pt-6">
-          <Button size="lg" block disabled={busy || !ready} onClick={() => void onContinue()}>
+          <Button
+            size="lg"
+            block
+            loading={busy}
+            disabled={busy || !ready}
+            onClick={() => void onContinue()}
+          >
             {busy ? "One moment…" : last ? "Finish" : "Continue"}
           </Button>
         </div>

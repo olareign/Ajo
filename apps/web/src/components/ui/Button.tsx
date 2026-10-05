@@ -1,4 +1,7 @@
-import type { ButtonHTMLAttributes } from "react";
+"use client";
+
+import { useLayoutEffect, useRef, useState, type ButtonHTMLAttributes } from "react";
+import { Spinner } from "./Spinner";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "money" | "quiet" | "danger";
@@ -22,6 +25,12 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   size?: Size;
   block?: boolean;
+  /**
+   * Something this screen started is under way: the button cannot be pressed again, and if it is the
+   * one that was pressed it shows a turning ring before its label and says it is busy. A screen with
+   * several buttons can pass the same flag to all of them; only the pressed one turns.
+   */
+  loading?: boolean;
 };
 
 /** The look of a button, for a link that should look like one. */
@@ -47,15 +56,45 @@ export function Button({
   block = false,
   type = "button",
   className,
+  loading = false,
+  disabled,
+  children,
+  onClick,
   ...props
 }: ButtonProps) {
+  const [pressed, setPressed] = useState(false);
+  // When the work ends the button is no longer the one that started it.
+  const [wasLoading, setWasLoading] = useState(loading);
+  if (loading !== wasLoading) {
+    setWasLoading(loading);
+    if (!loading) setPressed(false);
+  }
+  const loadingNow = useRef(loading);
+  useLayoutEffect(() => {
+    loadingNow.current = loading;
+  });
+  const turning = loading && pressed;
   return (
     <button
       type={type}
       data-variant={variant}
       data-size={size}
+      data-loading={turning || undefined}
+      aria-busy={turning || undefined}
+      disabled={disabled || loading}
       className={buttonClass({ variant, size, block, className })}
+      onClick={(event) => {
+        setPressed(true);
+        // A press that started nothing (a check failed first) must not leave this button primed.
+        setTimeout(() => {
+          if (!loadingNow.current) setPressed(false);
+        }, 0);
+        onClick?.(event);
+      }}
       {...props}
-    />
+    >
+      {turning && <Spinner />}
+      {children}
+    </button>
   );
 }

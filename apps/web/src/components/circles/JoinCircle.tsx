@@ -161,7 +161,14 @@ export function JoinCircle({ code }: Readonly<{ code: string }>) {
               : "This circle is no longer taking people."}
           </p>
         ) : (
-          <Button size="lg" block variant="money" disabled={busy} onClick={() => void join()}>
+          <Button
+            size="lg"
+            block
+            variant="money"
+            loading={busy}
+            disabled={busy}
+            onClick={() => void join()}
+          >
             {busy ? "Joining…" : "Join this circle"}
           </Button>
         )}

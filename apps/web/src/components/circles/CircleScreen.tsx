@@ -319,13 +319,19 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
               autoCapitalize="none"
               hint="Their username. We'll send them the circle."
             />
-            <Button type="submit" variant="quiet" disabled={busy || friend.trim().length < 3}>
+            <Button
+              type="submit"
+              variant="quiet"
+              loading={busy}
+              disabled={busy || friend.trim().length < 3}
+            >
               Send invite
             </Button>
           </form>
           {preview && gateway.fillWithSamples && (
             <Button
               variant="quiet"
+              loading={busy}
               disabled={busy}
               onClick={() => void run(() => gateway.fillWithSamples!(g.id), apply)}
             >
@@ -355,6 +361,7 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
                 </Button>
                 <Button
                   variant="danger"
+                  loading={busy}
                   disabled={busy}
                   onClick={() =>
                     void run(
@@ -479,6 +486,7 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
               {preview && gateway.nextRound && (
                 <Button
                   variant="quiet"
+                  loading={busy}
                   disabled={busy}
                   onClick={() => void run(() => gateway.nextRound!(g.id), apply)}
                 >
@@ -536,6 +544,7 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
                     <div className="grid grid-cols-2 gap-3">
                       <Button
                         variant="quiet"
+                        loading={busy}
                         disabled={busy}
                         onClick={() =>
                           void run(
@@ -547,6 +556,7 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
                         No
                       </Button>
                       <Button
+                        loading={busy}
                         disabled={busy}
                         onClick={() =>
                           void run(
@@ -663,6 +673,7 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
           <Button
             size="lg"
             variant="money"
+            loading={busy}
             disabled={busy}
             onClick={() => void run(() => gateway.joinPublic(g.id), apply)}
           >
@@ -745,6 +756,7 @@ function SwapAsk({
                 </span>
                 <Button
                   variant="quiet"
+                  loading={busy}
                   disabled={busy || !m.username}
                   aria-label={`Ask ${m.displayName} to swap`}
                   onClick={() => m.username && onAsk(m.username)}

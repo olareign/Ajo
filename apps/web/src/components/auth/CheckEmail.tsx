@@ -64,7 +64,14 @@ export function CheckEmail({ email, from }: { email?: string; from?: "sign-in" }
 
       {email ? (
         <div className="mt-2 grid justify-items-center gap-2">
-          <Button variant="quiet" size="lg" block disabled={busy || waiting} onClick={resend}>
+          <Button
+            variant="quiet"
+            size="lg"
+            block
+            loading={busy}
+            disabled={busy || waiting}
+            onClick={resend}
+          >
             {busy ? "Sending…" : "Resend email"}
           </Button>
           {waiting && !busy ? (

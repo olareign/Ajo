@@ -5,8 +5,8 @@
  * gold (aṣọ-òkè) is reserved for money. Values mirror the system's tokens.json; change them there
  * first. Contrast is checked for every text pair (4.5:1 text, 3:1 lines and focus).
  *
- * The app is always white: it does not follow the device's dark mode. The dark values below are only
- * used if something sets data-theme="dark" on purpose.
+ * Light and dark follow the device until the person picks one on Me (Appearance); the choice is
+ * stored on that device and set as data-theme="light" | "dark" on <html> before the first paint.
  */
 :root {
   --surface: #ffffff;
@@ -33,6 +33,12 @@
   --danger-tint: #fbe5df;
   --focus: #2f4ad6;
   --shadow-lift: 0 1px 2px rgba(15, 31, 23, 0.06), 0 8px 24px rgba(15, 31, 23, 0.08);
+  /* The balance card: deep green to near-black green, white text (7:1 or better across it). */
+  --hero-from: #06703a;
+  --hero-to: #023019;
+  --on-hero: #ffffff;
+  --on-hero-muted: rgba(255, 255, 255, 0.78);
+  --hero-chip: rgba(255, 255, 255, 0.14);
   color-scheme: light;
 }
 
@@ -61,7 +67,48 @@
   --danger-tint: #3d1710;
   --focus: #f2bb4c;
   --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --hero-from: #0b5a31;
+  --hero-to: #04170d;
+  --on-hero: #ffffff;
+  --on-hero-muted: rgba(255, 255, 255, 0.75);
+  --hero-chip: rgba(255, 255, 255, 0.12);
   color-scheme: dark;
+}
+
+/* No choice made: follow the device. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #0a1410;
+    --surface-raised: #101c16;
+    --surface-sunken: #070f0b;
+    --line: #22342a;
+    --line-strong: #6f8b7b;
+    --ink: #edf6f0;
+    --ink-muted: #a3b5aa;
+    --primary: #4ccb84;
+    --primary-deep: #7fe0a8;
+    --primary-tint: #12301f;
+    --on-primary: #03140a;
+    --tertiary: #9aa7f5;
+    --tertiary-tint: #1c2250;
+    --on-tertiary: #0d1130;
+    --oro: #f2bb4c;
+    --oro-tint: #3a2c0e;
+    --on-oro: #1c1405;
+    --oro-ink: #f2bb4c;
+    --leaf: #62cf92;
+    --leaf-tint: #10301f;
+    --danger: #ff8f73;
+    --danger-tint: #3d1710;
+    --focus: #f2bb4c;
+    --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
+    --hero-from: #0b5a31;
+    --hero-to: #04170d;
+    --on-hero: #ffffff;
+    --on-hero-muted: rgba(255, 255, 255, 0.75);
+    --hero-chip: rgba(255, 255, 255, 0.12);
+    color-scheme: dark;
+  }
 }
 
 @theme inline {
@@ -93,10 +140,13 @@
   --color-danger-tint: var(--danger-tint);
   --color-focus: var(--focus);
   --shadow-lift: var(--shadow-lift);
+  --color-on-hero: var(--on-hero);
+  --color-on-hero-muted: var(--on-hero-muted);
 
   --radius-s: 6px;
   --radius-m: 12px;
   --radius-l: 20px;
+  --radius-xl: 28px;
 }
 
 html {
@@ -380,4 +430,36 @@ body {
 }
 .pot-coin {
   animation: pot-coin 1.1s ease-in both;
+}
+
+/* The money hero: one gradient used by the wallet and savings totals. */
+.hero-card {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(217, 154, 30, 0.28) 0%, transparent 55%),
+    linear-gradient(145deg, var(--hero-from), var(--hero-to));
+  color: var(--on-hero);
+}
+
+/* A button's loader: a ring that turns; reduced motion keeps it still (the label still says busy). */
+@keyframes spin-once {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  animation: spin-once 0.8s linear infinite;
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.sheet-rise {
+  animation: sheet-rise 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }

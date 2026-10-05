@@ -95,6 +95,7 @@ export function BlockedScreen() {
                   </span>
                   <Button
                     variant="quiet"
+                    loading={busy === b.username}
                     disabled={busy === b.username}
                     aria-label={`Unblock ${b.displayName}`}
                     onClick={() => void unblock(b.username)}

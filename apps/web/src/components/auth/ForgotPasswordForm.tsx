@@ -65,7 +65,7 @@ export function ForgotPasswordForm() {
         required
       />
       <div className="mt-auto pt-8">
-        <Button type="submit" size="lg" block disabled={busy || !email.trim()}>
+        <Button type="submit" size="lg" block loading={busy} disabled={busy || !email.trim()}>
           {busy ? "One moment…" : "Send me email"}
         </Button>
       </div>

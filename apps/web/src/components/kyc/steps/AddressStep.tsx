@@ -54,7 +54,13 @@ export function AddressStep({ config, submit }: StepProps) {
           {error}
         </p>
       )}
-      <Button size="lg" block disabled={!kind || !file || busy} onClick={() => void send()}>
+      <Button
+        size="lg"
+        block
+        loading={busy}
+        disabled={!kind || !file || busy}
+        onClick={() => void send()}
+      >
         {busy ? "Checking…" : "Send document"}
       </Button>
     </div>

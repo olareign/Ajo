@@ -87,6 +87,7 @@ export function MfaOn() {
             <Button
               type="submit"
               variant="danger"
+              loading={busy}
               disabled={busy || !password || code.length !== 6}
             >
               {busy ? "One moment…" : "Turn off the second lock"}

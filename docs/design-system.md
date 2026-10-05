@@ -17,7 +17,7 @@ White and green lead; the original indigo is kept as a quiet tertiary accent; go
 | Status | `leaf`, `danger` | `#1D7346`, `#B3361D` | `#62CF92`, `#FF8F73` | Paid; errors |
 | Focus | `focus` | `#2F4AD6` | `#F2BB4C` | One visible ring on every control |
 
-Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:1. **The app is always white**: it does not follow the device's dark mode (the page, the browser's own controls and the theme colour are all light). The dark values stay in the tokens for a future, deliberate dark theme, switched on with `data-theme="dark"`.
+Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:1. **Light and dark follow the device** until the person picks one on Me → Appearance (System, Light, Dark). The choice is stored on that device (`ajo-theme`) and set as `data-theme` on `<html>` by a small script in `<head>` before the first paint, so the page never flashes the other theme; with no choice, `prefers-color-scheme` decides. The browser's controls and theme colour follow too. Money heroes (the wallet balance and savings totals) use one dark green gradient (`hero-from` to `hero-to`, white text) in both themes. Buttons that start work show a small turning ring on the pressed button (`loading`), and cannot be pressed again until it ends.
 
 ## Type, shape and layout
 

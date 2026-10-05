@@ -64,7 +64,7 @@ export function SignInForm() {
         </Link>
       </div>
       <div className="mt-auto pt-8">
-        <Button type="submit" size="lg" block disabled={busy || !email || !password}>
+        <Button type="submit" size="lg" block loading={busy} disabled={busy || !email || !password}>
           {busy ? "One moment…" : "Sign in"}
         </Button>
       </div>
