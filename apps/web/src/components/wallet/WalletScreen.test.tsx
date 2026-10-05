@@ -109,7 +109,8 @@ describe("WalletScreen", () => {
     expect(items[0]).toHaveTextContent("Withdrawal");
     expect(items[0]).toHaveTextContent("Money out");
     expect(items[0]).toHaveTextContent("-₦1,000");
-    expect(items[0]).toHaveTextContent(/Available · \d{1,2} Oct 2026/);
+    // An exact moment: the day, then the 12-hour time.
+    expect(items[0]).toHaveTextContent(/Available · .+, \d{1,2}:\d{2} (AM|PM)/);
     expect(items[1]).toHaveTextContent("Money added");
     expect(items[1]).toHaveTextContent("Money in");
     expect(items[1]).toHaveTextContent("+₦2,500");

@@ -24,6 +24,7 @@ import { Beads } from "./Beads";
 import { Pot } from "./Pot";
 import { ratioOf, StatusWord, toneOf } from "./SavingsHome";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
+import { whenText } from "@/lib/when";
 
 type Panel = "topup" | "end" | null;
 
@@ -437,7 +438,7 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
                 <span>
                   {HISTORY_WORDS[item.type] ?? "Activity"}
                   <span className="block text-[13px] text-ink-muted">
-                    {dayText(item.createdAt.slice(0, 10))}
+                    {whenText(item.createdAt)}
                   </span>
                 </span>
                 <span className="text-right">

@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ago, NotificationsScreen } from "./NotificationsScreen";
+import { NotificationsScreen } from "./NotificationsScreen";
 import { forgetAll } from "@/lib/visit-cache";
 
 const replace = vi.fn();
@@ -40,21 +40,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
   replace.mockReset();
   push.mockReset();
-});
-
-describe("how long ago", () => {
-  const now = new Date("2026-10-04T12:00:00Z");
-  it.each([
-    ["2026-10-04T11:59:40Z", /^Just now$/],
-    ["2026-10-04T11:55:00Z", /^5 min ago$/],
-    ["2026-10-04T11:00:00Z", /^1 hour ago$/],
-    ["2026-10-04T07:00:00Z", /^5 hours ago$/],
-    ["2026-10-03T09:00:00Z", /^Yesterday$/],
-    ["2026-10-01T09:00:00Z", /^3 days ago$/],
-    ["2026-09-20T09:00:00Z", /^20 Sep/],
-  ])("%s reads as %s", (iso, words) => {
-    expect(ago(iso, now)).toMatch(words);
-  });
 });
 
 describe("the messages screen", () => {
