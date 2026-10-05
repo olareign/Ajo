@@ -62,19 +62,19 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.9 | Confirm email again | ✅ | ☐ | Resend after a minute, ten a day, `email_verified` boolean kept in step by the database |
 | E1.10 | Housekeeping of sessions and tokens | ✅ | | Job built and tested. Runs only where the worker is deployed |
 | E1.11 | App shell and look | 🟡 | | Built on `redesign/fintech-refresh` (stacked on phase 4): theme follows the device with an Appearance choice on Me; Today leads with the balance card (eye to hide it, Add money, Withdraw), quick tiles, then what needs the person; bottom bar with a quick-actions sheet; Wallet, Savings, Friends, Messages and Me restyled on the same cards; a loader on the pressed button wherever a screen waits. No API or behaviour change. Unit tests updated and added; checked by eye on Today in light and dark |
-| E1.12 | Fast navigation | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.13 | One request per screen | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.14 | App bar navigation | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.15 | Exact times | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.16 | Change password | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.17 | Change or reset PIN | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.18 | Devices and sessions | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.19 | Recovery codes and turning the authenticator off | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.20 | Security activity | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.21 | Tier and limits card | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E1.22 | Phone number | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.12 | Fast navigation | ✅ |  | Built Oct 5 on `phase-4.5/profile-and-speed`: what a screen showed is kept for the visit and shown at once on return while a fresh copy loads; any change forgets it all, and so does signing in or out |
+| E1.13 | One request per screen | ✅ |  | Today, Wallet and Friends each load in one request (`/api/screens/<name>`), parts fetched side by side on our server and the session refreshed once; Today went from six calls in a row to one |
+| E1.14 | App bar navigation | ✅ | ☐ | Inner screens get a slim app bar pinned to the top: back on the left, title centred (Opay style), under the preview ribbon when there is one; tab screens keep a large title |
+| E1.15 | Exact times | ✅ |  | 12-hour times in the person's own time zone (Today, 2:45 PM; Yesterday; 3 Oct, 6:02 PM) on messages, wallet and plan activity, and circle draws |
+| E1.16 | Change password | ✅ | ☐ | Current password, plus the code when the authenticator is on; this phone stays signed in, every other device is signed out, an email goes out |
+| E1.17 | Change or reset PIN | ✅ | ☐ | Change with the old PIN; reset with the password and the code |
+| E1.18 | Devices and sessions | ✅ | ☐ | Each signed-in device with where and when; sign one out, forget a remembered one |
+| E1.19 | Recovery codes and turning the authenticator off | ✅ | ☐ | New recovery codes with the password and a code; the old set stops working |
+| E1.20 | Security activity | ✅ | ☐ | Sign-ins, new devices and every security change, newest first, the network shown only in part |
+| E1.21 | Tier and limits card | ✅ | ☐ | A card on Me: level, what it unlocks, a ladder bar, the circle trust badge, See your limits, and Raise your level (hidden at the top and while a check is under way) |
+| E1.22 | Phone number | ✅ | ☐ | Add, change or remove on Me; local numbers read by the account's country and stored in international form; one account per number; shown as **Not verified** until text-message checks are built |
 | E1.23 | Profile picture | ⬜ | | Needs a Cloudflare R2 bucket and keys (**You**) |
-| E1.24 | Close account | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.24 | Close account | ✅ | ☐ | Password (and code), plus an explicit yes; refused with the reason while money, a plan, a running circle, a payment or auto-debit remains; then signs out everywhere and emails a confirmation. Records stay; the ledger is never touched |
 | E1.25 | Help, terms and privacy | ⬜ | | Needs the support contact and the terms and privacy texts (**You**) |
 
 ### E2. KYC
@@ -118,6 +118,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E8.1 | Notification service | ✅ | | One service saves a message once per key, in the app and optionally by email from a queue that survives a mail outage and gives up after five tries. Push and SMS are not built |
 | E8.2 | Reminders | 🟡 | | Before each debit, when one is missed, when the wallet is short, at maturity or early end. Before payout is part of Phase 4 |
 | E8.3 | Notification centre | ✅ | ☐ | A Messages screen from the bell on Today (with an unread count), paged, mark one or all as read |
+| E8.4 | Preferences | ✅ | ☐ | Built Oct 5 on `phase-4.5/profile-and-speed`: Me, then Notifications: switch off reminder, saving-plan, circle or friend emails; money and account-safety emails always go. In-app messages are unaffected |
 
 Nothing is real until a person is approved. For your own test account see "Testing payments while KYC is pended"; the savings screens are also walkable with `?preview=1` (a pretend plan in the tab, with a "take the next debit" button to watch the pot fill).
 
@@ -134,8 +135,8 @@ Nothing is real until a person is approved. For your own test account see "Testi
 | E5.7 | Nearby people | ⏸ | | **Pended** with the location step of KYC (E2.4): it needs a verified location to measure from. Says so on the Find screen; will only ever show an area name |
 | E5.8 | Group discovery | ⬜ | | Built with groups in Phase 4 (it needs E6.1) |
 | E5.9 | Invite to app | 🟡 | ☐ | Your own invite link and code, to send by **WhatsApp, text message, copy or the phone's share sheet**. The page it opens (`/join/<code>`) shows only the inviter's first name and handle, then leads to sign-up with the code carried through. Joining through it **suggests** each to the other; it never makes anyone a friend. A wrong code is ignored without a word at sign-up |
-| E5.10 | Smart invite landing | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
-| E5.11 | Custom invite code and referrals | ⬜ | | Decided Oct 5: safe custom code, old link stops working |
+| E5.10 | Smart invite landing | ✅ | ☐ | Built Oct 5 on `phase-4.5/profile-and-speed`: signed in, the invite offers to add the inviter as a friend; signed out, sign-in or sign-up brings the person back to it; your own link says so; after joining, an install card |
+| E5.11 | Custom invite code and referrals | ✅ | ☐ | Choose your own code (4-20 letters, numbers, - or _; case does not matter; reserved and rude words refused; 3 changes in 30 days; the old link stops working) and see who joined through you |
 
 Nothing here works until a person is approved. For your own test accounts see "Testing payments while KYC is pended"; the friends screens are also walkable with `?preview=1` (a pretend circle in the tab).
 

@@ -19,6 +19,11 @@ export type Me = Readonly<{
   mfaEnabled?: boolean;
   kycStatus?: "not_started" | "in_progress" | "pending" | "approved" | "rejected";
   kycTier?: 0 | 1 | 2;
+  /** International form; not verified until SMS checks arrive. */
+  phone?: string | null;
+  phoneVerified?: boolean;
+  /** Standing in circles, as other members see it. */
+  trust?: Readonly<{ level: "new" | "building" | "trusted"; score: number }>;
 }>;
 
 type Props = Readonly<{

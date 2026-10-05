@@ -17,6 +17,7 @@ const CHANGES = {
   pin: { path: "/me/security/pin", keys: ["currentPin", "newPin"] },
   "pin/reset": { path: "/me/security/pin/reset", keys: ["password", "code", "newPin"] },
   "recovery-codes": { path: "/me/security/recovery-codes", keys: ["password", "code"] },
+  close: { path: "/me/security/close", keys: ["password", "code"] },
 } as const;
 
 const REMOVABLE = new Set(["sessions", "trusted-devices"]);

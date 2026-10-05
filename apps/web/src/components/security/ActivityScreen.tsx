@@ -5,9 +5,11 @@ import {
   LogIn,
   LogOut,
   MonitorSmartphone,
+  Phone,
   ShieldCheck,
   ShieldOff,
   TriangleAlert,
+  UserX,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -72,6 +74,8 @@ const WORDS: Record<SecurityEventKind, { text: string; Icon: LucideIcon; tone: s
     Icon: LogOut,
     tone: "bg-surface-sunken text-ink-muted",
   },
+  phone_changed: { text: "Phone number changed", Icon: Phone, tone: "bg-oro-tint text-oro-ink" },
+  account_closed: { text: "Account closed", Icon: UserX, tone: "bg-danger-tint text-danger" },
 };
 
 /** What happened to the account lately, newest first, with a way out if something looks wrong. */

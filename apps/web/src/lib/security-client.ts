@@ -27,7 +27,9 @@ export type SecurityEventKind =
   | "recovery_codes_renewed"
   | "device_signed_out"
   | "signed_out_everywhere"
-  | "device_forgotten";
+  | "device_forgotten"
+  | "phone_changed"
+  | "account_closed";
 export type SecurityEvent = Readonly<{
   kind: SecurityEventKind;
   device: string | null;

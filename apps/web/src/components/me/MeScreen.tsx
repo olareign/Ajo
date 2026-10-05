@@ -2,18 +2,21 @@
 
 import {
   BadgeCheck,
+  BellRing,
   BookUser,
   ChevronRight,
   History,
   KeyRound,
   Mail,
   MonitorSmartphone,
+  Phone,
   ShieldCheck,
   SquareAsterisk,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { postJson } from "@/components/auth/post-json";
 import { InstallRow } from "@/components/install/InstallRow";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
@@ -21,6 +24,7 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { AppearancePicker } from "./AppearancePicker";
+import { TierCard } from "./TierCard";
 
 export function MeScreen() {
   return <MeGate needs="onboarded">{(me) => <Account me={me} />}</MeGate>;
@@ -73,6 +77,32 @@ const SECURITY_ROWS = [
   { href: "/me/activity", label: "Security activity", Icon: History },
 ] as const;
 
+/** A grouped row that opens its own screen, with what is set today on the right. */
+function Row({
+  href,
+  label,
+  Icon,
+  value,
+}: Readonly<{ href: string; label: string; Icon: typeof Phone; value?: ReactNode }>) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
+    >
+      <p className="flex min-w-0 items-center gap-3 text-[15px] font-semibold">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
+          <Icon aria-hidden className="size-5" />
+        </span>
+        {label}
+      </p>
+      <p className="flex min-w-0 items-center gap-1 text-[14px] font-medium text-ink-muted">
+        {value}
+        <ChevronRight aria-hidden className="size-5 shrink-0" />
+      </p>
+    </Link>
+  );
+}
+
 const IDENTITY_WORDS = {
   not_started: "Not started",
   in_progress: "In progress",
@@ -117,7 +147,34 @@ function Account({ me }: Readonly<{ me: Me }>) {
       <div className="grid grid-cols-1 gap-8">
         <MemberCard me={me} />
 
+        <TierCard me={me} />
+
         <InstallRow />
+
+        <section aria-labelledby="account" className="grid grid-cols-1 gap-3">
+          <h2 id="account" className="font-display text-[18px] leading-6 font-semibold">
+            Account
+          </h2>
+          <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+            <Row
+              href="/me/phone"
+              label="Phone number"
+              Icon={Phone}
+              value={
+                me.phone ? (
+                  <span className="grid justify-items-end">
+                    <span className="truncate tabular-nums">{me.phone}</span>
+                    <span className="text-[12px] text-oro-ink">Not verified</span>
+                  </span>
+                ) : (
+                  "Add"
+                )
+              }
+            />
+            <Row href="/friends/invite" label="Invite friends" Icon={UserPlus} value="Your code" />
+            <Row href="/me/notifications" label="Notifications" Icon={BellRing} />
+          </div>
+        </section>
 
         <section aria-labelledby="security" className="grid grid-cols-1 gap-3">
           <h2 id="security" className="font-display text-[18px] leading-6 font-semibold">
@@ -240,6 +297,13 @@ function Account({ me }: Readonly<{ me: Me }>) {
             )}
           </div>
         </section>
+
+        <Link
+          href="/me/close"
+          className="justify-self-center px-4 py-2 text-[14px] font-semibold text-danger"
+        >
+          Close account
+        </Link>
       </div>
     </main>
   );
