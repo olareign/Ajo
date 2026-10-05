@@ -4,6 +4,7 @@ import { Check, Clock, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
+import { TrustBadge } from "@/components/ui/TrustBadge";
 import { Button } from "@/components/ui/Button";
 import type { Failure } from "@/lib/api-send";
 import type { Person, Relation } from "@/lib/friends-client";
@@ -14,6 +15,7 @@ type Props = Readonly<{
   person: Pick<Person, "username" | "displayName" | "tier"> & {
     relation?: Relation;
     mutualFriends?: number;
+    trust?: Person["trust"];
   };
   href: string;
   /** A line under the name, such as who they know in common. */
@@ -52,6 +54,7 @@ export function PersonRow({ person, href, note, onRelation, onFail }: Props) {
           <span className="truncate text-[13px] text-ink-muted">@{person.username}</span>
           <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <TierBadge tier={person.tier} />
+            {person.trust && <TrustBadge level={person.trust.level} />}
             {note && <span className="text-[12px] text-ink-muted">{note}</span>}
           </span>
         </span>
