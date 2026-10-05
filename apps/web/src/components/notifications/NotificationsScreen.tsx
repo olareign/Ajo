@@ -37,15 +37,26 @@ export function ago(iso: string, now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-function IconFor({ kind }: Readonly<{ kind: string }>) {
-  const Icon = /missed|short/.test(kind)
-    ? TriangleAlert
-    : /matured|paid|created/.test(kind)
-      ? PiggyBank
-      : /soon/.test(kind)
-        ? BellRing
-        : Coins;
-  return <Icon aria-hidden className="size-5" />;
+/** An icon and a colour for each kind of message: warnings warm, money good news green, reminders indigo. */
+function look(kind: string) {
+  if (/missed|short|failed|default/.test(kind))
+    return { Icon: TriangleAlert, tone: "bg-danger-tint text-danger" };
+  if (/matured|paid|created|payout/.test(kind))
+    return { Icon: PiggyBank, tone: "bg-leaf-tint text-leaf" };
+  if (/soon|reminder/.test(kind)) return { Icon: BellRing, tone: "bg-tertiary-tint text-tertiary" };
+  return { Icon: Coins, tone: "bg-oro-tint text-oro-ink" };
+}
+
+/** Today's messages first, then the rest, so what just happened is where the eye lands. */
+function byDay(items: readonly Notice[], now: Date = new Date()) {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const today = items.filter((i) => new Date(i.createdAt) >= start);
+  const earlier = items.filter((i) => new Date(i.createdAt) < start);
+  return [
+    { title: "Today", items: today },
+    { title: "Earlier", items: earlier },
+  ].filter((g) => g.items.length > 0);
 }
 
 function Messages() {
@@ -158,8 +169,10 @@ function Messages() {
         </div>
       )}
       {state.phase === "ready" && state.items.length === 0 && (
-        <div className="grid justify-items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift">
-          <Bell aria-hidden className="size-10 text-ink-muted" />
+        <div className="grid justify-items-center gap-3 rounded-[var(--radius-xl)] bg-surface-raised p-8 text-center shadow-lift">
+          <span className="grid size-16 place-items-center rounded-full bg-primary-tint text-primary">
+            <Bell aria-hidden className="size-8" />
+          </span>
           <p className="font-display text-[20px] font-semibold">Nothing yet</p>
           <p className="text-[15px] text-ink-muted">
             Reminders and results from your plans will show up here.
@@ -182,58 +195,75 @@ function Messages() {
               </button>
             )}
           </div>
-          <ul className="grid gap-2">
-            {state.items.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => open(item)}
-                  data-unread={item.readAt ? undefined : ""}
-                  className={cn(
-                    "flex w-full items-start gap-3 rounded-[var(--radius-l)] p-4 text-left",
-                    item.readAt ? "bg-surface-sunken" : "bg-surface-raised shadow-lift",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "mt-0.5 grid size-9 shrink-0 place-items-center rounded-full",
-                      item.readAt ? "bg-surface text-ink-muted" : "bg-primary-tint text-primary",
-                    )}
-                  >
-                    <IconFor kind={item.kind} />
-                  </span>
-                  <span className="grid min-w-0 gap-0.5">
-                    <span className="flex items-center gap-2">
-                      <span
+          {byDay(state.items).map((group) => (
+            <section key={group.title} aria-label={group.title} className="grid gap-2">
+              <h2 className="text-[13px] font-semibold tracking-[0.04em] text-ink-muted uppercase">
+                {group.title}
+              </h2>
+              <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+                {group.items.map((item) => {
+                  const { Icon, tone } = look(item.kind);
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => open(item)}
+                        data-unread={item.readAt ? undefined : ""}
                         className={cn(
-                          "text-[15px] leading-6",
-                          item.readAt ? "font-medium" : "font-semibold",
+                          "flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-surface-sunken",
+                          !item.readAt && "bg-primary-tint/40",
                         )}
                       >
-                        {item.title}
-                      </span>
-                      {!item.readAt && (
                         <span
-                          className="size-2 shrink-0 rounded-full bg-oro"
-                          role="img"
-                          aria-label="Unread"
-                        />
-                      )}
-                    </span>
-                    <span className="text-[14px] leading-5 text-ink-muted">{item.body}</span>
-                    <span className="text-[12px] text-ink-muted">{ago(item.createdAt)}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                          className={cn(
+                            "grid size-10 shrink-0 place-items-center rounded-full",
+                            item.readAt ? "bg-surface-sunken text-ink-muted" : tone,
+                          )}
+                        >
+                          <Icon aria-hidden className="size-5" />
+                        </span>
+                        <span className="grid min-w-0 grow gap-0.5">
+                          <span className="flex items-start justify-between gap-2">
+                            <span
+                              className={cn(
+                                "text-[15px] leading-6",
+                                item.readAt ? "font-medium" : "font-semibold",
+                              )}
+                            >
+                              {item.title}
+                            </span>
+                            <span className="flex shrink-0 items-center gap-2 pt-1 text-[12px] text-ink-muted">
+                              {ago(item.createdAt)}
+                              {!item.readAt && (
+                                <span
+                                  className="size-2 shrink-0 rounded-full bg-oro"
+                                  role="img"
+                                  aria-label="Unread"
+                                />
+                              )}
+                            </span>
+                          </span>
+                          <span className="text-[14px] leading-5 text-ink-muted">{item.body}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
           {state.moreFailed && (
             <p role="alert" className="text-center text-[15px] text-danger">
               We couldn&apos;t load more.
             </p>
           )}
           {state.next && (
-            <Button variant="quiet" disabled={loadingMore} onClick={() => void more()}>
+            <Button
+              variant="quiet"
+              loading={loadingMore}
+              disabled={loadingMore}
+              onClick={() => void more()}
+            >
               {loadingMore ? "Loading…" : "Show more"}
             </Button>
           )}

@@ -8,6 +8,7 @@ import { CircleRing } from "@/components/CircleRing";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
+import { Initials } from "@/components/ui/Initials";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { FlowLocked } from "@/components/wallet/FlowLocked";
@@ -100,7 +101,7 @@ export function FriendsHome() {
         <div className="grid gap-6">
           <section
             aria-label="Your circle"
-            className="grid justify-items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-5 shadow-lift"
+            className="grid justify-items-center gap-3 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift"
           >
             <CircleRing
               members={data.friends
@@ -111,7 +112,7 @@ export function FriendsHome() {
                 value: String(data.friends.length),
               }}
               title="Your circle of friends"
-              size={220}
+              size={190}
             />
             {data.friends.length === 0 && (
               <p className="text-center text-[15px] leading-6 text-ink-muted">
@@ -140,7 +141,7 @@ export function FriendsHome() {
           {(incoming > 0 || data.requests.outgoing.length > 0) && (
             <Link
               href={href("/friends/requests")}
-              className="flex items-center justify-between gap-3 rounded-[var(--radius-l)] bg-oro-tint p-4 text-oro-ink"
+              className="flex items-center justify-between gap-3 rounded-[var(--radius-l)] border border-oro/30 bg-oro-tint p-4 text-oro-ink"
             >
               <span className="flex items-center gap-3 text-[15px] font-semibold">
                 <UserRoundCheck aria-hidden className="size-6" />
@@ -154,7 +155,7 @@ export function FriendsHome() {
 
           {data.suggestions.length > 0 && (
             <section aria-labelledby="may-know" className="grid gap-3">
-              <h2 id="may-know" className="font-display text-[20px] leading-7 font-semibold">
+              <h2 id="may-know" className="font-display text-[18px] leading-6 font-semibold">
                 People you may know
               </h2>
               <ul className="grid gap-3">
@@ -179,16 +180,17 @@ export function FriendsHome() {
 
           {data.friends.length > 0 && (
             <section aria-labelledby="your-friends" className="grid gap-3">
-              <h2 id="your-friends" className="font-display text-[20px] leading-7 font-semibold">
+              <h2 id="your-friends" className="font-display text-[18px] leading-6 font-semibold">
                 Your friends
               </h2>
-              <ul className="grid gap-3">
+              <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
                 {data.friends.map((f) => (
                   <li key={f.username}>
                     <Link
                       href={href(`/friends/${f.username}`)}
-                      className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-3 shadow-lift"
+                      className="flex items-center gap-3 p-3 hover:bg-surface-sunken"
                     >
+                      <Initials name={f.displayName} />
                       <span className="grid min-w-0 gap-0.5">
                         <span className="truncate text-[16px] leading-5 font-semibold">
                           {f.displayName}

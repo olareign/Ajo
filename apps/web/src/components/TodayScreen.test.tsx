@@ -205,7 +205,8 @@ describe("TodayScreen", () => {
         }),
       );
       render(<TodayScreen />);
-      const card = await screen.findByRole("link", { name: /Friends/ });
+      // The quick-actions "Friends" tile is always there; the card is the one that counts people.
+      const card = await screen.findByRole("link", { name: /^Friends\s*\d/ });
       expect(card).toHaveAttribute("href", "/friends");
       expect(card).toHaveTextContent("2 friends");
       expect(card).toHaveTextContent("1 request is waiting");
@@ -215,7 +216,8 @@ describe("TodayScreen", () => {
       api([], 0);
       render(<TodayScreen />);
       await screen.findByText("Fill your first pot");
-      expect(screen.queryByRole("link", { name: /Friends/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /^Friends\s*(\d|Find)/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Friends" })).toHaveAttribute("href", "/friends");
     });
 
     it("shows less, quietly, when savings or messages cannot be had", async () => {

@@ -1,8 +1,17 @@
 "use client";
 
-import { Bell, BookUser, ChevronRight, ShieldAlert } from "lucide-react";
+import {
+  Bell,
+  BookUser,
+  ChevronRight,
+  Landmark,
+  Orbit,
+  PiggyBank,
+  ShieldAlert,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { InstallCard } from "@/components/install/InstallCard";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { Avatar } from "@/components/ui/Avatar";
@@ -10,6 +19,7 @@ import { TodayFriends } from "@/components/friends/TodayFriends";
 import { TodayCircles } from "@/components/circles/TodayCircles";
 import { TodaySavings } from "@/components/savings/TodaySavings";
 import { WalletSummary } from "@/components/wallet/WalletSummary";
+import { countryConfig } from "@/lib/kyc-config";
 
 export function TodayScreen() {
   return <MeGate needs="onboarded">{(me) => <Today me={me} />}</MeGate>;
@@ -27,46 +37,52 @@ function Today({ me }: Readonly<{ me: Me }>) {
   const onSavings = useCallback(() => setSavingsDone(true), []);
   const onUnread = useCallback((n: number) => setUnread(n), []);
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-10 pb-28">
-      <div className="flex items-start justify-between gap-4">
-        <h1 className="font-display text-[32px] leading-9 font-bold tracking-[-0.015em]">
-          Hello, {me.displayName}
-        </h1>
-        <div className="-mt-1 flex shrink-0 items-center gap-1">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <Link
-            href="/notifications"
-            aria-label={unread > 0 ? `Messages, ${unread} unread` : "Messages"}
-            className="relative grid size-11 place-items-center rounded-full text-ink"
+            href="/me"
+            aria-label="Me"
+            className="grid size-11 shrink-0 place-items-center rounded-full"
           >
-            <Bell aria-hidden className="size-6" />
-            {unread > 0 && (
-              <span
-                aria-hidden
-                className="absolute top-1.5 right-1.5 grid min-w-[18px] place-items-center rounded-full bg-oro px-1 text-[11px] leading-[18px] font-bold text-on-oro"
-              >
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
+            <Avatar size={44} />
           </Link>
-          <Link href="/me" aria-label="Me" className="grid size-11 place-items-center rounded-full">
-            <Avatar size={40} />
-          </Link>
+          <div className="grid min-w-0">
+            <TimeOfDay />
+            <h1 className="truncate font-display text-[22px] leading-7 font-bold tracking-[-0.01em]">
+              Hello, {me.displayName}
+            </h1>
+          </div>
         </div>
-      </div>
-      <p className="mt-3 text-ink-muted">Nothing needs you yet. Your circles will show up here.</p>
-      <WalletSummary onLoaded={onWallet} />
-      <TodaySavings go={walletDone} onUnread={onUnread} onDone={onSavings} />
-      <TodayFriends go={savingsDone} onDone={onFriends} />
-      <TodayCircles go={friendsDone} />
+        <Link
+          href="/notifications"
+          aria-label={unread > 0 ? `Messages, ${unread} unread` : "Messages"}
+          className="relative grid size-11 shrink-0 place-items-center rounded-full bg-surface-sunken text-ink"
+        >
+          <Bell aria-hidden className="size-[22px]" />
+          {unread > 0 && (
+            <span
+              aria-hidden
+              className="absolute -top-0.5 -right-0.5 grid min-w-[20px] place-items-center rounded-full border-2 border-surface bg-oro px-1 text-[11px] leading-4 font-bold text-on-oro"
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
+        </Link>
+      </header>
+      <WalletSummary onLoaded={onWallet} currency={countryConfig(me.country)?.currency} />
+      <QuickActions />
       {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
         <Link
           href="/verify"
-          className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] bg-primary-deep p-4 text-on-primary"
+          className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] border border-primary/20 bg-primary-tint p-4 text-ink"
         >
-          <BookUser aria-hidden className="size-7 shrink-0 text-oro" />
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-on-primary">
+            <BookUser aria-hidden className="size-6" />
+          </span>
           <span className="grid gap-0.5">
             <span className="text-[15px] font-semibold">Get your passport stamped</span>
-            <span className="text-[14px] leading-5 text-on-primary/85">
+            <span className="text-[14px] leading-5 text-ink-muted">
               {me.kycStatus === "rejected"
                 ? "A stamp needs another try."
                 : me.kycStatus === "pending"
@@ -80,9 +96,11 @@ function Today({ me }: Readonly<{ me: Me }>) {
       {me.mfaEnabled === false && (
         <Link
           href="/me/security"
-          className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] bg-oro-tint p-4 text-oro-ink"
+          className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] border border-oro/30 bg-oro-tint p-4 text-oro-ink"
         >
-          <ShieldAlert aria-hidden className="size-6 shrink-0" />
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-oro text-on-oro">
+            <ShieldAlert aria-hidden className="size-6" />
+          </span>
           <span className="grid gap-0.5">
             <span className="text-[15px] font-semibold">Add a second lock</span>
             <span className="text-[14px] leading-5">
@@ -92,7 +110,60 @@ function Today({ me }: Readonly<{ me: Me }>) {
           <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
         </Link>
       )}
+      <TodaySavings go={walletDone} onUnread={onUnread} onDone={onSavings} />
+      <TodayCircles go={friendsDone} />
+      <TodayFriends go={savingsDone} onDone={onFriends} />
       <InstallCard />
     </main>
   );
+}
+
+const TILES = [
+  { href: "/save", label: "Save", Icon: PiggyBank, tone: "bg-leaf-tint text-leaf" },
+  { href: "/circles", label: "Circles", Icon: Orbit, tone: "bg-tertiary-tint text-tertiary" },
+  { href: "/friends", label: "Friends", Icon: Users, tone: "bg-primary-tint text-primary" },
+  {
+    href: "/wallet/mandate",
+    label: "Auto-debit",
+    Icon: Landmark,
+    tone: "bg-oro-tint text-oro-ink",
+  },
+] as const;
+
+/** The four places people go most after their balance, one tap each. */
+function QuickActions() {
+  return (
+    <nav
+      aria-label="Quick actions"
+      className="mt-4 rounded-[var(--radius-l)] bg-surface-raised p-3 shadow-lift"
+    >
+      <ul className="grid grid-cols-4 gap-1">
+        {TILES.map(({ href, label, Icon, tone }) => (
+          <li key={href}>
+            <Link
+              href={href}
+              className="grid justify-items-center gap-2 rounded-m px-1 py-2 text-center text-[12px] leading-4 font-semibold hover:bg-surface-sunken"
+            >
+              <span className={`grid size-12 place-items-center rounded-2xl ${tone}`}>
+                <Icon aria-hidden className="size-6" />
+              </span>
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/** "Good morning" and so on, from the device's clock; drawn after load so the server never guesses it. */
+const greeting = () => {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+};
+const noSubscription = () => () => undefined;
+
+function TimeOfDay() {
+  const word = useSyncExternalStore(noSubscription, greeting, () => "");
+  return <p className="h-5 text-[13px] leading-5 text-ink-muted">{word}</p>;
 }

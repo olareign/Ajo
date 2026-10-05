@@ -11,12 +11,12 @@ type Props = Readonly<{
 }>;
 
 const backClass =
-  "mb-8 inline-flex size-11 items-center justify-center rounded-m border border-line bg-surface-raised text-ink hover:bg-primary-tint";
+  "mb-5 inline-flex size-11 items-center justify-center rounded-full bg-surface-sunken text-ink transition-colors hover:bg-primary-tint";
 
 /** Back chevron, a short label for where the person is, and the screen's question as its title. */
 export function ScreenHeader({ title, eyebrow, subtitle, onBack, backHref }: Props) {
   return (
-    <header className="mb-8">
+    <header className="mb-6">
       {onBack && (
         <button type="button" onClick={onBack} aria-label="Back" className={backClass}>
           <ChevronLeft aria-hidden className="size-6" />
@@ -30,10 +30,10 @@ export function ScreenHeader({ title, eyebrow, subtitle, onBack, backHref }: Pro
       {eyebrow && (
         <p className="mb-2 text-[13px] font-semibold tracking-[0.01em] text-tertiary">{eyebrow}</p>
       )}
-      <h1 className="font-display text-[32px] leading-9 font-bold tracking-[-0.015em] text-balance text-primary">
+      <h1 className="font-display text-[28px] leading-[34px] font-bold tracking-[-0.015em] text-balance text-ink">
         {title}
       </h1>
-      {subtitle && <p className="mt-3 text-[17px] leading-[26px] text-ink-muted">{subtitle}</p>}
+      {subtitle && <p className="mt-2 text-[15px] leading-6 text-ink-muted">{subtitle}</p>}
     </header>
   );
 }

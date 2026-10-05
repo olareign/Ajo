@@ -28,10 +28,10 @@ describe("ScreenHeader", () => {
     expect(screen.getByText("Welcome back. Sign in to your account.")).toBeInTheDocument();
   });
 
-  it("draws the back control as a squared button you can see against the page", () => {
+  it("draws the back control as a round, filled button you can see against the page", () => {
     render(<ScreenHeader title="Groups" backHref="/" />);
     const back = screen.getByRole("link", { name: "Back" });
-    expect(back.className).toContain("rounded-m");
-    expect(back.className).toContain("border");
+    expect(back.className).toContain("rounded-full");
+    expect(back.className).toContain("bg-surface-sunken");
   });
 });

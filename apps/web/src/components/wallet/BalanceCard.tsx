@@ -1,31 +1,51 @@
+"use client";
+
 import { Amount } from "@/components/ui/Amount";
+import { useHiddenBalance } from "@/lib/hidden-balance";
 import { currencyName, type Wallet } from "@/lib/wallet";
+import { BalanceEye, HiddenAmount, SIGN } from "./BalanceEye";
 
 /** One currency's money: what can be spent, then what is held back and what is saved. */
 export function BalanceCard({ wallet }: Readonly<{ wallet: Wallet }>) {
   const name = currencyName(wallet.currency);
+  const [hidden, toggle] = useHiddenBalance();
+  const sign = SIGN[wallet.currency] ?? wallet.currency;
+  const money = (value: Wallet["available"], size: "l" | "s") =>
+    hidden ? (
+      <HiddenAmount
+        sign={sign}
+        className={
+          size === "l"
+            ? "font-display text-[34px] leading-10 font-bold"
+            : "font-display text-[15px] font-semibold"
+        }
+      />
+    ) : (
+      <Amount {...value} size={size} tone="hero" />
+    );
   return (
     <section
       aria-label={`${name} wallet`}
-      className="grid gap-5 rounded-[var(--radius-l)] bg-surface-raised p-5 shadow-lift"
+      className="hero-card grid gap-5 overflow-hidden rounded-[var(--radius-xl)] p-5 shadow-lift"
     >
-      <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">{name}</p>
-      <div className="grid gap-1">
-        <p className="text-[13px] text-ink-muted">Available</p>
-        <Amount {...wallet.available} size="xl" />
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted uppercase">
+          {name}
+        </p>
+        <BalanceEye hidden={hidden} onToggle={toggle} />
       </div>
-      <dl className="grid grid-cols-2 gap-4 border-t border-line pt-4">
-        <div className="grid gap-1">
-          <dt className="text-[13px] text-ink-muted">Locked</dt>
-          <dd>
-            <Amount {...wallet.locked} size="s" />
-          </dd>
+      <div className="grid gap-1">
+        <p className="text-[13px] text-on-hero-muted">Available</p>
+        {money(wallet.available, "l")}
+      </div>
+      <dl className="grid grid-cols-2 gap-3">
+        <div className="grid gap-1 rounded-m bg-[var(--hero-chip)] p-3">
+          <dt className="text-[12px] text-on-hero-muted">Locked</dt>
+          <dd>{money(wallet.locked, "s")}</dd>
         </div>
-        <div className="grid gap-1">
-          <dt className="text-[13px] text-ink-muted">Savings</dt>
-          <dd>
-            <Amount {...wallet.savings} size="s" />
-          </dd>
+        <div className="grid gap-1 rounded-m bg-[var(--hero-chip)] p-3">
+          <dt className="text-[12px] text-on-hero-muted">Savings</dt>
+          <dd>{money(wallet.savings, "s")}</dd>
         </div>
       </dl>
     </section>
