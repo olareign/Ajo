@@ -21,6 +21,8 @@ import { dayText, longDayText } from "@/lib/schedule";
 import { inviteText, whatsAppUrl } from "@/lib/share";
 import { polling } from "@/lib/use-payment";
 import { FREQ_WORDS, ORDER_WORDS, TrustBadge, useCircles, useCirclesLock } from "./CirclesFlow";
+import { whenText } from "@/lib/when";
+import { InstallCard } from "@/components/install/InstallCard";
 
 const RING: Record<ContributionStatus, RingMember["status"]> = {
   scheduled: "pending",
@@ -43,7 +45,9 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
   const gateway = useCircles();
   const router = useRouter();
   const lock = useCirclesLock();
-  const fresh = useSearchParams().get("new") === "1";
+  const params = useSearchParams();
+  const fresh = params.get("new") === "1";
+  const justJoined = params.get("joined") === "1";
 
   const [group, setGroup] = useState<GroupDetail | "failed" | "missing">();
   const [swaps, setSwaps] = useState<readonly Swap[]>([]);
@@ -178,6 +182,20 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
           <Sparkles aria-hidden className="size-5 shrink-0" />
           Your circle is open. Share the link below to fill it before {longDayText(g.startDate)}.
         </p>
+      )}
+      {justJoined && g.isMember && (
+        <>
+          <p
+            role="status"
+            className="mb-4 flex items-center gap-3 rounded-[var(--radius-l)] bg-leaf-tint p-4 text-[15px] leading-6 text-leaf"
+          >
+            <Sparkles aria-hidden className="size-5 shrink-0" />
+            You&apos;re in. We&apos;ll remind you before each payment.
+          </p>
+          <div className="mb-6">
+            <InstallCard />
+          </div>
+        </>
       )}
       {note && (
         <p
@@ -391,17 +409,7 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
             {g.mySpot
               ? "Waiting for the others. Anyone who hasn't picked when time is up is given a turn that's left."
               : `Everyone can pick at once. The first ${g.rules.earlySpots} turns pay out earliest; if you're new to circles they need a larger deposit (${formatMoney(g.rules.earlyDeposit, locale)} in all).`}
-            {g.pickDeadline && (
-              <>
-                {" "}
-                Picking closes{" "}
-                {new Intl.DateTimeFormat("en-GB", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(new Date(g.pickDeadline))}
-                .
-              </>
-            )}
+            {g.pickDeadline && <> Picking closes {whenText(g.pickDeadline)}.</>}
           </p>
           <ul aria-label="Turns" className="grid grid-cols-3 gap-2">
             {Array.from({ length: g.size }, (_, i) => i + 1).map((spot) => {
@@ -647,12 +655,8 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
             <div key={d.seed} className="mt-3 grid gap-2 text-[14px] leading-5">
               <p className="text-ink-muted">
                 {d.kind === "random" ? "A draw by lot" : "Turns left over after picking"},{" "}
-                {new Intl.DateTimeFormat("en-GB", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(new Date(d.createdAt))}
-                . The seed below was made before the order was known, so the same people and seed
-                always give this order; anyone can check it.
+                {whenText(d.createdAt)}. The seed below was made before the order was known, so the
+                same people and seed always give this order; anyone can check it.
               </p>
               <p className="font-mono text-[12px] break-all">{d.seed}</p>
               <ol className="grid gap-1">

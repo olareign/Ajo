@@ -1,8 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { Amount } from "@/components/ui/Amount";
+import { whenText } from "@/lib/when";
 import { accountLabel, describeTransaction, type WalletTransaction } from "@/lib/wallet";
-
-const DATE = new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "short", year: "numeric" });
 
 /** Direction is a sign and a word, never colour alone. */
 function Row({ item }: Readonly<{ item: WalletTransaction }>) {
@@ -25,7 +24,7 @@ function Row({ item }: Readonly<{ item: WalletTransaction }>) {
         </p>
         <p className="text-[13px] leading-[18px] text-ink-muted">
           {accountLabel(item.account)} ·{" "}
-          <time dateTime={item.createdAt}>{DATE.format(new Date(item.createdAt))}</time>
+          <time dateTime={item.createdAt}>{whenText(item.createdAt)}</time>
         </p>
       </div>
       <p className="shrink-0 text-right">

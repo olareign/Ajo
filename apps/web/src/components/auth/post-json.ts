@@ -1,3 +1,5 @@
+import { forgetAll } from "@/lib/visit-cache";
+
 export type PostResult = Readonly<{ ok: boolean; status: number; data: Record<string, unknown> }>;
 
 export const OFFLINE = "We couldn't reach Àjọ. Check your connection and try again.";
@@ -8,6 +10,8 @@ export async function postJson(
   body: object,
   method: "POST" | "PUT" | "DELETE" = "POST",
 ): Promise<PostResult> {
+  // Signing in or out, or changing anything, makes what this visit remembers out of date.
+  forgetAll();
   try {
     const res = await fetch(path, {
       method,

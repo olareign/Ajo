@@ -2,35 +2,12 @@
 
 import { ChevronRight, CircleDashed } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { loadGroups, type GroupSummary } from "@/lib/groups-client";
+import type { GroupSummary } from "@/lib/groups-client";
 
-/**
- * Today's glance at circles. It waits for its turn (`go`), and shows nothing if circles cannot be had
- * (for instance before the passport is approved).
- */
-export function TodayCircles({ go }: Readonly<{ go: boolean }>) {
-  const router = useRouter();
-  const [groups, setGroups] = useState<readonly GroupSummary[]>();
-
-  useEffect(() => {
-    if (!go) return;
-    let live = true;
-    (async () => {
-      const result = await loadGroups();
-      if (!live) return;
-      if (!result.ok) {
-        if (result.failure.kind === "signed-out") router.replace("/sign-in");
-        return;
-      }
-      setGroups(result.data);
-    })();
-    return () => {
-      live = false;
-    };
-  }, [go, router]);
-
+/** Today's glance at circles. Nothing at all when circles cannot be had (say, before the passport). */
+export function TodayCircles({
+  groups,
+}: Readonly<{ groups: readonly GroupSummary[] | null | undefined }>) {
   if (!groups) return null;
   const going = groups.filter((g) => ["open", "picking", "running"].includes(g.status));
   const next = going.find((g) => g.status === "running") ?? going[0];

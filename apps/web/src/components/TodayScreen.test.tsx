@@ -3,122 +3,129 @@ import { TodayScreen } from "./TodayScreen";
 
 const router = { replace: vi.fn() };
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  router.replace.mockReset();
+});
+
+const naira = (amount: string) => ({ amount, currency: "NGN" });
+const plan = (over: object = {}) => ({
+  id: "p1",
+  name: "Rent",
+  status: "active",
+  saved: naira("500000"),
+  target: naira("2000000"),
+  nextDebit: { dueOn: "2026-11-08", amount: naira("500000") },
+  ...over,
+});
+const part = (data: object, status = 200) => ({ status, data });
+const refused = part({ message: "Finish your passport first.", code: "kyc_required" }, 403);
+
+type Parts = Partial<
+  Record<"wallets" | "plans" | "notices" | "friends" | "requests" | "groups", object>
+>;
+const ALL: Parts = {
+  wallets: part({ wallets: [] }),
+  plans: part({ plans: [] }),
+  notices: part({ items: [], next: null, unread: 0 }),
+  friends: part({ friends: [] }),
+  requests: part({ incoming: [], outgoing: [] }),
+  groups: part({ groups: [] }),
+};
+
+/** The signed-in person and Today's one reply; returns the fetch mock to look at what was asked. */
+function api(parts: Parts = {}, me: object = {}, screenStatus = 200) {
+  const mock = vi.fn(async (url: string) => {
+    if (url === "/api/me")
+      return Response.json({
+        displayName: "Ada",
+        email: "a@b.co",
+        onboarded: true,
+        mfaEnabled: true,
+        country: "NG",
+        ...me,
+      });
+    if (url === "/api/screens/today")
+      return Response.json(screenStatus === 200 ? { ...ALL, ...parts } : { message: "x" }, {
+        status: screenStatus,
+      });
+    return new Response(null, { status: 404 });
+  });
+  vi.stubGlobal("fetch", mock);
+  return mock;
+}
 
 describe("TodayScreen", () => {
   it("greets the person and has a way to their account, always in reach", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) =>
-        url === "/api/me"
-          ? Response.json({ displayName: "Ada", email: "a@b.co", onboarded: true })
-          : Response.json({ wallets: [] }),
-      ),
-    );
+    api();
     render(<TodayScreen />);
     expect(await screen.findByRole("heading", { name: "Hello, Ada" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Me" })).toHaveAttribute("href", "/me");
   });
 
-  const signedIn = (mfaEnabled: boolean) =>
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) =>
-        url === "/api/me"
-          ? Response.json({ displayName: "Ada", email: "a@b.co", onboarded: true, mfaEnabled })
-          : Response.json({ wallets: [] }),
-      ),
-    );
-
-  it("nudges toward the second lock until it is on, because money cannot move without it", async () => {
-    signedIn(false);
+  it("asks the server once for everything Today shows", async () => {
+    const mock = api();
     render(<TodayScreen />);
-    const nudge = await screen.findByRole("link", { name: /Add a second lock/ });
-    expect(nudge).toHaveAttribute("href", "/me/security");
+    await screen.findByText("Fill your first pot");
+    expect(mock.mock.calls.map(([u]) => u)).toEqual(["/api/me", "/api/screens/today"]);
   });
 
-  it("stops nudging once the second lock is on", async () => {
-    signedIn(true);
+  it("nudges toward the second lock until it is on, because money cannot move without it", async () => {
+    api({}, { mfaEnabled: false });
+    const first = render(<TodayScreen />);
+    expect(await screen.findByRole("link", { name: /Add a second lock/ })).toHaveAttribute(
+      "href",
+      "/me/security",
+    );
+    first.unmount();
+    api({}, { mfaEnabled: true });
     render(<TodayScreen />);
     await screen.findByRole("heading", { name: "Hello, Ada" });
-    expect(screen.queryByRole("link", { name: /second lock/i })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("link", { name: /second lock/i })).not.toBeInTheDocument(),
+    );
   });
 
   it("invites someone to get their passport stamped until they are approved", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) =>
-        url === "/api/me"
-          ? Response.json({
-              displayName: "Ada",
-              email: "a@b.co",
-              onboarded: true,
-              mfaEnabled: true,
-              kycStatus: "in_progress",
-            })
-          : Response.json({ wallets: [] }),
-      ),
+    api({}, { kycStatus: "in_progress" });
+    const first = render(<TodayScreen />);
+    expect(await screen.findByRole("link", { name: /passport/i })).toHaveAttribute(
+      "href",
+      "/verify",
     );
-    render(<TodayScreen />);
-    const card = await screen.findByRole("link", { name: /passport/i });
-    expect(card).toHaveAttribute("href", "/verify");
-  });
-
-  it("stops asking once the passport is approved", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) =>
-        url === "/api/me"
-          ? Response.json({
-              displayName: "Ada",
-              email: "a@b.co",
-              onboarded: true,
-              mfaEnabled: true,
-              kycStatus: "approved",
-            })
-          : Response.json({ wallets: [] }),
-      ),
-    );
+    first.unmount();
+    api({}, { kycStatus: "approved" });
     render(<TodayScreen />);
     await screen.findByRole("heading", { name: "Hello, Ada" });
-    expect(screen.queryByRole("link", { name: /passport/i })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("link", { name: /passport/i })).not.toBeInTheDocument(),
+    );
   });
 
-  describe("saving and messages", () => {
-    const naira = (amount: string) => ({ amount, currency: "NGN" });
-    const plan = (over: object = {}) => ({
-      id: "p1",
-      name: "Rent",
-      status: "active",
-      saved: naira("500000"),
-      target: naira("2000000"),
-      nextDebit: { dueOn: "2026-11-08", amount: naira("500000") },
-      ...over,
+  it("shows the balance in the hero, and zero in the person's currency when the wallet is empty", async () => {
+    api({
+      wallets: part({
+        wallets: [
+          { currency: "NGN", available: naira("250000"), locked: naira("0"), savings: naira("0") },
+        ],
+      }),
     });
-    function api(plans: object[], unread: number, order: string[] = []) {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async (url: string) => {
-          order.push(url);
-          if (url === "/api/me")
-            return Response.json({
-              displayName: "Ada",
-              email: "a@b.co",
-              onboarded: true,
-              mfaEnabled: true,
-            });
-          if (url === "/api/wallet") return Response.json({ wallets: [] });
-          if (url === "/api/savings") return Response.json({ plans });
-          if (url.startsWith("/api/notifications"))
-            return Response.json({ items: [], next: null, unread });
-          return new Response(null, { status: 404 });
-        }),
-      );
-    }
+    const first = render(<TodayScreen />);
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: /Wallet balance/ })).toHaveTextContent("₦2,500"),
+    );
+    first.unmount();
+    api();
+    render(<TodayScreen />);
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: /Wallet balance/ })).toHaveTextContent("₦0"),
+    );
+  });
 
-    it("shows what is saved and when the next debit is, and a way into savings", async () => {
-      api(
-        [
+  it("shows what is saved and when the next debit is, and a way into savings", async () => {
+    api({
+      plans: part({
+        plans: [
           plan(),
           plan({
             id: "p2",
@@ -126,119 +133,87 @@ describe("TodayScreen", () => {
             nextDebit: { dueOn: "2026-11-02", amount: naira("100000") },
           }),
         ],
-        0,
-      );
-      render(<TodayScreen />);
-      const card = await screen.findByRole("link", { name: /Savings/ });
-      expect(card).toHaveAttribute("href", "/save");
-      expect(card).toHaveTextContent("₦6,000");
-      expect(card).toHaveTextContent("in 2 pots");
-      expect(card).toHaveTextContent("next Mon 2 Nov");
+      }),
     });
+    render(<TodayScreen />);
+    const card = await screen.findByRole("link", { name: /Savings/ });
+    expect(card).toHaveAttribute("href", "/save");
+    expect(card).toHaveTextContent("₦6,000");
+    expect(card).toHaveTextContent("in 2 pots");
+    expect(card).toHaveTextContent("next Mon 2 Nov");
+  });
 
-    it("invites a first plan when there is none", async () => {
-      api([], 0);
-      render(<TodayScreen />);
-      expect(await screen.findByText("Fill your first pot")).toBeInTheDocument();
-    });
+  it("shows how many messages are unread on the bell, caps it, and is plain when all are read", async () => {
+    api({ notices: part({ items: [], next: null, unread: 14 }) });
+    const first = render(<TodayScreen />);
+    expect(await screen.findByRole("link", { name: "Messages, 14 unread" })).toHaveTextContent(
+      "9+",
+    );
+    first.unmount();
+    api();
+    render(<TodayScreen />);
+    await screen.findByText("Fill your first pot");
+    expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+  });
 
-    it("shows how many messages are unread on the bell, and caps it", async () => {
-      api([], 14);
-      render(<TodayScreen />);
-      const bell = await screen.findByRole("link", { name: "Messages, 14 unread" });
-      expect(bell).toHaveAttribute("href", "/notifications");
-      expect(bell).toHaveTextContent("9+");
+  it("shows how many friends there are, and that someone is waiting", async () => {
+    api({
+      friends: part({ friends: [{ username: "a" }, { username: "b" }] }),
+      requests: part({ incoming: [{ username: "x_y" }], outgoing: [] }),
     });
+    render(<TodayScreen />);
+    // The quick-actions "Friends" tile is always there; the card is the one that counts people.
+    const card = await screen.findByRole("link", { name: /^Friends\s*\d/ });
+    expect(card).toHaveAttribute("href", "/friends");
+    expect(card).toHaveTextContent("2 friends");
+    expect(card).toHaveTextContent("1 request is waiting");
+  });
 
-    it("has a plain bell when everything is read", async () => {
-      api([], 0);
-      render(<TodayScreen />);
-      expect(await screen.findByRole("link", { name: "Messages" })).toBeInTheDocument();
-    });
+  it("shows less, quietly, when parts cannot be had (say, before the passport)", async () => {
+    api({ plans: refused, friends: refused, groups: refused, notices: part({}, 502) });
+    render(<TodayScreen />);
+    await screen.findByRole("link", { name: /Wallet balance/ });
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: /Wallet balance/ })).toHaveTextContent("₦0"),
+    );
+    expect(screen.queryByRole("link", { name: /Savings/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Friends\s*(\d|Find)/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 
-    it("asks the server for one thing at a time: the wallet, the savings, the messages, friends, then circles", async () => {
-      const order: string[] = [];
-      api([plan()], 1, order);
-      render(<TodayScreen />);
-      await screen.findByRole("link", { name: "Messages, 1 unread" });
-      await waitFor(() => expect(order).toHaveLength(6));
-      expect(order).toEqual([
-        "/api/me",
-        "/api/wallet",
-        "/api/savings",
-        expect.stringContaining("/api/notifications"),
-        "/api/friends",
-        "/api/groups",
-      ]);
-    });
+  it("still shows the screen, with no balance guessed, when Today cannot be loaded", async () => {
+    api({}, {}, 502);
+    render(<TodayScreen />);
+    expect(await screen.findByText("Tap to see your balance")).toBeInTheDocument();
+  });
 
-    it("shows how many friends there are, and that someone is waiting", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async (url: string) => {
-          if (url === "/api/me")
-            return Response.json({
-              displayName: "Ada",
-              email: "a@b.co",
-              onboarded: true,
-              mfaEnabled: true,
-            });
-          if (url === "/api/wallet") return Response.json({ wallets: [] });
-          if (url === "/api/savings") return Response.json({ plans: [] });
-          if (url.startsWith("/api/notifications"))
-            return Response.json({ items: [], next: null, unread: 0 });
-          if (url === "/api/friends")
-            return Response.json({
-              friends: [
-                { username: "a_b", displayName: "A B", since: "2026-10-01T00:00:00Z", tier: 1 },
-                { username: "c_d", displayName: "C D", since: "2026-10-01T00:00:00Z", tier: 1 },
-              ],
-            });
-          if (url === "/api/friends/requests")
-            return Response.json({
-              incoming: [
-                { username: "x_y", displayName: "X Y", sentAt: "2026-10-01T00:00:00Z", tier: 1 },
-              ],
-              outgoing: [],
-            });
-          return new Response(null, { status: 404 });
-        }),
-      );
-      render(<TodayScreen />);
-      // The quick-actions "Friends" tile is always there; the card is the one that counts people.
-      const card = await screen.findByRole("link", { name: /^Friends\s*\d/ });
-      expect(card).toHaveAttribute("href", "/friends");
-      expect(card).toHaveTextContent("2 friends");
-      expect(card).toHaveTextContent("1 request is waiting");
-    });
+  it("sends a signed-out person to sign in", async () => {
+    api({}, {}, 401);
+    render(<TodayScreen />);
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/sign-in"));
+  });
 
-    it("shows no friends card when friends cannot be had", async () => {
-      api([], 0);
-      render(<TodayScreen />);
-      await screen.findByText("Fill your first pot");
-      expect(screen.queryByRole("link", { name: /^Friends\s*(\d|Find)/ })).not.toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Friends" })).toHaveAttribute("href", "/friends");
-    });
+  it("shows what this visit already loaded at once when coming back, then refreshes", async () => {
+    api({ plans: part({ plans: [plan()] }) });
+    const first = render(<TodayScreen />);
+    await screen.findByRole("link", { name: /Savings/ });
+    first.unmount();
 
-    it("shows less, quietly, when savings or messages cannot be had", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async (url: string) => {
-          if (url === "/api/me")
-            return Response.json({
-              displayName: "Ada",
-              email: "a@b.co",
-              onboarded: true,
-              mfaEnabled: true,
-            });
-          if (url === "/api/wallet") return Response.json({ wallets: [] });
-          return Response.json({}, { status: 502 });
-        }),
-      );
-      render(<TodayScreen />);
-      await screen.findByRole("heading", { name: "Hello, Ada" });
-      expect(screen.queryByRole("link", { name: /Savings/ })).not.toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
-    });
+    // The server is slow the second time: the last copy shows before it answers.
+    let answer: (r: Response) => void = () => undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (url: string) =>
+          new Promise<Response>(
+            (resolve) => (url === "/api/me" || url === "/api/screens/today") && (answer = resolve),
+          ),
+      ),
+    );
+    render(<TodayScreen />);
+    expect(screen.getByRole("link", { name: /Savings/ })).toHaveTextContent("₦5,000");
+    expect(fetch).toHaveBeenCalled();
+    answer(Response.json({}));
   });
 });

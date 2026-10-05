@@ -236,7 +236,7 @@ describe("an invite to a circle", () => {
     expect(screen.getByText(/Chidi Okafor invited you/)).toBeInTheDocument();
     expect(screen.getByText(/Trusted members lock nothing/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Join this circle" }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/circles/g9"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/circles/g9?joined=1"));
     expect(json(sent(mock, "POST /api/groups/join")[0]!)).toEqual({ code: "ABCD1234" });
   });
 
@@ -438,6 +438,13 @@ describe("a circle", () => {
     await user.click(screen.getByRole("button", { name: "Send invite" }));
     expect(await screen.findByText("Invite sent to @funmi_a.")).toBeInTheDocument();
     expect(json(sent(mock, "POST /api/groups/g1/invite")[0]!)).toEqual({ username: "funmi_a" });
+  });
+
+  it("says you're in after joining through an invite", async () => {
+    query = new URLSearchParams("joined=1");
+    api({ "GET /api/groups/g1": () => ({ status: 200, body: detail() }) });
+    open(<CircleScreen id="g1" />);
+    expect(await screen.findByText(/You.re in/)).toBeInTheDocument();
   });
 
   it("asks before calling off a circle you made, then does it and shows it called off", async () => {
@@ -677,34 +684,27 @@ describe("a circle", () => {
 });
 
 describe("the circles card on Today", () => {
-  it("shows the circle under way and where your turn is", async () => {
-    api({
-      "GET /api/groups": () => ({
-        status: 200,
-        body: { groups: [summary({ status: "running", memberCount: 4, mySpot: 3 })] },
-      }),
-    });
-    render(<TodayCircles go />);
-    expect(await screen.findByText("Sunday circle")).toBeInTheDocument();
+  it("shows the circle under way and where your turn is", () => {
+    render(
+      <TodayCircles
+        groups={[summary({ status: "running", memberCount: 4, mySpot: 3 })] as never}
+      />,
+    );
+    expect(screen.getByText("Sunday circle")).toBeInTheDocument();
     expect(screen.getByText(/Your turn is 3 of 4/)).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "/circles");
   });
 
-  it("invites you to start one when you have none, and waits for its turn", async () => {
-    const mock = api({ "GET /api/groups": () => ({ status: 200, body: { groups: [] } }) });
-    const idle = render(<TodayCircles go={false} />);
-    expect(sent(mock, "GET /api/groups")).toHaveLength(0);
-    idle.unmount();
-    render(<TodayCircles go />);
-    expect(await screen.findByText("Save together")).toBeInTheDocument();
+  it("invites you to start one when you have none", () => {
+    render(<TodayCircles groups={[]} />);
+    expect(screen.getByText("Save together")).toBeInTheDocument();
   });
 
-  it("shows nothing when circles cannot be had", async () => {
-    api({
-      "GET /api/groups": () => ({ status: 403, body: { message: "no", code: "kyc_required" } }),
-    });
-    const { container } = render(<TodayCircles go />);
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
+  it("shows nothing while loading or when circles cannot be had", () => {
+    const loading = render(<TodayCircles groups={undefined} />);
+    expect(loading.container).toBeEmptyDOMElement();
+    loading.unmount();
+    const { container } = render(<TodayCircles groups={null} />);
     expect(container).toBeEmptyDOMElement();
   });
 });

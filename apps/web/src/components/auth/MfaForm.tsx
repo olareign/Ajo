@@ -8,6 +8,7 @@ import { CodeBoxes } from "@/components/ui/CodeBoxes";
 import { Keypad } from "@/components/ui/Keypad";
 import { TextField } from "@/components/ui/TextField";
 import { messageOf, postJson } from "./post-json";
+import { takeReturn } from "@/lib/return-to";
 
 const CODE_LENGTH = 6;
 const EXPIRED = /start again/i;
@@ -37,7 +38,7 @@ export function MfaForm() {
         : { code, trustDevice: remember },
     );
     if (result.ok) {
-      router.push("/today");
+      router.push(takeReturn() ?? "/today");
       return;
     }
     setError(messageOf(result));

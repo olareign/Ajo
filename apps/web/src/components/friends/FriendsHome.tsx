@@ -15,6 +15,7 @@ import { FlowLocked } from "@/components/wallet/FlowLocked";
 import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { Friend, Requests, Suggestion } from "@/lib/friends-client";
 import { dayText } from "@/lib/schedule";
+import { recall, remember } from "@/lib/visit-cache";
 import { TierBadge, useFriends, useFriendsLock } from "./FriendsFlow";
 import { PersonRow } from "./PersonRow";
 
@@ -36,7 +37,11 @@ export function FriendsHome() {
   const gateway = useFriends();
   const router = useRouter();
   const lock = useFriendsLock();
-  const [data, setData] = useState<Loaded | "failed">();
+  // Within a visit the last copy shows at once while a fresh one loads (never in a preview).
+  const cacheKey = preview ? null : "screen:friends";
+  const [data, setData] = useState<Loaded | "failed" | undefined>(() =>
+    cacheKey ? recall<Loaded>(cacheKey) : undefined,
+  );
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState<string>();
 
@@ -44,24 +49,20 @@ export function FriendsHome() {
     if (lock) return;
     let live = true;
     (async () => {
-      // One after another: the session's refresh token is single-use.
-      const friends = await gateway.friends();
+      // Friends, requests and suggestions come in one request.
+      const result = await gateway.home();
       if (!live) return;
-      if (!friends.ok) {
-        if (friends.failure.kind === "signed-out") return router.replace("/sign-in");
-        return setData("failed");
+      if (!result.ok) {
+        if (result.failure.kind === "signed-out") return router.replace("/sign-in");
+        return setData((was) => (was && was !== "failed" ? was : "failed"));
       }
-      const requests = await gateway.requests();
-      if (!live) return;
-      const suggestions = await gateway.suggestions();
-      if (!live) return;
-      if (!requests.ok || !suggestions.ok) return setData("failed");
-      setData({ friends: friends.data, requests: requests.data, suggestions: suggestions.data });
+      if (cacheKey) remember(cacheKey, result.data);
+      setData(result.data);
     })();
     return () => {
       live = false;
     };
-  }, [gateway, lock, router, attempt]);
+  }, [gateway, lock, router, attempt, cacheKey]);
 
   if (lock) return <FlowLocked lock={lock} title="Friends" path="/friends" />;
 

@@ -40,8 +40,32 @@ type Routes = Record<string, (init?: RequestInit, url?: string) => Reply | Promi
 function api(routes: Routes, state: Rails = rails()) {
   const mock = vi.fn(async (url: string, init?: RequestInit) => {
     const u = new URL(url, "http://app");
-    if (u.pathname === "/api/me") return Response.json(me);
+    const own = routes[`GET ${u.pathname}`];
+    if (u.pathname === "/api/me") {
+      if (!own) return Response.json(me);
+      const reply = await own(init, url);
+      return Response.json(reply.body ?? {}, { status: reply.status });
+    }
     if (u.pathname === "/api/wallet/rails") return Response.json(state);
+    // The friends home's one request: the server asks for each part and returns each answer.
+    if (u.pathname === "/api/screens/friends") {
+      const parts: Record<string, Reply> = {};
+      for (const [key, path] of [
+        ["friends", "/api/friends"],
+        ["requests", "/api/friends/requests"],
+        ["suggestions", "/api/friends/suggestions"],
+      ] as const) {
+        const handler = routes[`GET ${path}`];
+        parts[key] = handler ? await handler() : { status: 404, body: {} };
+      }
+      if (Object.values(parts).some((p) => p.status === 401))
+        return Response.json({}, { status: 401 });
+      return Response.json(
+        Object.fromEntries(
+          Object.entries(parts).map(([k, p]) => [k, { status: p.status, data: p.body ?? {} }]),
+        ),
+      );
+    }
     const handler = routes[`${init?.method ?? "GET"} ${u.pathname}`];
     if (!handler) return new Response(null, { status: 404 });
     const reply = await handler(init, url);
@@ -142,19 +166,16 @@ describe("the friends home", () => {
     expect(screen.queryByRole("heading", { name: "Your friends" })).not.toBeInTheDocument();
   });
 
-  it("asks for one thing after another, never together", async () => {
-    const order: string[] = [];
-    api({
-      "GET /api/friends": () => (order.push("friends"), { status: 200, body: { friends: [] } }),
-      "GET /api/friends/requests": () => (
-        order.push("requests"),
-        { status: 200, body: { incoming: [], outgoing: [] } }
-      ),
-      "GET /api/friends/suggestions": () => (order.push("suggestions"), { status: 200, body: [] }),
+  it("asks for friends, requests and suggestions in one request", async () => {
+    const mock = api({
+      "GET /api/friends": () => ({ status: 200, body: { friends: [] } }),
+      "GET /api/friends/requests": () => ({ status: 200, body: { incoming: [], outgoing: [] } }),
+      "GET /api/friends/suggestions": () => ({ status: 200, body: [] }),
     });
     open(<FriendsHome />);
     await screen.findByText(/Your circle is empty/);
-    expect(order).toEqual(["friends", "requests", "suggestions"]);
+    expect(sent(mock, "GET /api/screens/friends")).toHaveLength(1);
+    expect(sent(mock, "GET /api/friends")).toHaveLength(0);
   });
 
   it("is locked until the passport is approved, with a preview; says when it cannot load; signs out the signed out", async () => {
@@ -419,6 +440,70 @@ describe("requests and blocked people", () => {
   });
 });
 
+describe("choosing your own invite code", () => {
+  const invite = (code: string) => ({ code, link: `https://app.ajo.test/join/${code}` });
+
+  it("saves a new code in capitals, shows the new link, and says the old one no longer works", async () => {
+    const mock = api({
+      "GET /api/friends/invite": () => ({ status: 200, body: invite("K7M2QH9R") }),
+      "GET /api/friends/referrals": () => ({ status: 200, body: [] }),
+      "PUT /api/friends/invite": () => ({ status: 200, body: invite("ADA-SAVES") }),
+    });
+    const user = userEvent.setup();
+    open(<InviteScreen />);
+    await user.click(await screen.findByRole("button", { name: "Change my code" }));
+    const field = screen.getByLabelText("New code");
+    await user.clear(field);
+    await user.type(field, "ada-saves");
+    await user.click(screen.getByRole("button", { name: "Save code" }));
+    expect(await screen.findByText("ADA-SAVES")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("The old one no longer works.");
+    expect(json(sent(mock, "PUT /api/friends/invite")[0]!)).toEqual({ code: "ADA-SAVES" });
+  });
+
+  it("says why a code was refused, and keeps the old one", async () => {
+    api({
+      "GET /api/friends/invite": () => ({ status: 200, body: invite("K7M2QH9R") }),
+      "GET /api/friends/referrals": () => ({ status: 200, body: [] }),
+      "PUT /api/friends/invite": () => ({
+        status: 409,
+        body: { message: "That code isn't available. Try another.", code: "code_unavailable" },
+      }),
+    });
+    const user = userEvent.setup();
+    open(<InviteScreen />);
+    await user.click(await screen.findByRole("button", { name: "Change my code" }));
+    await user.clear(screen.getByLabelText("New code"));
+    await user.type(screen.getByLabelText("New code"), "ajo-support");
+    await user.click(screen.getByRole("button", { name: "Save code" }));
+    expect(await screen.findByText("That code isn't available. Try another.")).toBeInTheDocument();
+    expect(screen.getByText("K7M2QH9R")).toBeInTheDocument();
+  });
+
+  it("lists who joined through the invite, and says so when nobody has", async () => {
+    api({
+      "GET /api/friends/invite": () => ({ status: 200, body: invite("K7M2QH9R") }),
+      "GET /api/friends/referrals": () => ({
+        status: 200,
+        body: [
+          { displayName: "Kemi Salako", username: "kemi_s", joinedAt: "2026-10-01T09:00:00Z" },
+        ],
+      }),
+    });
+    const first = open(<InviteScreen />);
+    const joined = await screen.findByRole("region", { name: "Joined through you" });
+    expect(joined).toHaveTextContent("Kemi Salako");
+    expect(joined).toHaveTextContent("@kemi_s");
+    first.unmount();
+    api({
+      "GET /api/friends/invite": () => ({ status: 200, body: invite("K7M2QH9R") }),
+      "GET /api/friends/referrals": () => ({ status: 200, body: [] }),
+    });
+    open(<InviteScreen />);
+    expect(await screen.findByText(/Nobody yet/)).toBeInTheDocument();
+  });
+});
+
 describe("inviting", () => {
   it("shows the code and link, and gives WhatsApp and text links with the message in them", async () => {
     api({
@@ -456,13 +541,19 @@ describe("inviting", () => {
 });
 
 describe("opening an invite link before having an account", () => {
-  it("says who it is from and carries the code into sign-up", async () => {
+  const signedOut = {
+    "GET /api/me": () => ({ status: 401, body: { message: "Please sign in." } }),
+  };
+
+  it("says who it is from, carries the code into sign-up, and remembers to come back here", async () => {
     const mock = api({
+      ...signedOut,
       "GET /api/invites/K7M2QH9R": () => ({
         status: 200,
         body: { name: "Ada", username: "ada_ola" },
       }),
     });
+    const user = userEvent.setup();
     render(<JoinScreen code="K7M2QH9R" />);
     expect(
       await screen.findByRole("heading", { name: "Ada invited you to Àjọ" }),
@@ -472,15 +563,17 @@ describe("opening an invite link before having an account", () => {
       "href",
       "/sign-up?invite=K7M2QH9R",
     );
-    expect(screen.getByRole("link", { name: "I already have an account" })).toHaveAttribute(
-      "href",
-      "/sign-in",
-    );
+    const signIn = screen.getByRole("link", { name: "I already have an account" });
+    expect(signIn).toHaveAttribute("href", "/sign-in");
+    await user.click(signIn);
+    expect(JSON.parse(localStorage.getItem("ajo-return-to")!).path).toBe("/join/K7M2QH9R");
     expect(sent(mock, "GET /api/invites/K7M2QH9R")).toHaveLength(1);
+    localStorage.clear();
   });
 
   it("still welcomes someone with a code that means nothing, without a name and without carrying it on", async () => {
     api({
+      ...signedOut,
       "GET /api/invites/ZZZZZZZZ": () => ({
         status: 404,
         body: { message: "That invite isn't valid." },
@@ -492,5 +585,71 @@ describe("opening an invite link before having an account", () => {
       "href",
       "/sign-up",
     );
+  });
+});
+
+describe("opening an invite link while signed in", () => {
+  const inviter = {
+    "GET /api/invites/ADA-SAVES": () => ({
+      status: 200,
+      body: { name: "Ada", username: "ada_ola" },
+    }),
+  };
+
+  it("skips sign-up and adds the inviter in one tap, then offers the way home", async () => {
+    const mock = api({
+      ...inviter,
+      "POST /api/friends/requests": () => ({ status: 200, body: { relation: "requested" } }),
+    });
+    const user = userEvent.setup();
+    render(<JoinScreen code="ADA-SAVES" />);
+    await user.click(await screen.findByRole("button", { name: "Add Ada as a friend" }));
+    expect(await screen.findByText("Request sent. Ada will see it.")).toBeInTheDocument();
+    expect(json(sent(mock, "POST /api/friends/requests")[0]!)).toEqual({ username: "ada_ola" });
+    expect(screen.queryByRole("link", { name: "Create my account" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "I already have an account" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Go to Home" })).toHaveAttribute("href", "/today");
+  });
+
+  it("says why it could not add them, and leads to the passport when that is the reason", async () => {
+    api({
+      ...inviter,
+      "POST /api/friends/requests": () => ({
+        status: 403,
+        body: { message: "Finish your passport first.", code: "kyc_required" },
+      }),
+    });
+    const user = userEvent.setup();
+    render(<JoinScreen code="ADA-SAVES" />);
+    await user.click(await screen.findByRole("button", { name: "Add Ada as a friend" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Finish your passport first.");
+    expect(screen.getByRole("link", { name: "Go to my passport" })).toHaveAttribute(
+      "href",
+      "/verify",
+    );
+  });
+
+  it("recognises the person's own invite", async () => {
+    api({
+      "GET /api/me": () => ({ status: 200, body: { ...me, username: "ada_ola" } }),
+      ...inviter,
+    });
+    render(<JoinScreen code="ADA-SAVES" />);
+    expect(
+      await screen.findByRole("heading", { name: "This is your own invite" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /as a friend/ })).toBeNull();
+  });
+
+  it("sends someone who has not finished setting up to finish, and remembers the invite", async () => {
+    api({
+      "GET /api/me": () => ({ status: 200, body: { ...me, onboarded: false } }),
+      ...inviter,
+    });
+    const user = userEvent.setup();
+    render(<JoinScreen code="ADA-SAVES" />);
+    await user.click(await screen.findByRole("link", { name: "Finish setting up" }));
+    expect(JSON.parse(localStorage.getItem("ajo-return-to")!).path).toBe("/join/ADA-SAVES");
+    localStorage.clear();
   });
 });

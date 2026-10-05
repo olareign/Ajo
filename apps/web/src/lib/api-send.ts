@@ -1,3 +1,5 @@
+import { forgetAll } from "./visit-cache";
+
 export type Failure =
   | Readonly<{ kind: "signed-out" }>
   | Readonly<{ kind: "unreachable"; message: string }>
@@ -18,6 +20,8 @@ export async function send<T>(
   if (options.body) headers["Content-Type"] = "application/json";
   if (options.key) headers["Idempotency-Key"] = options.key;
   if (options.code) headers["X-Ajo-Mfa-Code"] = options.code;
+  // A change makes what this visit remembers out of date (a balance, a list): forget it all.
+  if (method !== "GET") forgetAll();
   try {
     const res = await fetch(url, {
       method,
@@ -39,7 +43,10 @@ export async function send<T>(
     }
     const code = typeof data.code === "string" ? data.code : undefined;
     // A 401 that carries a code is the API refusing a code, not an end to the session.
-    if (res.status === 401 && !code) return { ok: false, failure: { kind: "signed-out" } };
+    if (res.status === 401 && !code) {
+      forgetAll();
+      return { ok: false, failure: { kind: "signed-out" } };
+    }
     const message =
       typeof data.message === "string"
         ? data.message

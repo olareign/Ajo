@@ -8,6 +8,8 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { loadNotices, readAllNotices, readNotice, type Notice } from "@/lib/savings-client";
+import { recall, remember } from "@/lib/visit-cache";
+import { whenText } from "@/lib/when";
 
 export function NotificationsScreen() {
   return <MeGate needs="onboarded">{() => <Messages />}</MeGate>;
@@ -23,19 +25,6 @@ type State =
       unread: number;
       moreFailed: boolean;
     }>;
-
-/** "2 min ago", "Yesterday", "3 Nov": how long ago, in the words a person would use. */
-export function ago(iso: string, now: Date = new Date()): string {
-  const minutes = Math.floor((now.getTime() - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(new Date(iso));
-}
 
 /** An icon and a colour for each kind of message: warnings warm, money good news green, reminders indigo. */
 function look(kind: string) {
@@ -63,7 +52,10 @@ function byDay(items: readonly Notice[], now: Date = new Date()) {
 
 function Messages() {
   const router = useRouter();
-  const [state, setState] = useState<State>({ phase: "loading" });
+  // Within a visit the last copy shows at once while a fresh one loads.
+  const [state, setState] = useState<State>(
+    () => recall<State>("screen:messages") ?? { phase: "loading" },
+  );
   const [attempt, setAttempt] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const mounted = useRef(true);
@@ -82,15 +74,17 @@ function Messages() {
       if (!live) return;
       if (!result.ok) {
         if (result.failure.kind === "signed-out") return router.replace("/sign-in");
-        return setState({ phase: "failed" });
+        return setState((was) => (was.phase === "ready" ? was : { phase: "failed" }));
       }
-      setState({
+      const next: State = {
         phase: "ready",
         items: result.data.items,
         next: result.data.next,
         unread: result.data.unread,
         moreFailed: false,
-      });
+      };
+      remember("screen:messages", next);
+      setState(next);
     })();
     return () => {
       live = false;
@@ -235,7 +229,7 @@ function Messages() {
                               {item.title}
                             </span>
                             <span className="flex shrink-0 items-center gap-2 pt-1 text-[12px] text-ink-muted">
-                              {ago(item.createdAt)}
+                              {whenText(item.createdAt)}
                               {!item.readAt && (
                                 <span
                                   className="size-2 shrink-0 rounded-full bg-oro"

@@ -12,6 +12,7 @@ import {
   handleReport,
   handleSearch,
   handleSendRequest,
+  handleSetInvite,
   handleSuggestions,
   isPersonAction,
 } from "./friends-handlers";
@@ -182,6 +183,24 @@ describe("doing things", () => {
   });
 });
 
+describe("choosing an invite code", () => {
+  it("passes only the code on, from this app only", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => reply(200, { code: "ADA-SAVES", link: "x" }));
+    await handleSetInvite(await req("PUT", { code: "ada-saves", userId: "x" }), { env, fetchFn });
+    expect(call(fetchFn).url).toBe("https://api.ajo.example/api/v1/friends/invite");
+    expect(call(fetchFn).init.method).toBe("PUT");
+    expect(JSON.parse(call(fetchFn).init.body as string)).toEqual({ code: "ada-saves" });
+
+    const blocked = vi.fn<Fetch>(async () => reply(200));
+    const res = await handleSetInvite(await req("PUT", { code: "ADA1" }, "cross-site"), {
+      env,
+      fetchFn: blocked,
+    });
+    expect(res.status).toBe(403);
+    expect(blocked).not.toHaveBeenCalled();
+  });
+});
+
 describe("an invite link, before sign-in", () => {
   it("asks who it is from without a session, and passes nothing from the browser", async () => {
     const fetchFn = vi.fn<Fetch>(async () => reply(200, { name: "Ada", username: "ada_ola" }));
@@ -195,9 +214,16 @@ describe("an invite link, before sign-in", () => {
     expect(call(fetchFn).headers.get("Authorization")).toBeNull();
   });
 
+  it("accepts a chosen code as well as a made-up one", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => reply(200, { name: "Ada", username: null }));
+    for (const code of ["ADA-SAVES", "lagos_2026", "ADA1"]) {
+      expect((await handleInvite(await req("GET"), { env, fetchFn }, code)).status).toBe(200);
+    }
+  });
+
   it("does not ask for a code that cannot be one", async () => {
     const fetchFn = vi.fn<Fetch>(async () => reply(200));
-    for (const bad of ["short", "../x", "K7M2QH9R9", "K7M2 QH9"]) {
+    for (const bad of ["abc", "../x", "-ADA", "ADA_", "K7M2 QH9", "A".repeat(21)]) {
       expect((await handleInvite(await req("GET"), { env, fetchFn }, bad)).status).toBe(404);
     }
     expect(fetchFn).not.toHaveBeenCalled();

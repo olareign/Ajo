@@ -1,10 +1,12 @@
 import type { Failure, Outcome } from "./api-send";
 import * as live from "./friends-client";
+import { loadScreen, partData, type Part } from "./screen-client";
 import type {
   Blocked,
   Friend,
   FriendRequest,
   Invite,
+  Referral,
   Person,
   Relation,
   ReportReason,
@@ -14,7 +16,16 @@ import type {
 } from "./friends-client";
 
 /** What the friends screens ask for: the server, or in a preview a pretend one that lives in this tab. */
+/** Everything the friends home shows. */
+export type FriendsHomeData = Readonly<{
+  friends: readonly Friend[];
+  requests: Requests;
+  suggestions: readonly Suggestion[];
+}>;
+
 export type FriendsGateway = Readonly<{
+  /** The friends home in one go (one request when live). */
+  home: () => Promise<Outcome<FriendsHomeData>>;
   friends: () => Promise<Outcome<readonly Friend[]>>;
   requests: () => Promise<Outcome<Requests>>;
   suggestions: () => Promise<Outcome<readonly Suggestion[]>>;
@@ -22,6 +33,8 @@ export type FriendsGateway = Readonly<{
   person: (username: string) => Promise<Outcome<Person>>;
   blocks: () => Promise<Outcome<readonly Blocked[]>>;
   invite: () => Promise<Outcome<Invite>>;
+  setInvite: (code: string) => Promise<Outcome<Invite>>;
+  referrals: () => Promise<Outcome<readonly Referral[]>>;
   request: (username: string) => Promise<Outcome<{ relation: Relation }>>;
   accept: (username: string) => Promise<Outcome<{ relation: Relation }>>;
   decline: (username: string) => Promise<Outcome<unknown>>;
@@ -32,7 +45,50 @@ export type FriendsGateway = Readonly<{
   report: (username: string, reason: ReportReason, details?: string) => Promise<Outcome<unknown>>;
 }>;
 
+const refusedPart = (part: Part | undefined): Outcome<never> => ({
+  ok: false,
+  failure: {
+    kind: "refused",
+    status: part?.status ?? 502,
+    code: typeof part?.data.code === "string" ? part.data.code : undefined,
+    message:
+      typeof part?.data.message === "string"
+        ? part.data.message
+        : "We couldn't load your friends. Check your connection and try again.",
+  },
+});
+
+async function liveHome(): Promise<Outcome<FriendsHomeData>> {
+  const result = await loadScreen("friends");
+  if (result.status === "signed-out") return { ok: false, failure: { kind: "signed-out" } };
+  if (result.status === "failed")
+    return {
+      ok: false,
+      failure: { kind: "unreachable", message: "We couldn't reach Àjọ. Check your connection." },
+    };
+  const { friends, requests, suggestions } = result.data;
+  const f = partData(friends);
+  const r = partData(requests);
+  const s = partData(suggestions);
+  if (!f) return refusedPart(friends);
+  if (!r) return refusedPart(requests);
+  if (!s) return refusedPart(suggestions);
+  return {
+    ok: true,
+    data: {
+      friends: Array.isArray(f.friends) ? (f.friends as Friend[]) : [],
+      requests: {
+        incoming: Array.isArray(r.incoming) ? (r.incoming as FriendRequest[]) : [],
+        outgoing: Array.isArray(r.outgoing) ? (r.outgoing as FriendRequest[]) : [],
+      },
+      // The API answers suggestions as a bare list.
+      suggestions: Array.isArray(s) ? (s as Suggestion[]) : [],
+    },
+  };
+}
+
 export const liveFriends: FriendsGateway = {
+  home: liveHome,
   friends: live.loadFriends,
   requests: live.loadRequests,
   suggestions: live.loadSuggestions,
@@ -40,6 +96,8 @@ export const liveFriends: FriendsGateway = {
   person: live.loadPerson,
   blocks: live.loadBlocks,
   invite: live.loadInvite,
+  setInvite: live.setInviteCode,
+  referrals: live.loadReferrals,
   request: live.sendRequest,
   accept: live.acceptRequest,
   decline: live.declineRequest,
@@ -154,6 +212,7 @@ export function previewFriends(): FriendsGateway {
     mutualFriends: mutual(p),
     tier: p.tier,
   });
+  let inviteCode = "PREVIEW1";
   const when = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
   const set = (username: string, relation: Relation) => {
     const p = find(username);
@@ -162,7 +221,7 @@ export function previewFriends(): FriendsGateway {
     return ok({ relation });
   };
 
-  return {
+  const gateway: Omit<FriendsGateway, "home"> = {
     friends: async () =>
       ok(
         visible()
@@ -229,7 +288,27 @@ export function previewFriends(): FriendsGateway {
             blockedAt: when(0),
           })),
       ),
-    invite: async () => ok({ code: "PREVIEW1", link: "https://ajo.example/join/PREVIEW1" }),
+    invite: async () => ok({ code: inviteCode, link: `https://ajo.example/join/${inviteCode}` }),
+    setInvite: async (code) => {
+      const next = code.trim().toUpperCase();
+      if (!/^[A-Z0-9][A-Z0-9_-]{2,18}[A-Z0-9]$/.test(next))
+        return {
+          ok: false,
+          failure: {
+            kind: "refused",
+            status: 400,
+            code: "code_invalid",
+            message: "Use 4 to 20 letters or numbers; - and _ are fine in the middle.",
+          },
+        };
+      inviteCode = next;
+      return ok({ code: next, link: `https://ajo.example/join/${next}` });
+    },
+    referrals: async () =>
+      ok([
+        { displayName: "Kemi Salako", username: "kemi_s", joinedAt: when(2) },
+        { displayName: "Sade Kehinde", username: null, joinedAt: when(9) },
+      ]),
     request: async (username) => {
       const p = find(username);
       if (!p || p.blocked) return missing();
@@ -255,5 +334,19 @@ export function previewFriends(): FriendsGateway {
       return ok({});
     },
     report: async (username) => (find(username) ? ok({}) : missing()),
+  };
+  return {
+    ...gateway,
+    home: async () => {
+      const [friends, requests, suggestions] = await Promise.all([
+        gateway.friends(),
+        gateway.requests(),
+        gateway.suggestions(),
+      ]);
+      if (!friends.ok) return friends;
+      if (!requests.ok) return requests;
+      if (!suggestions.ok) return suggestions;
+      return ok({ friends: friends.data, requests: requests.data, suggestions: suggestions.data });
+    },
   };
 }

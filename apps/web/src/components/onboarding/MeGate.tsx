@@ -2,6 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { ScreenSkeleton } from "@/components/ui/ScreenSkeleton";
+import { forgetAll, recall, remember } from "@/lib/visit-cache";
+import { rememberReturn } from "@/lib/return-to";
 
 export type Me = Readonly<{
   displayName: string;
@@ -16,6 +19,11 @@ export type Me = Readonly<{
   mfaEnabled?: boolean;
   kycStatus?: "not_started" | "in_progress" | "pending" | "approved" | "rejected";
   kycTier?: 0 | 1 | 2;
+  /** International form; not verified until SMS checks arrive. */
+  phone?: string | null;
+  phoneVerified?: boolean;
+  /** Standing in circles, as other members see it. */
+  trust?: Readonly<{ level: "new" | "building" | "trusted"; score: number }>;
 }>;
 
 type Props = Readonly<{
@@ -24,13 +32,20 @@ type Props = Readonly<{
   children: (me: Me) => ReactNode;
 }>;
 
+const fits = (me: Me | undefined, needs: Props["needs"]) =>
+  me !== undefined && me.onboarded === (needs === "onboarded");
+
 /**
  * Asks our server who is signed in (it refreshes the session if needed) and sends the person
- * where they belong: sign-in without a session, onboarding until it is finished.
+ * where they belong: sign-in without a session, onboarding until it is finished. Within a visit the
+ * last answer is shown at once while a fresh one is fetched, so moving between screens never waits.
  */
 export function MeGate({ needs, children }: Props) {
   const router = useRouter();
-  const [me, setMe] = useState<Me>();
+  const [me, setMe] = useState<Me | undefined>(() => {
+    const known = recall<Me>("me");
+    return fits(known, needs) ? known : undefined;
+  });
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -39,11 +54,20 @@ export function MeGate({ needs, children }: Props) {
       try {
         const res = await fetch("/api/me", { credentials: "same-origin" });
         if (!live) return;
-        if (res.status === 401) return router.replace("/sign-in");
+        if (res.status === 401) {
+          forgetAll();
+          // An invite opened while signed out is where the person comes back to after signing in.
+          rememberReturn(window.location.pathname);
+          return router.replace("/sign-in");
+        }
         if (!res.ok) return setFailed(true);
         const data = (await res.json()) as Me;
+        remember("me", data);
         if (data.onboarded && needs === "not-onboarded") return router.replace("/today");
-        if (!data.onboarded && needs === "onboarded") return router.replace("/onboarding");
+        if (!data.onboarded && needs === "onboarded") {
+          rememberReturn(window.location.pathname);
+          return router.replace("/onboarding");
+        }
         setMe(data);
       } catch {
         if (live) setFailed(true);
@@ -61,11 +85,6 @@ export function MeGate({ needs, children }: Props) {
       </p>
     );
   }
-  if (!me)
-    return (
-      <p className="sr-only" role="status">
-        Loading…
-      </p>
-    );
+  if (!me) return <ScreenSkeleton />;
   return <>{children(me)}</>;
 }

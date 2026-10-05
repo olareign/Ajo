@@ -12,6 +12,7 @@ import { HandlePicker } from "./HandlePicker";
 import { HowItWorks } from "./HowItWorks";
 import type { Me } from "./MeGate";
 import { useUsernameCheck } from "./useUsernameCheck";
+import { takeReturn } from "@/lib/return-to";
 
 const COUNTRIES: readonly CardOption[] = [
   { value: "NG", title: "Nigeria", detail: "Save and receive in naira (₦)" },
@@ -83,7 +84,7 @@ export function Onboarding({ me, photos }: Props) {
   const firstQuestion = steps[0] === "story" ? 1 : 0;
 
   useEffect(() => {
-    if (steps.length === 0) router.replace("/today");
+    if (steps.length === 0) router.replace(takeReturn() ?? "/today");
   }, [steps, router]);
 
   if (!step) return null;
@@ -167,7 +168,7 @@ export function Onboarding({ me, photos }: Props) {
           : await savePin();
     setBusy(false);
     if (!saved) return;
-    if (last) router.replace("/today");
+    if (last) router.replace(takeReturn() ?? "/today");
     else setAt(at + 1);
   }
 
