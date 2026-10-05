@@ -42,6 +42,14 @@ describe("WalletSummary", () => {
     expect(link).toHaveTextContent("Nothing here yet");
   });
 
+  it("reads as zero in the person's own currency when the wallet is empty", async () => {
+    answer(200, { wallets: [] });
+    render(<WalletSummary currency="NGN" />);
+    const link = await screen.findByRole("link", { name: /wallet/i });
+    expect(link).toHaveTextContent("₦0");
+    expect(link).toHaveTextContent("Available");
+  });
+
   it("does not guess a balance when it cannot load one", async () => {
     answer(502, { message: "down" });
     render(<WalletSummary />);
@@ -54,5 +62,43 @@ describe("WalletSummary", () => {
     answer(401);
     render(<WalletSummary />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/sign-in"));
+  });
+});
+
+describe("hiding the balance", () => {
+  afterEach(() => localStorage.clear());
+
+  it("hides and shows it, and remembers the choice", async () => {
+    answer(200, { wallets: [wallet("NGN", "250000")] });
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const first = render(<WalletSummary />);
+    const link = await screen.findByRole("link", { name: /wallet/i });
+    await waitFor(() => expect(link).toHaveTextContent("₦2,500"));
+    await user.click(screen.getByRole("button", { name: "Hide balance" }));
+    expect(link).not.toHaveTextContent("₦2,500");
+    expect(link).toHaveTextContent("Balance hidden");
+    expect(screen.getByRole("button", { name: "Show balance" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    first.unmount();
+
+    render(<WalletSummary />);
+    const again = await screen.findByRole("link", { name: /wallet/i });
+    await waitFor(() => expect(again).toHaveTextContent("Balance hidden"));
+    expect(again).not.toHaveTextContent("₦2,500");
+  });
+
+  it("offers adding money and withdrawing straight from the card", async () => {
+    answer(200, { wallets: [] });
+    render(<WalletSummary />);
+    expect(await screen.findByRole("link", { name: "Add money" })).toHaveAttribute(
+      "href",
+      "/wallet/add",
+    );
+    expect(screen.getByRole("link", { name: "Withdraw" })).toHaveAttribute(
+      "href",
+      "/wallet/withdraw",
+    );
   });
 });

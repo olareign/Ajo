@@ -3,7 +3,7 @@
 import { Check, Clock, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { Avatar } from "@/components/ui/Avatar";
+import { Initials } from "@/components/ui/Initials";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { Button } from "@/components/ui/Button";
 import type { Failure } from "@/lib/api-send";
@@ -48,7 +48,7 @@ export function PersonRow({ person, href, note, onRelation, onFail }: Props) {
   return (
     <li className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-3 shadow-lift">
       <Link href={href} className="flex min-w-0 grow items-center gap-3">
-        <Avatar size={44} />
+        <Initials name={person.displayName} />
         <span className="grid min-w-0 gap-0.5">
           <span className="truncate text-[16px] leading-5 font-semibold">{person.displayName}</span>
           <span className="truncate text-[13px] text-ink-muted">@{person.username}</span>
@@ -62,6 +62,7 @@ export function PersonRow({ person, href, note, onRelation, onFail }: Props) {
       {relation === "none" && (
         <Button
           variant="primary"
+          loading={busy}
           disabled={busy}
           aria-label={`Add ${person.displayName}`}
           onClick={() => void act(() => gateway.request(person.username), "requested")}
@@ -73,6 +74,7 @@ export function PersonRow({ person, href, note, onRelation, onFail }: Props) {
       {relation === "requested" && (
         <Button
           variant="quiet"
+          loading={busy}
           disabled={busy}
           aria-label={`Cancel your request to ${person.displayName}`}
           onClick={() => void act(() => gateway.cancel(person.username), "none")}
@@ -84,6 +86,7 @@ export function PersonRow({ person, href, note, onRelation, onFail }: Props) {
       {relation === "incoming" && (
         <Button
           variant="money"
+          loading={busy}
           disabled={busy}
           aria-label={`Accept ${person.displayName}`}
           onClick={() => void act(() => gateway.accept(person.username), "friend")}

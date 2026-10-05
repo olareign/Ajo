@@ -142,27 +142,36 @@ export function SavingsHome() {
             <section
               key={currency}
               aria-label="Saved so far"
-              className="grid gap-1 rounded-[var(--radius-l)] bg-primary-deep p-5 text-on-primary"
+              className="hero-card grid gap-4 overflow-hidden rounded-[var(--radius-xl)] p-5 shadow-lift"
             >
-              <p className="text-[13px] font-semibold tracking-[0.04em] text-on-primary/80">
-                IN YOUR POTS
-              </p>
-              <Amount
-                amount={total.toString()}
-                currency={currency}
-                locale={locale}
-                size="xl"
-                className="text-on-primary"
-              />
-              <p className="text-[14px] text-on-primary/85">
-                across {open.length} {open.length === 1 ? "plan" : "plans"}
-              </p>
+              <div className="grid gap-1">
+                <p className="text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted">
+                  IN YOUR POTS
+                </p>
+                <Amount
+                  amount={total.toString()}
+                  currency={currency}
+                  locale={locale}
+                  size="l"
+                  tone="hero"
+                />
+                <p className="text-[14px] text-on-hero-muted">
+                  across {open.length} {open.length === 1 ? "plan" : "plans"}
+                </p>
+              </div>
+              <Link
+                href={href("/save/new")}
+                className="flex min-h-12 items-center justify-center gap-2 rounded-m bg-oro px-4 text-[15px] font-semibold text-on-oro transition-[filter] hover:brightness-95"
+              >
+                <Plus aria-hidden className="size-5" />
+                New plan
+              </Link>
             </section>
           ))}
 
           {open.length > 0 && (
             <section aria-labelledby="going" className="grid gap-3">
-              <h2 id="going" className="font-display text-[20px] leading-7 font-semibold">
+              <h2 id="going" className="font-display text-[18px] leading-6 font-semibold">
                 Going now
               </h2>
               <ul className="grid gap-3">
@@ -179,7 +188,7 @@ export function SavingsHome() {
           )}
           {finished.length > 0 && (
             <section aria-labelledby="done" className="grid gap-3">
-              <h2 id="done" className="font-display text-[20px] leading-7 font-semibold">
+              <h2 id="done" className="font-display text-[18px] leading-6 font-semibold">
                 Finished
               </h2>
               <ul className="grid gap-3">
@@ -194,10 +203,12 @@ export function SavingsHome() {
               </ul>
             </section>
           )}
-          <ButtonLink href={href("/save/new")} size="lg" block>
-            <Plus aria-hidden className="size-5" />
-            Start a plan
-          </ButtonLink>
+          {totals.size === 0 && (
+            <ButtonLink href={href("/save/new")} size="lg" block>
+              <Plus aria-hidden className="size-5" />
+              Start a plan
+            </ButtonLink>
+          )}
         </div>
       )}
     </main>
@@ -209,7 +220,7 @@ function PlanCard({ plan, locale, href }: Readonly<{ plan: Plan; locale: string;
     <li>
       <Link
         href={href}
-        className="flex items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"
+        className="flex items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift transition-transform active:scale-[0.99]"
       >
         <Pot
           ratio={ratioOf(plan)}
@@ -227,6 +238,17 @@ function PlanCard({ plan, locale, href }: Readonly<{ plan: Plan; locale: string;
           <span className="text-[14px] text-ink-muted">
             <Amount {...plan.saved} locale={locale} size="s" /> of{" "}
             <Amount {...plan.target} locale={locale} size="s" tone="muted" />
+          </span>
+          <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+            <span
+              className={cn(
+                "block h-full rounded-full",
+                plan.status === "active" || plan.status === "completed"
+                  ? "bg-primary"
+                  : "bg-line-strong",
+              )}
+              style={{ width: `${Math.round(ratioOf(plan) * 100)}%` }}
+            />
           </span>
           <span className="text-[13px] text-ink-muted">
             {plan.nextDebit

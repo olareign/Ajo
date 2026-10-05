@@ -295,6 +295,7 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
                 <Button
                   variant="quiet"
                   block
+                  loading={busy}
                   disabled={busy}
                   onClick={() => void run(() => gateway.pause(plan.id))}
                 >
@@ -305,6 +306,7 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
                 <Button
                   variant="quiet"
                   block
+                  loading={busy}
                   disabled={busy}
                   onClick={() => void run(() => gateway.resume(plan.id))}
                 >
@@ -316,6 +318,7 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
                 <Button
                   variant="quiet"
                   block
+                  loading={busy}
                   disabled={busy}
                   onClick={() => void run(() => gateway.takeNextDebit!(plan.id))}
                 >
@@ -355,6 +358,7 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
                 </Button>
                 <Button
                   variant="money"
+                  loading={busy}
                   disabled={topMinor === "0" || busy}
                   onClick={() => {
                     const signature = `${plan.id}:${topMinor}`;
@@ -404,6 +408,7 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
                 </Button>
                 <Button
                   variant="danger"
+                  loading={busy}
                   disabled={pin.length !== 6 || busy}
                   onClick={() =>
                     void run(

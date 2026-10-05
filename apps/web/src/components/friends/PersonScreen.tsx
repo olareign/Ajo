@@ -152,6 +152,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
             {shown.relation === "none" && (
               <Button
                 size="lg"
+                loading={busy}
                 disabled={busy}
                 onClick={() =>
                   void run(
@@ -167,6 +168,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
               <Button
                 size="lg"
                 variant="quiet"
+                loading={busy}
                 disabled={busy}
                 onClick={() =>
                   void run(
@@ -183,6 +185,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
                 <Button
                   size="lg"
                   variant="money"
+                  loading={busy}
                   disabled={busy}
                   onClick={() =>
                     void run(
@@ -196,6 +199,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
                 <Button
                   size="lg"
                   variant="quiet"
+                  loading={busy}
                   disabled={busy}
                   onClick={() =>
                     void run(
@@ -244,6 +248,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
               </Button>
               <Button
                 variant="danger"
+                loading={busy}
                 disabled={busy}
                 onClick={() =>
                   void run(
@@ -271,6 +276,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
               </Button>
               <Button
                 variant="danger"
+                loading={busy}
                 disabled={busy}
                 onClick={() =>
                   void run(
@@ -301,6 +307,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
                 Cancel
               </Button>
               <Button
+                loading={busy}
                 disabled={!reason || busy}
                 onClick={() =>
                   void run(

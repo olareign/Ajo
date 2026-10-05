@@ -214,7 +214,7 @@ export function MfaSetup() {
 
         <div className="mt-auto grid gap-4 pt-2">
           {phase.kind === "intro" && (
-            <Button size="lg" block disabled={busy} onClick={() => void start()}>
+            <Button size="lg" block loading={busy} disabled={busy} onClick={() => void start()}>
               {busy ? "One moment…" : "Start"}
             </Button>
           )}
@@ -232,6 +232,7 @@ export function MfaSetup() {
               <Button
                 size="lg"
                 block
+                loading={busy}
                 disabled={busy || code.length !== CODE_LENGTH}
                 onClick={() => void confirm()}
               >

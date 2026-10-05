@@ -42,7 +42,13 @@ export function NationalStep({ config, submit }: StepProps) {
         inputMode="numeric"
         autoComplete="off"
       />
-      <Button size="lg" block disabled={!validateBvn(number) || busy} onClick={() => void send()}>
+      <Button
+        size="lg"
+        block
+        loading={busy}
+        disabled={!validateBvn(number) || busy}
+        onClick={() => void send()}
+      >
         {busy ? "Checking…" : `Add my ${check.label}`}
       </Button>
     </div>

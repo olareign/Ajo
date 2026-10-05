@@ -4,10 +4,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MeGate } from "@/components/onboarding/MeGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { ChevronRight } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Gauge, Landmark } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { ButtonLink } from "@/components/ui/ButtonLink";
 import type { Wallet, WalletTransaction } from "@/lib/wallet";
 import { loadTransactions, loadWallets } from "@/lib/wallet-client";
 import { BalanceCard } from "./BalanceCard";
@@ -93,35 +92,21 @@ function Wallets() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-10 pb-28">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       <ScreenHeader title="Wallet" subtitle="Your money, and where it sits." backHref="/today" />
-      <nav aria-label="Money actions" className="mb-8 grid gap-3">
-        <div className="grid grid-cols-2 gap-3">
-          <ButtonLink href="/wallet/add" size="lg">
-            Add money
-          </ButtonLink>
-          <ButtonLink href="/wallet/withdraw" size="lg" variant="quiet">
-            Withdraw
-          </ButtonLink>
-        </div>
-        {[
-          ["/wallet/mandate", "Auto-debit"],
-          ["/wallet/limits", "Your limits"],
-        ].map(([href, label]) => (
-          <Link
-            key={href}
-            href={href!}
-            className="flex items-center justify-between rounded-[var(--radius-l)] bg-surface-raised px-4 py-3.5 text-[15px] font-semibold shadow-lift"
-          >
-            {label}
-            <ChevronRight aria-hidden className="size-5 text-ink-muted" />
-          </Link>
-        ))}
-      </nav>
+      <MoneyActions />
       {state.phase === "loading" && (
-        <p className="sr-only" role="status">
-          Loading…
-        </p>
+        <div role="status" className="grid gap-4">
+          <span className="sr-only">Loading…</span>
+          <div
+            aria-hidden
+            className="h-48 animate-pulse rounded-[var(--radius-xl)] bg-surface-sunken"
+          />
+          <div
+            aria-hidden
+            className="h-40 animate-pulse rounded-[var(--radius-l)] bg-surface-sunken"
+          />
+        </div>
       )}
       {state.phase === "failed" && (
         <div className="grid gap-4">
@@ -136,7 +121,7 @@ function Wallets() {
       {state.phase === "ready" && (
         <div className="grid gap-8">
           {state.wallets.length === 0 ? (
-            <p className="text-ink-muted">
+            <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
               No money here yet. When you add or receive money, it shows up here.
             </p>
           ) : (
@@ -147,17 +132,24 @@ function Wallets() {
             </div>
           )}
           <section aria-labelledby="activity" className="grid gap-2">
-            <h2 id="activity" className="font-display text-[22px] leading-7 font-semibold">
+            <h2 id="activity" className="font-display text-[18px] leading-6 font-semibold">
               Recent activity
             </h2>
-            <TransactionList items={state.items} />
+            <div className="rounded-[var(--radius-l)] bg-surface-raised px-4 shadow-lift">
+              <TransactionList items={state.items} />
+            </div>
             {state.moreFailed && (
               <p role="alert" className="text-danger">
                 We couldn&apos;t load more.
               </p>
             )}
             {state.next && (
-              <Button variant="quiet" disabled={loadingMore} onClick={() => void showMore(state)}>
+              <Button
+                variant="quiet"
+                loading={loadingMore}
+                disabled={loadingMore}
+                onClick={() => void showMore(state)}
+              >
                 Show more
               </Button>
             )}
@@ -165,5 +157,55 @@ function Wallets() {
         </div>
       )}
     </main>
+  );
+}
+
+/**
+ * Add money and withdraw as the two big actions, then auto-debit and limits as settings rows. The
+ * balance cards follow, so the actions stay in the same place whatever has loaded.
+ */
+function MoneyActions() {
+  return (
+    <nav aria-label="Money actions" className="mb-6 grid gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/wallet/add"
+          className="flex min-h-14 items-center justify-center gap-2 rounded-[var(--radius-l)] bg-oro px-4 text-base font-semibold text-on-oro shadow-lift transition-[filter] hover:brightness-95"
+        >
+          <ArrowDownToLine aria-hidden className="size-5" />
+          Add money
+        </Link>
+        <Link
+          href="/wallet/withdraw"
+          className="flex min-h-14 items-center justify-center gap-2 rounded-[var(--radius-l)] bg-surface-raised px-4 text-base font-semibold text-primary shadow-lift"
+        >
+          <ArrowUpFromLine aria-hidden className="size-5" />
+          Withdraw
+        </Link>
+      </div>
+      <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+        {(
+          [
+            ["/wallet/mandate", "Auto-debit", "Lets your bank top up a short wallet", Landmark],
+            ["/wallet/limits", "Your limits", "How much can move each day", Gauge],
+          ] as const
+        ).map(([href, label, hint, Icon]) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-sunken"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
+              <Icon aria-hidden className="size-5" />
+            </span>
+            <span className="grid min-w-0">
+              <span className="text-[15px] font-semibold">{label}</span>
+              <span className="text-[13px] text-ink-muted">{hint}</span>
+            </span>
+            <ChevronRight aria-hidden className="ml-auto size-5 shrink-0 text-ink-muted" />
+          </Link>
+        ))}
+      </div>
+    </nav>
   );
 }

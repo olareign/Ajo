@@ -10,6 +10,7 @@ import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
+import { AppearancePicker } from "./AppearancePicker";
 
 export function MeScreen() {
   return <MeGate needs="onboarded">{(me) => <Account me={me} />}</MeGate>;
@@ -20,18 +21,18 @@ function MemberCard({ me }: Readonly<{ me: Me }>) {
   return (
     <section
       aria-label="Your membership"
-      className="relative grid grid-cols-1 gap-5 rounded-[var(--radius-l)] bg-primary-tint p-6"
+      className="relative grid grid-cols-1 gap-5 overflow-hidden rounded-[var(--radius-xl)] bg-primary-tint p-6"
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-2 rounded-[calc(var(--radius-l)-8px)] border-[1.5px] border-dashed border-primary/35"
+        className="pointer-events-none absolute inset-2 rounded-[calc(var(--radius-xl)-8px)] border-[1.5px] border-dashed border-primary/30"
       />
       <div className="flex items-center gap-4">
         <Avatar size={64} />
         <div className="grid min-w-0 gap-0.5">
           <p className="text-[11px] font-semibold tracking-[0.08em] text-tertiary">ÀJỌ MEMBER</p>
           {me.username && (
-            <p className="truncate font-display text-[26px] leading-8 font-bold text-primary-deep">
+            <p className="truncate font-display text-[26px] leading-8 font-bold text-primary">
               @{me.username}
             </p>
           )}
@@ -93,7 +94,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-10 pb-28">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       <ScreenHeader
         title="Me"
         subtitle="Your account, and how it is kept safe."
@@ -105,41 +106,59 @@ function Account({ me }: Readonly<{ me: Me }>) {
         <InstallRow />
 
         <section aria-labelledby="security" className="grid grid-cols-1 gap-3">
-          <h2 id="security" className="font-display text-[22px] leading-7 font-semibold">
+          <h2 id="security" className="font-display text-[18px] leading-6 font-semibold">
             Security
           </h2>
-          <Link
-            href="/verify"
-            className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"
-          >
-            <p className="flex items-center gap-3 text-[15px] font-semibold">
-              <BookUser aria-hidden className="size-5 text-primary" />
-              Identity
-            </p>
-            <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
-              {IDENTITY_WORDS[me.kycStatus ?? "not_started"]}
-              <ChevronRight aria-hidden className="size-5" />
-            </p>
-          </Link>
-          <Link
-            href="/me/security"
-            className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"
-          >
-            <p className="flex items-center gap-3 text-[15px] font-semibold">
-              <ShieldCheck aria-hidden className="size-5 text-primary" />
-              Authenticator app
-            </p>
-            <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
-              {me.mfaEnabled ? "On" : "Set up"}
-              <ChevronRight aria-hidden className="size-5" />
-            </p>
-          </Link>
+          <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+            <Link
+              href="/verify"
+              className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
+            >
+              <p className="flex items-center gap-3 text-[15px] font-semibold">
+                <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
+                  <BookUser aria-hidden className="size-5" />
+                </span>
+                Identity
+              </p>
+              <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
+                {IDENTITY_WORDS[me.kycStatus ?? "not_started"]}
+                <ChevronRight aria-hidden className="size-5" />
+              </p>
+            </Link>
+            <Link
+              href="/me/security"
+              className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
+            >
+              <p className="flex items-center gap-3 text-[15px] font-semibold">
+                <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
+                  <ShieldCheck aria-hidden className="size-5" />
+                </span>
+                Authenticator app
+              </p>
+              <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
+                {me.mfaEnabled ? "On" : "Set up"}
+                <ChevronRight aria-hidden className="size-5" />
+              </p>
+            </Link>
+          </div>
+        </section>
 
-          <div className="grid grid-cols-1 gap-3 pt-2">
+        <section aria-labelledby="preferences" className="grid grid-cols-1 gap-3">
+          <h2 id="preferences" className="font-display text-[18px] leading-6 font-semibold">
+            Preferences
+          </h2>
+          <div className="overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+            <AppearancePicker />
+          </div>
+        </section>
+
+        <section aria-label="Sign out" className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <Button
               variant="quiet"
               size="lg"
               block
+              loading={busy !== undefined}
               disabled={busy !== undefined}
               onClick={() => void signOut()}
             >
@@ -150,6 +169,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
               size="lg"
               block
               aria-expanded={confirming}
+              loading={busy !== undefined}
               disabled={busy !== undefined}
               onClick={() => setConfirming((open) => !open)}
             >
@@ -172,6 +192,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
                 <div className="grid grid-cols-[auto_1fr] gap-3">
                   <Button
                     variant="quiet"
+                    loading={busy !== undefined}
                     disabled={busy !== undefined}
                     onClick={() => setConfirming(false)}
                   >
@@ -179,6 +200,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
                   </Button>
                   <Button
                     variant="danger"
+                    loading={busy !== undefined}
                     disabled={busy !== undefined}
                     onClick={() => void signOutEverywhere()}
                   >

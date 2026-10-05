@@ -172,7 +172,7 @@ export function Mandate() {
           </p>
         )}
         {state === "none" && (!preview ? real !== undefined : true) && (
-          <Button size="lg" block disabled={busy} onClick={() => void setUp()}>
+          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void setUp()}>
             {busy ? "Taking you to your bank…" : "Set up auto-debit"}
           </Button>
         )}
@@ -215,7 +215,12 @@ export function Mandate() {
                   <Button variant="quiet" onClick={() => setConfirming(false)}>
                     Keep it
                   </Button>
-                  <Button variant="danger" disabled={busy} onClick={() => void cancel()}>
+                  <Button
+                    variant="danger"
+                    loading={busy}
+                    disabled={busy}
+                    onClick={() => void cancel()}
+                  >
                     Cancel it
                   </Button>
                 </div>
@@ -224,7 +229,7 @@ export function Mandate() {
           </div>
         )}
         {(state === "cancelled" || state === "failed") && (
-          <Button size="lg" block disabled={busy} onClick={() => void setUp()}>
+          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void setUp()}>
             {state === "failed" ? "Try again" : "Set it up again"}
           </Button>
         )}

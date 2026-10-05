@@ -44,7 +44,13 @@ export function VerifyEmail({ token }: Readonly<{ token: string }>) {
           {error}
         </p>
       )}
-      <Button size="lg" block disabled={state === "busy"} onClick={confirm}>
+      <Button
+        size="lg"
+        block
+        loading={state === "busy"}
+        disabled={state === "busy"}
+        onClick={confirm}
+      >
         Confirm my email
       </Button>
     </div>

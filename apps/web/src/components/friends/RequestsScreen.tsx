@@ -119,6 +119,7 @@ export function RequestsScreen() {
                     <>
                       <Button
                         variant="quiet"
+                        loading={busy === r.username}
                         disabled={busy === r.username}
                         aria-label={`Decline ${r.displayName}`}
                         onClick={() =>
@@ -132,6 +133,7 @@ export function RequestsScreen() {
                       </Button>
                       <Button
                         variant="money"
+                        loading={busy === r.username}
                         disabled={busy === r.username}
                         aria-label={`Accept ${r.displayName}`}
                         onClick={() =>
@@ -162,6 +164,7 @@ export function RequestsScreen() {
                     r,
                     <Button
                       variant="quiet"
+                      loading={busy === r.username}
                       disabled={busy === r.username}
                       aria-label={`Cancel your request to ${r.displayName}`}
                       onClick={() =>

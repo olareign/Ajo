@@ -101,7 +101,7 @@ export function MfaForm() {
         </button>
       </div>
       <div className="mt-auto grid gap-4 pt-6">
-        <Button type="submit" size="lg" block disabled={!ready || busy}>
+        <Button type="submit" size="lg" block loading={busy} disabled={!ready || busy}>
           {busy ? "One moment…" : "Confirm"}
         </Button>
         {!useRecovery && (

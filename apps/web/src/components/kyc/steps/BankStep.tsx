@@ -104,11 +104,17 @@ export function BankStep({ country, config, holder, submit, resolveName }: StepP
         </p>
       )}
       {owner === undefined ? (
-        <Button size="lg" block disabled={!ready || busy} onClick={() => void lookUp()}>
+        <Button
+          size="lg"
+          block
+          loading={busy}
+          disabled={!ready || busy}
+          onClick={() => void lookUp()}
+        >
           {busy ? "Looking it up…" : "Check the name"}
         </Button>
       ) : matches ? (
-        <Button size="lg" block disabled={busy} onClick={() => void confirm()}>
+        <Button size="lg" block loading={busy} disabled={busy} onClick={() => void confirm()}>
           {busy ? "Saving…" : "Use this account"}
         </Button>
       ) : (

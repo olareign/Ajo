@@ -77,7 +77,7 @@ export function ResetPasswordForm({ token }: Readonly<{ token: string }>) {
         )}
       </div>
       <div className="mt-auto pt-8">
-        <Button type="submit" size="lg" block disabled={busy || !password}>
+        <Button type="submit" size="lg" block loading={busy} disabled={busy || !password}>
           {busy ? "One moment…" : "Save new password"}
         </Button>
       </div>
