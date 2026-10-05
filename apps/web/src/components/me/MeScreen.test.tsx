@@ -83,10 +83,11 @@ describe("MeScreen", () => {
     expect(within(row).getByText(word)).toBeInTheDocument();
   });
 
-  it("leads back to Today", async () => {
+  it("has no back arrow: it is a tab, and the bottom bar leads home", async () => {
     api();
     render(<MeScreen />);
-    expect(await screen.findByRole("link", { name: "Back" })).toHaveAttribute("href", "/today");
+    await screen.findByRole("heading", { name: "Me" });
+    expect(screen.queryByRole("link", { name: "Back" })).toBeNull();
   });
 
   describe("signing out of this device", () => {

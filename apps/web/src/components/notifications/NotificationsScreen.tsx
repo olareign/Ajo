@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, Coins, PiggyBank, TriangleAlert } from "lucide-react";
+import { Bell, BellRing, Coins, Orbit, PiggyBank, TriangleAlert, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MeGate } from "@/components/onboarding/MeGate";
@@ -39,11 +39,13 @@ export function ago(iso: string, now: Date = new Date()): string {
 
 /** An icon and a colour for each kind of message: warnings warm, money good news green, reminders indigo. */
 function look(kind: string) {
-  if (/missed|short|failed|default/.test(kind))
+  if (/missed|short|failed|default|reversed/.test(kind))
     return { Icon: TriangleAlert, tone: "bg-danger-tint text-danger" };
   if (/matured|paid|created|payout/.test(kind))
     return { Icon: PiggyBank, tone: "bg-leaf-tint text-leaf" };
   if (/soon|reminder/.test(kind)) return { Icon: BellRing, tone: "bg-tertiary-tint text-tertiary" };
+  if (kind.startsWith("friend.")) return { Icon: UserCheck, tone: "bg-primary-tint text-primary" };
+  if (kind.startsWith("group.")) return { Icon: Orbit, tone: "bg-tertiary-tint text-tertiary" };
   return { Icon: Coins, tone: "bg-oro-tint text-oro-ink" };
 }
 

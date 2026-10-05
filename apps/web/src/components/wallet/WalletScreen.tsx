@@ -94,7 +94,6 @@ function Wallets() {
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       <ScreenHeader title="Wallet" subtitle="Your money, and where it sits." backHref="/today" />
-      <MoneyActions />
       {state.phase === "loading" && (
         <div role="status" className="grid gap-4">
           <span className="sr-only">Loading…</span>
@@ -116,10 +115,11 @@ function Wallets() {
           <Button variant="quiet" onClick={retry}>
             Try again
           </Button>
+          <MoneyActions />
         </div>
       )}
       {state.phase === "ready" && (
-        <div className="grid gap-8">
+        <div className="grid gap-6">
           {state.wallets.length === 0 ? (
             <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
               No money here yet. When you add or receive money, it shows up here.
@@ -131,6 +131,7 @@ function Wallets() {
               ))}
             </div>
           )}
+          <MoneyActions />
           <section aria-labelledby="activity" className="grid gap-2">
             <h2 id="activity" className="font-display text-[18px] leading-6 font-semibold">
               Recent activity
@@ -160,13 +161,10 @@ function Wallets() {
   );
 }
 
-/**
- * Add money and withdraw as the two big actions, then auto-debit and limits as settings rows. The
- * balance cards follow, so the actions stay in the same place whatever has loaded.
- */
+/** Add money and withdraw as the two big actions under the balance, then auto-debit and limits as rows. */
 function MoneyActions() {
   return (
-    <nav aria-label="Money actions" className="mb-6 grid gap-3">
+    <nav aria-label="Money actions" className="grid gap-3">
       <div className="grid grid-cols-2 gap-3">
         <Link
           href="/wallet/add"

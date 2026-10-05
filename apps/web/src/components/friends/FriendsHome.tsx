@@ -101,32 +101,40 @@ export function FriendsHome() {
         <div className="grid gap-6">
           <section
             aria-label="Your circle"
-            className="grid justify-items-center gap-3 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift"
+            className="flex items-center gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift"
           >
             <CircleRing
               members={data.friends
                 .slice(0, 12)
                 .map((f) => ({ name: f.displayName, status: "paid" as const }))}
-              center={{
-                label: data.friends.length === 1 ? "friend" : "friends",
-                value: String(data.friends.length),
-              }}
               title="Your circle of friends"
-              size={190}
+              size={112}
             />
-            {data.friends.length === 0 && (
-              <p className="text-center text-[15px] leading-6 text-ink-muted">
-                Your circle is empty. Find people you trust, or send them your invite link.
+            <div className="grid min-w-0 gap-1">
+              <p className="font-display text-[20px] leading-7 font-semibold">
+                {data.friends.length === 0
+                  ? "No friends yet"
+                  : `${data.friends.length} ${data.friends.length === 1 ? "friend" : "friends"}`}
               </p>
-            )}
+              <p className="text-[14px] leading-5 text-ink-muted">
+                {data.friends.length === 0
+                  ? "Your circle is empty. Find people you trust, or send them your invite link."
+                  : "People you can start a circle with."}
+              </p>
+            </div>
           </section>
 
           <div className="grid grid-cols-2 gap-3">
-            <ButtonLink href={href("/friends/find")} size="lg">
+            <ButtonLink href={href("/friends/find")} size="lg" className="whitespace-nowrap">
               <Search aria-hidden className="size-5" />
               Find people
             </ButtonLink>
-            <ButtonLink href={href("/friends/invite")} size="lg" variant="quiet">
+            <ButtonLink
+              href={href("/friends/invite")}
+              size="lg"
+              variant="quiet"
+              className="whitespace-nowrap"
+            >
               <Link2 aria-hidden className="size-5" />
               Invite
             </ButtonLink>

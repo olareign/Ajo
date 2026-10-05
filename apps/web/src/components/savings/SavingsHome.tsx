@@ -93,7 +93,7 @@ export function SavingsHome() {
       <ScreenHeader
         title="Savings"
         subtitle="Little by little, the pot fills."
-        backHref={href("/today")}
+        backHref={preview ? href("/today") : undefined}
       />
 
       {plans === undefined && (

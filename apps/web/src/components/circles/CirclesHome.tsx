@@ -65,7 +65,7 @@ export function CirclesHome() {
       <ScreenHeader
         title="Circles"
         subtitle="Save together, one turn at a time."
-        backHref={href("/today")}
+        backHref={preview ? href("/today") : undefined}
       />
 
       {groups === undefined && (
