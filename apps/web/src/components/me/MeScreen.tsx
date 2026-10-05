@@ -95,11 +95,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
-      <ScreenHeader
-        title="Me"
-        subtitle="Your account, and how it is kept safe."
-        backHref="/today"
-      />
+      <ScreenHeader title="Me" subtitle="Your account, and how it is kept safe." />
       <div className="grid grid-cols-1 gap-8">
         <MemberCard me={me} />
 

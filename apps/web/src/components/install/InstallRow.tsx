@@ -14,7 +14,7 @@ export function InstallRow() {
 
   return (
     <section aria-labelledby="app" className="grid grid-cols-1 gap-3">
-      <h2 id="app" className="font-display text-[22px] leading-7 font-semibold">
+      <h2 id="app" className="font-display text-[18px] leading-6 font-semibold">
         The app
       </h2>
       <div className="grid grid-cols-1 gap-3 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift">

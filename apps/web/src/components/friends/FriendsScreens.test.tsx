@@ -113,7 +113,7 @@ describe("the friends home", () => {
     });
     open(<FriendsHome />);
     const circle = await screen.findByRole("region", { name: "Your circle" });
-    expect(within(circle).getByText("2")).toBeInTheDocument();
+    expect(within(circle).getByText("2 friends")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /1 request is waiting for you/ })).toHaveAttribute(
       "href",
       "/friends/requests",

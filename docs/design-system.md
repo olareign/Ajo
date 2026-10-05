@@ -22,7 +22,7 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 ## Type, shape and layout
 
 - **Fonts:** Bricolage Grotesque (display), Be Vietnam Pro (text), JetBrains Mono (numbers), all self-hosted through `@fontsource` because the content security policy allows only `font-src 'self'`.
-- **Radius:** 6 / 12 / 20px. In markup use `rounded-s`/`rounded-m` for 6/12 and `rounded-[var(--radius-l)]` for 20: plain `rounded-l` means "left side" in Tailwind, not our token. Fields and buttons are 12px; keypads and sheets 20px.
+- **Radius:** 6 / 12 / 20 / 28px. In markup use `rounded-s`/`rounded-m` for 6/12, `rounded-[var(--radius-l)]` for 20 (cards, lists) and `rounded-[var(--radius-xl)]` for 28 (hero cards, sheets): plain `rounded-l` means "left side" in Tailwind, not our token. Fields and buttons are 12px; keypads and sheets 20px.
 - **Touch targets:** 44px minimum; main buttons 56px; keypad keys 56px. The number pad always spans the full content width, so its edges line up with the main button under it.
 - **Phone first:** every screen is built for a small Android phone. The main action sits at the bottom, where the thumb is, with the "switch screen" line under it.
 
@@ -30,10 +30,10 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 
 | Component | Notes |
 | --- | --- |
-| `Button` | `primary`, `money` (gold, for moving money), `quiet`, `danger`; 44 or 56px; `block` for full width |
+| `Button` | `primary`, `money` (gold, for moving money), `quiet`, `danger`; 44 or 56px; `block` for full width. `loading={busy}` on every button whose press waits on the server: no second press, and the pressed button alone shows the `Spinner` and `aria-busy` (screens that share one busy flag pass it to all their buttons) |
 | `TextField` | Soft filled field that takes an outline when focused; hint below, error replaces the hint; password fields get a show/hide eye |
 | `ChoiceChips` | Accessible radio group with arrow-key support |
-| `ScreenHeader` | Squared back button, optional small label, heading and one calm subtitle |
+| `ScreenHeader` | Round filled back button, optional small label, a 28px heading in ink and one calm subtitle. Tab screens (Today, Save, Circles, Me) have no back button; a preview keeps it so it stays a preview |
 | `AuthScreen` | The frame every sign-in screen shares: full height, content on top, footer line at the bottom, a corner of beads |
 | `OptionCards` | Big tappable single-choice cards for onboarding questions: a title, one calm line, a tick when chosen |
 | `HowItWorks` | Three swipeable scenes shown to a brand-new person before any question: a savings goal filling stitch by stitch with a coin landing each week (solo), the circle of photos with the gold ring travelling from person to person (èsúsú), a shield and three reasons rising in (trust). Pictures are for the eye (hidden from screen readers) and every message is also in words; they hold still when the device asks for less motion; skippable; the buttons stay pinned to the bottom on a short phone |
@@ -42,9 +42,45 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `Keypad`, `PinPad`, `CodeBoxes` | Number pad; PIN pad (digits shown as dots); one-time code boxes (digits shown) |
 | `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
 | `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
-| `TabBar` | Today, Circles, Wallet, Me, with the gold action in the centre |
+| `TabBar`, `AppNav` | Home, Save, Circles, Me with the gold + in the centre, which opens the quick-actions sheet (add money, withdraw, start a savings plan, start a circle, invite a friend). `AppNav` (in the root layout) shows it only on the top screen of a section (`HOMES` in `AppNav.tsx`); flows keep the whole screen |
+| `WalletSummary`, `BalanceCard`, `BalanceEye` | The money hero: `hero-card` gradient, `Amount` with `size="l" tone="hero"`, the eye that hides every balance (`useHiddenBalance`, remembered on the device) |
+| `Initials` | A person's initials in a soft disc, the same tint every time for the same name |
+| `AppearancePicker` | System / Light / Dark on Me (`useTheme`) |
 | `Logo` | The Àjọ logo: green wordmark whose o is a piggy bank, with a gold ₦ coin and sparkles. Three transparent layers (`public/brand/ajo-wordmark.webp`, `ajo-coin.webp`, `ajo-rays.webp`) cut from the supplied artwork, so the coin and sparkles can move on their own. `ajo-logo.webp` is the whole logo for places that cannot animate. The app icons are made from `ajo-logo.webp` by `apps/web/scripts/generate-icons.py`: the whole logo for the home screen (plain, and a smaller maskable one that stays inside the circle Android crops to, and the iPhone one) and the pig-and-coin mark alone for the browser tab; `src/app/icons.test.ts` fails if the logo is cropped |
 | `Welcome`, `RecoveryBadge` | The first screen, with its entrance (below); the lock badge on password recovery |
+
+## Screen patterns (E1.11): follow these for every new screen
+
+The look introduced with the app-shell refresh. New screens and restyles should use these pieces
+rather than inventing new ones, so the app keeps one feel.
+
+- **Lead with what matters most.** The first thing on a screen is the person's money or the thing
+  they came to do (a balance, a total, the next turn), as a hero card. Actions that need them
+  (passport, second lock, requests waiting) come right after, as tinted banners with an icon disc.
+  Everything else follows.
+- **Hero card** for any headline money figure: `className="hero-card rounded-[var(--radius-xl)] p-5 shadow-lift"`,
+  amounts as `<Amount size="l" tone="hero" />`, labels `text-on-hero-muted`, inner chips
+  `bg-[var(--hero-chip)]`, and its main action as a gold (`bg-oro text-on-oro`) button inside the card.
+  Respect the hidden-balance eye (`useHiddenBalance` / `HiddenAmount`) wherever a balance shows.
+- **Quick actions** as tiles: a 48px rounded-2xl icon square in a tint (`bg-*-tint text-*`) above a
+  12px label, four to a row, inside one raised card.
+- **Lists** as one grouped card: `divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift`,
+  each row `flex items-center gap-3 p-4 hover:bg-surface-sunken` with a 40px icon disc or `Initials`
+  on the left and a chevron on the right. Not a stack of separate shadowed cards.
+- **Section headings** `font-display text-[18px] leading-6 font-semibold`; small group labels
+  (e.g. TODAY / EARLIER) `text-[13px] font-semibold tracking-[0.04em] uppercase text-ink-muted`.
+- **Colour by meaning:** gold for money moving, leaf for good news, danger for a problem,
+  tertiary (indigo) for circles and reminders, primary for everything else. Never colour alone: a
+  word or an icon says the same.
+- **Tokens only.** No `bg-white`, `text-black` or hex in components (the QR code is the one
+  exception: scanners need black on white). Both themes come from the tokens; a scrim over the page
+  is `bg-black/50`, the same in both. Check every new screen in light and dark.
+- **Loading** looks like the thing that is coming: a pulsing block the size of the card
+  (`animate-pulse bg-surface-sunken`, or `bg-[var(--hero-chip)]` on a hero), with `role="status"` and
+  a hidden "Loading…".
+- **`cn` does not merge Tailwind classes.** To change an `Amount`'s size or colour use its `size` and
+  `tone` props, not `className`.
+- **Bottom space:** screens with the tab bar keep `pb-28` so the last row clears it.
 
 ## Motion
 
