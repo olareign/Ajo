@@ -62,6 +62,20 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.9 | Confirm email again | ✅ | ☐ | Resend after a minute, ten a day, `email_verified` boolean kept in step by the database |
 | E1.10 | Housekeeping of sessions and tokens | ✅ | | Job built and tested. Runs only where the worker is deployed |
 | E1.11 | App shell and look | 🟡 | | Built on `redesign/fintech-refresh` (stacked on phase 4): theme follows the device with an Appearance choice on Me; Today leads with the balance card (eye to hide it, Add money, Withdraw), quick tiles, then what needs the person; bottom bar with a quick-actions sheet; Wallet, Savings, Friends, Messages and Me restyled on the same cards; a loader on the pressed button wherever a screen waits. No API or behaviour change. Unit tests updated and added; checked by eye on Today in light and dark |
+| E1.12 | Fast navigation | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.13 | One request per screen | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.14 | App bar navigation | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.15 | Exact times | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.16 | Change password | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.17 | Change or reset PIN | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.18 | Devices and sessions | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.19 | Recovery codes and turning the authenticator off | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.20 | Security activity | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.21 | Tier and limits card | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.22 | Phone number | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.23 | Profile picture | ⬜ | | Needs a Cloudflare R2 bucket and keys (**You**) |
+| E1.24 | Close account | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E1.25 | Help, terms and privacy | ⬜ | | Needs the support contact and the terms and privacy texts (**You**) |
 
 ### E2. KYC
 
@@ -120,6 +134,8 @@ Nothing is real until a person is approved. For your own test account see "Testi
 | E5.7 | Nearby people | ⏸ | | **Pended** with the location step of KYC (E2.4): it needs a verified location to measure from. Says so on the Find screen; will only ever show an area name |
 | E5.8 | Group discovery | ⬜ | | Built with groups in Phase 4 (it needs E6.1) |
 | E5.9 | Invite to app | 🟡 | ☐ | Your own invite link and code, to send by **WhatsApp, text message, copy or the phone's share sheet**. The page it opens (`/join/<code>`) shows only the inviter's first name and handle, then leads to sign-up with the code carried through. Joining through it **suggests** each to the other; it never makes anyone a friend. A wrong code is ignored without a word at sign-up |
+| E5.10 | Smart invite landing | ⬜ | | Decided Oct 5; on `phase-4.5/profile-and-speed` |
+| E5.11 | Custom invite code and referrals | ⬜ | | Decided Oct 5: safe custom code, old link stops working |
 
 Nothing here works until a person is approved. For your own test accounts see "Testing payments while KYC is pended"; the friends screens are also walkable with `?preview=1` (a pretend circle in the tab).
 
