@@ -75,7 +75,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.22 | Phone number | ✅ | ☐ | Add, change or remove on Me; local numbers read by the account's country and stored in international form; one account per number; shown as **Not verified** until text-message checks are built |
 | E1.23 | Profile picture | ⬜ | | Needs a Cloudflare R2 bucket and keys (**You**) |
 | E1.24 | Close account | ✅ | ☐ | Password (and code), plus an explicit yes; refused with the reason while money, a plan, a running circle, a payment or auto-debit remains; then signs out everywhere and emails a confirmation. Records stay; the ledger is never touched |
-| E1.25 | Help, terms and privacy | ⬜ | | Needs the support contact and the terms and privacy texts (**You**) |
+| E1.25 | Help, terms and privacy | ✅ | ☐ | Built Oct 5 on `phase-4.5/profile-and-speed`: `/help` (support email with a ready subject, a never-share-your-codes warning, five quick answers), `/terms` and `/privacy` as plain-language **drafts** marked "under legal review" (flip `LEGAL.draft` in `src/lib/support.ts` once your lawyer signs them off), all open without signing in; Me gets a Help and legal group and the build number. **You:** a phone/WhatsApp contact later, and the lawyer's review |
 
 ### E2. KYC
 

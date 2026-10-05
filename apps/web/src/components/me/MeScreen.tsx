@@ -5,6 +5,9 @@ import {
   BellRing,
   BookUser,
   ChevronRight,
+  FileText,
+  LifeBuoy,
+  Lock,
   History,
   KeyRound,
   Mail,
@@ -238,6 +241,17 @@ function Account({ me }: Readonly<{ me: Me }>) {
           </div>
         </section>
 
+        <section aria-labelledby="help" className="grid grid-cols-1 gap-3">
+          <h2 id="help" className="font-display text-[18px] leading-6 font-semibold">
+            Help and legal
+          </h2>
+          <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+            <Row href="/help" label="Help and support" Icon={LifeBuoy} />
+            <Row href="/terms" label="Terms of use" Icon={FileText} />
+            <Row href="/privacy" label="Privacy notice" Icon={Lock} />
+          </div>
+        </section>
+
         <section aria-label="Sign out" className="grid grid-cols-1 gap-3">
           <div className="grid grid-cols-1 gap-3">
             <Button
@@ -304,6 +318,9 @@ function Account({ me }: Readonly<{ me: Me }>) {
         >
           Close account
         </Link>
+        <p className="-mt-6 text-center text-[12px] text-ink-muted">
+          Àjọ · build {process.env.NEXT_PUBLIC_APP_BUILD ?? "local"}
+        </p>
       </div>
     </main>
   );
