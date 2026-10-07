@@ -7,7 +7,9 @@ self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim(
 
 /** Only a path inside the app is ever opened. */
 const safeLink = (link) =>
-  typeof link === "string" && link.startsWith("/") && !link.startsWith("//") ? link : "/notifications";
+  typeof link === "string" && link.startsWith("/") && !link.startsWith("//")
+    ? link
+    : "/notifications";
 
 self.addEventListener("push", (event) => {
   let data = {};

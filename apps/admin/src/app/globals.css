@@ -1,0 +1,465 @@
+@import "tailwindcss";
+
+/*
+ * Àjọ design system. Green and white lead; the original indigo is kept as the tertiary accent;
+ * gold (aṣọ-òkè) is reserved for money. Values mirror the system's tokens.json; change them there
+ * first. Contrast is checked for every text pair (4.5:1 text, 3:1 lines and focus).
+ *
+ * Light and dark follow the device until the person picks one on Me (Appearance); the choice is
+ * stored on that device and set as data-theme="light" | "dark" on <html> before the first paint.
+ */
+:root {
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f3f5f7;
+  --line: #e2e6ea;
+  --line-strong: #7c8794;
+  --ink: #0f1f17;
+  --ink-muted: #4a5750;
+  --primary: #057a3f;
+  --primary-deep: #035e30;
+  --primary-tint: #e3f5eb;
+  --on-primary: #ffffff;
+  --tertiary: #222f78;
+  --tertiary-tint: #e8eaf8;
+  --on-tertiary: #ffffff;
+  --oro: #d99a1e;
+  --oro-tint: #fbefd2;
+  --on-oro: #1c1405;
+  --oro-ink: #7a5306;
+  --leaf: #1d7346;
+  --leaf-tint: #dff2e6;
+  --danger: #b3361d;
+  --danger-tint: #fbe5df;
+  --focus: #2f4ad6;
+  --shadow-lift: 0 1px 2px rgba(15, 31, 23, 0.06), 0 8px 24px rgba(15, 31, 23, 0.08);
+  /* The balance card: deep green to near-black green, white text (7:1 or better across it). */
+  --hero-from: #06703a;
+  --hero-to: #023019;
+  --on-hero: #ffffff;
+  --on-hero-muted: rgba(255, 255, 255, 0.78);
+  --hero-chip: rgba(255, 255, 255, 0.14);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --surface: #0a1410;
+  --surface-raised: #101c16;
+  --surface-sunken: #070f0b;
+  --line: #22342a;
+  --line-strong: #6f8b7b;
+  --ink: #edf6f0;
+  --ink-muted: #a3b5aa;
+  --primary: #4ccb84;
+  --primary-deep: #7fe0a8;
+  --primary-tint: #12301f;
+  --on-primary: #03140a;
+  --tertiary: #9aa7f5;
+  --tertiary-tint: #1c2250;
+  --on-tertiary: #0d1130;
+  --oro: #f2bb4c;
+  --oro-tint: #3a2c0e;
+  --on-oro: #1c1405;
+  --oro-ink: #f2bb4c;
+  --leaf: #62cf92;
+  --leaf-tint: #10301f;
+  --danger: #ff8f73;
+  --danger-tint: #3d1710;
+  --focus: #f2bb4c;
+  --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --hero-from: #0b5a31;
+  --hero-to: #04170d;
+  --on-hero: #ffffff;
+  --on-hero-muted: rgba(255, 255, 255, 0.75);
+  --hero-chip: rgba(255, 255, 255, 0.12);
+  color-scheme: dark;
+}
+
+/* No choice made: follow the device. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #0a1410;
+    --surface-raised: #101c16;
+    --surface-sunken: #070f0b;
+    --line: #22342a;
+    --line-strong: #6f8b7b;
+    --ink: #edf6f0;
+    --ink-muted: #a3b5aa;
+    --primary: #4ccb84;
+    --primary-deep: #7fe0a8;
+    --primary-tint: #12301f;
+    --on-primary: #03140a;
+    --tertiary: #9aa7f5;
+    --tertiary-tint: #1c2250;
+    --on-tertiary: #0d1130;
+    --oro: #f2bb4c;
+    --oro-tint: #3a2c0e;
+    --on-oro: #1c1405;
+    --oro-ink: #f2bb4c;
+    --leaf: #62cf92;
+    --leaf-tint: #10301f;
+    --danger: #ff8f73;
+    --danger-tint: #3d1710;
+    --focus: #f2bb4c;
+    --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
+    --hero-from: #0b5a31;
+    --hero-to: #04170d;
+    --on-hero: #ffffff;
+    --on-hero-muted: rgba(255, 255, 255, 0.75);
+    --hero-chip: rgba(255, 255, 255, 0.12);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --font-display: "Bricolage Grotesque Variable", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Menlo, monospace;
+
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-tint: var(--primary-tint);
+  --color-on-primary: var(--on-primary);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-tint: var(--tertiary-tint);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-oro: var(--oro);
+  --color-oro-tint: var(--oro-tint);
+  --color-on-oro: var(--on-oro);
+  --color-oro-ink: var(--oro-ink);
+  --color-leaf: var(--leaf);
+  --color-leaf-tint: var(--leaf-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-focus: var(--focus);
+  --shadow-lift: var(--shadow-lift);
+  --color-on-hero: var(--on-hero);
+  --color-on-hero-muted: var(--on-hero-muted);
+
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 20px;
+  --radius-xl: 28px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+/* One visible focus ring everywhere (3:1 or more on every surface, both themes). */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * The welcome entrance, about two seconds in total:
+ *   0.0s  the circle rolls in from the side like a wheel and settles (its beads turn with it)
+ *   0.5s  the logo fades up
+ *   1.0s  the coin drops into the piggy bank, the logo gives a small bounce, the sparkles twinkle
+ *   1.1s  the tagline and the buttons rise in
+ * Only transform and opacity move, so it stays smooth on a small phone.
+ */
+@keyframes ring-slide {
+  from {
+    transform: translateX(-85vw);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes ring-spin {
+  from {
+    transform: rotate(-630deg);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes coin-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-120px) rotate(-18deg);
+  }
+  20% {
+    opacity: 1;
+  }
+  62% {
+    transform: translateY(6px) rotate(4deg);
+  }
+  80% {
+    transform: translateY(-3px) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes logo-bounce {
+  0%,
+  100% {
+    transform: none;
+  }
+  45% {
+    transform: scale(1.035, 0.97);
+  }
+  70% {
+    transform: scale(0.99, 1.01);
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The "how it works" scenes and the handle step. Only transform and opacity move. */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  0%,
+  100% {
+    transform: none;
+  }
+  40% {
+    transform: scale(1.04);
+  }
+}
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ring-roll {
+  animation: ring-slide 1.1s cubic-bezier(0.22, 0.9, 0.25, 1) both;
+}
+.ring-roll .ring-wheel {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+  animation: ring-spin 1.1s cubic-bezier(0.22, 0.9, 0.25, 1) both;
+}
+.ring-roll text[aria-hidden],
+.ring-roll g[aria-hidden] {
+  animation: fade-in 0.4s ease-out 0.9s both;
+}
+.motion-rise {
+  animation: rise 0.55s ease-out var(--rise-delay, 0ms) both;
+}
+.scene-coin {
+  animation: coin-drop 0.7s cubic-bezier(0.3, 0.1, 0.4, 1) both;
+}
+.pop-in {
+  animation: pop-in 0.6s cubic-bezier(0.3, 0.1, 0.4, 1) var(--pop-delay, 0ms) both;
+}
+.pop {
+  animation: pop 0.5s ease-out both;
+}
+.slide-from-right {
+  animation: slide-from-right 0.35s ease-out both;
+}
+.slide-from-left {
+  animation: slide-from-left 0.35s ease-out both;
+}
+/* The passport stamp: pressed down with a thunk, and a gentle wait while it is being checked. */
+@keyframes stamp-thunk {
+  0% {
+    opacity: 0;
+    transform: scale(1.9) rotate(calc(var(--tilt, 0deg) - 16deg));
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.93) rotate(var(--tilt, 0deg));
+  }
+  78% {
+    transform: scale(1.04) rotate(var(--tilt, 0deg));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(var(--tilt, 0deg));
+  }
+}
+@keyframes stamp-wait {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.stamp-thunk {
+  animation: stamp-thunk 0.7s cubic-bezier(0.3, 0.1, 0.4, 1) both;
+}
+.stamp-wait {
+  animation: stamp-wait 2.2s ease-in-out infinite;
+}
+.logo-pop {
+  animation:
+    fade-in 0.5s ease-out 0.5s both,
+    logo-bounce 0.5s ease-out 1.55s both;
+}
+.logo-coin {
+  animation: coin-drop 0.7s cubic-bezier(0.3, 0.1, 0.4, 1) 1s both;
+}
+.logo-rays {
+  animation:
+    fade-in 0.3s ease-out 1.65s both,
+    twinkle 0.8s ease-in-out 1.95s 2;
+}
+
+/* Reduced motion: no movement at all, everything is simply there. */
+@media (prefers-reduced-motion: reduce) {
+  .ring-roll,
+  .ring-roll .ring-wheel,
+  .ring-roll text[aria-hidden],
+  .ring-roll g[aria-hidden],
+  .motion-rise,
+  .scene-coin,
+  .pop-in,
+  .pop,
+  .slide-from-right,
+  .slide-from-left,
+  .logo-pop,
+  .logo-coin,
+  .logo-rays,
+  .stamp-thunk,
+  .stamp-wait {
+    animation: none !important;
+  }
+}
+
+/* The saving pot: the surface of the savings ripples slowly, and a coin falls in when a debit lands. */
+@keyframes pot-wave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-60px);
+  }
+}
+@keyframes pot-coin {
+  0% {
+    transform: translateY(-34px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+.pot-wave {
+  animation: pot-wave 5s linear infinite;
+}
+.pot-coin {
+  animation: pot-coin 1.1s ease-in both;
+}
+
+/* The money hero: one gradient used by the wallet and savings totals. */
+.hero-card {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(217, 154, 30, 0.28) 0%, transparent 55%),
+    linear-gradient(145deg, var(--hero-from), var(--hero-to));
+  color: var(--on-hero);
+}
+
+/* A button's loader: a ring that turns; reduced motion keeps it still (the label still says busy). */
+@keyframes spin-once {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  animation: spin-once 0.8s linear infinite;
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.sheet-rise {
+  animation: sheet-rise 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}

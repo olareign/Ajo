@@ -140,16 +140,59 @@ Nothing is real until a person is approved. For your own test account see "Testi
 
 Nothing here works until a person is approved. For your own test accounts see "Testing payments while KYC is pended"; the friends screens are also walkable with `?preview=1` (a pretend circle in the tab).
 
+### E6. Èsúsú circles (Phase 4, merged)
+
+| ID | Feature | Mark | Hand test | Note |
+| --- | --- | --- | --- | --- |
+| E6.1 | Create circle | 🟡 | ☐ | A wizard that shows every round, the pot and the deposits before anything is saved; one circle however many times the same request is sent; five at once at most per person |
+| E6.2 | Invite and join | 🟡 | ☐ | By code, from a friend's share or from discovery (friends first); needs auto-debit and money for the deposit, refuses a recent defaulter or anyone blocked either way |
+| E6.3 | Circle page | 🟡 | ☐ | Rules, members with trust badges, places left; a private circle is hidden from anyone not in it |
+| E6.4 | Fill and lock | 🟡 | ☐ | Never takes more people than there are places, however many join at once; a circle that has not filled by its first round is called off and every deposit returned |
+| E6.5 | Random draw | 🟡 | ☐ | Drawn once; the seed and the result are logged for everyone to see, and the same seed gives the same order |
+| E6.6 | Finger pick | 🟡 | ☐ | Opens for everyone at once with a deadline; one turn each, even when everyone reaches for the same one; whoever has not picked gets a turn at the close |
+| E6.7 | Join order | 🟡 | ☐ | Turns by the order of joining |
+| E6.8 | Early-turn rule | 🟡 | ☐ | Trusted members take an early turn with no extra deposit; an untrusted one locks a larger deposit, or the turn goes to the first later member who can |
+| E6.9 | Round collection | 🟡 | ☐ | Each member's contribution from their wallet into the round's pot on its day, once however many sweeps race; who has paid shows on the circle |
+| E6.10 | Payout | 🟡 | ☐ | The pot to whoever's turn it is; the fee (a setting, 0 for now) is kept apart as the platform's |
+| E6.11 | Completion | 🟡 | ☐ | After the last round every deposit comes back, a finished circle goes on each record that did not miss, and the books are even |
+| E6.12 | Leave before it fills | 🟡 | ☐ | Deposit back once, place freed, the maker told; the maker can call it off while open |
+| E6.13 | Swap turns | 🟡 | ☐ | Two members agree before round 1; no after |
+
+### E7. Trust and defaults (Phase 4, merged)
+
+| ID | Feature | Mark | Hand test | Note |
+| --- | --- | --- | --- | --- |
+| E7.1 | Trust events | 🟡 | ☐ | On-time, late and missed payments and finished circles recorded |
+| E7.2 | Trust score and badge | 🟡 | ☐ | New, Building trust, Trusted (eight on-time payments); on Me, friends and circle members; one missed payment holds a record back from Trusted |
+| E7.3 | Grace and retries | 🟡 | ☐ | A short wallet is told the day before (email too), tried again each day for the grace days, then taken late once money arrives |
+| E7.4 | Deposit covers a default | 🟡 | ☐ | After the grace days the deposit pays the pot so the round pays out in full; the circle still finishes |
+| E7.5 | Late charge and block | 🟡 | ☐ | The late charge (a setting, 0 for now) comes out of what is left of the deposit, never more; the defaulter cannot join or start a circle for a while |
+| E7.6 | Recovery case | 🟡 | ☐ | A case opens with the amount owed and what the deposit covered; **Oct 7:** staff read it, with the member's contact and identity standing, in the admin console (E9.4) |
+
+### E9. Admin console (Oct 7, `phase-6/admin-back-office`)
+
+A separate app (`apps/admin`) on its own address, with its own sign-in. How to set it up: `docs/admin-console.md`.
+
+| ID | Feature | Mark | Hand test | Note |
+| --- | --- | --- | --- | --- |
+| E9.1 | Admin login and roles | ✅ | ☐ | Staff are a separate table with their own sessions: a customer's token opens nothing here, a staff token nothing for customers. Joining by a one-time setup code (a day, cancelled after ten wrong tries), a 14+ character breach-checked password and an authenticator app that must prove itself; sign-in is password and code together every time, the same answer whatever was wrong, a code works once, five misses lock for 15 minutes, 30 minutes idle and 8 hours at most, three sessions at most. Four roles: owner, support, compliance, finance |
+| E9.2 | Identity review | 🟡 | ☐ | The queue of waiting steps, decide one once with a reason, and approve or hold one person by hand (replaces `pnpm kyc:override`, with a record). **No documents to open yet:** identity checks are not connected to a partner, so there is nothing stored; signed links wait for that |
+| E9.3 | People lookup | ✅ | ☐ | Search by whole email or the start of a username; standing, money held, what is going on, recent security events; suspend (every session ends at once, money untouched, nobody told) and reinstate |
+| E9.4 | Recovery cases | ✅ | ☐ | Open, resolved and written-off cases with the member's details; notes by name; an outcome recorded once. It moves no money |
+| E9.5 | Reconciliation | ⬜ | | Waits for the daily reconciliation job (E3.7) |
+| E9.6 | Reports | ⬜ | | Second step, after the core |
+| E9.7 | Audit log | ✅ | ☐ | Every look and every change, refusals too; the database itself refuses to update, delete or empty it; readable by compliance and the owner, and reading it is logged too |
+
 ## Phases 2 to 6
 
 | Phase | Epics | Mark |
 | --- | --- | --- |
 | 2 Solo savings | E4 (with E8.1 to E8.3) | 🟡 Built Oct 4, waiting for your hand test |
 | 3 Friends and discovery | E5 | 🟡 Built Oct 4 (phone search, contacts and nearby pended), waiting for your hand test |
-| 4 Èsúsú groups | E6, E7 | ⬜ |
+| 4 Èsúsú groups | E6, E7 | 🟡 Built and merged, waiting for your hand test (E7.6's staff screen is E9.4) |
 | 5 Launch readiness | E10 | ⬜ |
 | 6 Mobile and new countries | React Native | ⬜ |
-| Alongside | E8 notifications: **service, reminders and the in-app messages screen built (Oct 4); web push built (Oct 7, needs your VAPID keys)**; SMS is ⬜ until you pick a provider. E9 admin: ⬜. E11 multi-currency: ledger and wallet screens hold several currencies (🟡); the rest ⬜ | |
+| Alongside | E8 notifications: **service, reminders and the in-app messages screen built (Oct 4); web push built (Oct 7, needs your VAPID keys)**; SMS is ⬜ until you pick a provider. E9 admin: **core built Oct 7** (login and roles, people, identity, cases, audit log); reconciliation and reports ⬜. E11 multi-currency: ledger and wallet screens hold several currencies (🟡); the rest ⬜ | |
 
 ## Defects found in review
 
