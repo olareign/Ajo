@@ -3,6 +3,7 @@
 import {
   BadgeCheck,
   BellRing,
+  Camera,
   BookUser,
   ChevronRight,
   FileText,
@@ -24,7 +25,7 @@ import { postJson } from "@/components/auth/post-json";
 import { InstallRow } from "@/components/install/InstallRow";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { Avatar } from "@/components/ui/Avatar";
+import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { Button } from "@/components/ui/Button";
 import { AppearancePicker } from "./AppearancePicker";
 import { TierCard } from "./TierCard";
@@ -45,7 +46,18 @@ function MemberCard({ me }: Readonly<{ me: Me }>) {
         className="pointer-events-none absolute inset-2 rounded-[calc(var(--radius-xl)-8px)] border-[1.5px] border-dashed border-primary/30"
       />
       <div className="flex items-center gap-4">
-        <Avatar size={64} />
+        <Link
+          href="/me/photo"
+          aria-label="Change your profile picture"
+          className="shrink-0 rounded-full"
+        >
+          <PersonPhoto
+            username={me.username}
+            version={me.photoVersion}
+            name={me.displayName}
+            size={64}
+          />
+        </Link>
         <div className="grid min-w-0 gap-0.5">
           <p className="text-[11px] font-semibold tracking-[0.08em] text-tertiary">ÀJỌ MEMBER</p>
           {me.username && (
@@ -146,7 +158,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
-      <ScreenHeader title="Me" subtitle="Your account, and how it is kept safe." />
+      <ScreenHeader tab title="Me" subtitle="Your account, and how it is kept safe." />
       <div className="grid grid-cols-1 gap-8">
         <MemberCard me={me} />
 
@@ -159,6 +171,12 @@ function Account({ me }: Readonly<{ me: Me }>) {
             Account
           </h2>
           <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+            <Row
+              href="/me/photo"
+              label="Profile picture"
+              Icon={Camera}
+              value={me.photoVersion != null ? "Change" : "Add"}
+            />
             <Row
               href="/me/phone"
               label="Phone number"

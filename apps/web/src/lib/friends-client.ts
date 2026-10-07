@@ -12,6 +12,8 @@ export type Person = Readonly<{
   /** 1 passport stamped; 2 with a national check too. */
   tier: 1 | 2;
   trust: Trust;
+  /** When their picture was last set, only for people you are connected to (null = none or not shown). */
+  photoVersion?: number | null;
 }>;
 
 export type Suggestion = Person &
@@ -23,12 +25,14 @@ export type Friend = Readonly<{
   since: string;
   tier: 1 | 2;
   trust: Trust;
+  photoVersion?: number | null;
 }>;
 export type FriendRequest = Readonly<{
   username: string;
   displayName: string;
   sentAt: string;
   tier: 1 | 2;
+  photoVersion?: number | null;
 }>;
 export type Requests = Readonly<{
   incoming: readonly FriendRequest[];

@@ -97,6 +97,7 @@ export function SavingsHome() {
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       {preview && <PreviewRibbon exitHref="/save" />}
       <ScreenHeader
+        tab
         title="Savings"
         subtitle="Little by little, the pot fills."
         backHref={preview ? href("/today") : undefined}

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { Avatar } from "@/components/ui/Avatar";
+import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { Button } from "@/components/ui/Button";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { FlowLocked } from "@/components/wallet/FlowLocked";
@@ -69,7 +69,7 @@ export function RequestsScreen() {
       key={r.username}
       className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-3 shadow-lift"
     >
-      <Avatar size={44} />
+      <PersonPhoto username={r.username} version={r.photoVersion} name={r.displayName} />
       <span className="grid min-w-0 gap-0.5">
         <span className="truncate text-[16px] leading-5 font-semibold">{r.displayName}</span>
         <span className="truncate text-[13px] text-ink-muted">@{r.username}</span>

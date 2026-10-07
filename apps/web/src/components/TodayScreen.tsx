@@ -1,13 +1,15 @@
 "use client";
 
 import {
-  Bell,
   BookUser,
   ChevronRight,
+  Gauge,
+  Headset,
   Landmark,
   Orbit,
   PiggyBank,
   ShieldAlert,
+  UserPlus,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { InstallCard } from "@/components/install/InstallCard";
 import { MeGate, type Me } from "@/components/onboarding/MeGate";
-import { Avatar } from "@/components/ui/Avatar";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { TodayFriends, type FriendsGlance } from "@/components/friends/TodayFriends";
 import { TodayCircles } from "@/components/circles/TodayCircles";
 import { TodaySavings } from "@/components/savings/TodaySavings";
@@ -72,6 +74,7 @@ function Today({ me }: Readonly<{ me: Me }>) {
       if (result.status === "failed") return setData((was) => was ?? NOTHING);
       const next = readToday(result.data);
       remember("screen:today", next);
+      remember("unread", next.unread);
       setData(next);
     })();
     return () => {
@@ -79,41 +82,14 @@ function Today({ me }: Readonly<{ me: Me }>) {
     };
   }, [router]);
 
-  const unread = data?.unread ?? 0;
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
-      <header className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href="/me"
-            aria-label="Me"
-            className="grid size-11 shrink-0 place-items-center rounded-full"
-          >
-            <Avatar size={44} />
-          </Link>
-          <div className="grid min-w-0">
-            <TimeOfDay />
-            <h1 className="truncate font-display text-[22px] leading-7 font-bold tracking-[-0.01em]">
-              Hello, {me.displayName}
-            </h1>
-          </div>
-        </div>
-        <Link
-          href="/notifications"
-          aria-label={unread > 0 ? `Messages, ${unread} unread` : "Messages"}
-          className="relative grid size-11 shrink-0 place-items-center rounded-full bg-surface-sunken text-ink"
-        >
-          <Bell aria-hidden className="size-[22px]" />
-          {unread > 0 && (
-            <span
-              aria-hidden
-              className="absolute -top-0.5 -right-0.5 grid min-w-[20px] place-items-center rounded-full border-2 border-surface bg-oro px-1 text-[11px] leading-4 font-bold text-on-oro"
-            >
-              {unread > 9 ? "9+" : unread}
-            </span>
-          )}
-        </Link>
-      </header>
+      <ScreenHeader
+        tab
+        title={`Hello, ${me.displayName}`}
+        eyebrow={<TimeOfDay />}
+        unread={data ? data.unread : null}
+      />
       <WalletSummary wallets={data?.wallets} currency={countryConfig(me.country)?.currency} />
       <QuickActions />
       {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
@@ -166,22 +142,26 @@ const TILES = [
   { href: "/save", label: "Save", Icon: PiggyBank, tone: "bg-leaf-tint text-leaf" },
   { href: "/circles", label: "Circles", Icon: Orbit, tone: "bg-tertiary-tint text-tertiary" },
   { href: "/friends", label: "Friends", Icon: Users, tone: "bg-primary-tint text-primary" },
+  { href: "/friends/invite", label: "Invite", Icon: UserPlus, tone: "bg-oro-tint text-oro-ink" },
   {
     href: "/wallet/mandate",
     label: "Auto-debit",
     Icon: Landmark,
     tone: "bg-oro-tint text-oro-ink",
   },
+  { href: "/wallet/limits", label: "Limits", Icon: Gauge, tone: "bg-primary-tint text-primary" },
+  { href: "/verify", label: "Identity", Icon: BookUser, tone: "bg-tertiary-tint text-tertiary" },
+  { href: "/help", label: "Help", Icon: Headset, tone: "bg-leaf-tint text-leaf" },
 ] as const;
 
-/** The four places people go most after their balance, one tap each. */
+/** Where people go most after their balance, one tap each, in two rows of four. */
 function QuickActions() {
   return (
     <nav
       aria-label="Quick actions"
       className="mt-4 rounded-[var(--radius-l)] bg-surface-raised p-3 shadow-lift"
     >
-      <ul className="grid grid-cols-4 gap-1">
+      <ul className="grid grid-cols-4 gap-x-1 gap-y-2">
         {TILES.map(({ href, label, Icon, tone }) => (
           <li key={href}>
             <Link

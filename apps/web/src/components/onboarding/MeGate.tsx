@@ -22,6 +22,10 @@ export type Me = Readonly<{
   /** International form; not verified until SMS checks arrive. */
   phone?: string | null;
   phoneVerified?: boolean;
+  /** When the profile picture was last set, in milliseconds (null = none). */
+  photoVersion?: number | null;
+  /** False until picture storage is switched on. */
+  photosEnabled?: boolean;
   /** Standing in circles, as other members see it. */
   trust?: Readonly<{ level: "new" | "building" | "trusted"; score: number }>;
 }>;

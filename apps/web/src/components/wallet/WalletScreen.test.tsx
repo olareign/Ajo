@@ -144,7 +144,10 @@ describe("WalletScreen", () => {
     });
     render(<WalletScreen />);
     await screen.findByText("No activity yet.");
-    expect(fetchMock.mock.calls.map(([u]) => u)).toEqual(["/api/me", "/api/screens/wallet"]);
+    // The screen's own data is one request; the bell in the top bar asks for its count, once per visit.
+    expect(
+      fetchMock.mock.calls.map(([u]) => u).filter((u) => u !== "/api/notifications?limit=1"),
+    ).toEqual(["/api/me", "/api/screens/wallet"]);
   });
 
   it("says so when it cannot load, and tries again when asked", async () => {

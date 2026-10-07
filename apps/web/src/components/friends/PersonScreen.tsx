@@ -4,7 +4,7 @@ import { Ban, Flag, UserMinus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { Avatar } from "@/components/ui/Avatar";
+import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
@@ -116,7 +116,12 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
         aria-label="About"
         className="grid justify-items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
       >
-        <Avatar size={96} />
+        <PersonPhoto
+          username={shown.username}
+          version={shown.photoVersion}
+          name={shown.displayName}
+          size={96}
+        />
         <div className="grid gap-1">
           <p className="text-[15px] text-ink-muted">@{shown.username}</p>
           <div className="flex flex-wrap justify-center gap-2">

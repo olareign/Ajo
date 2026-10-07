@@ -8,7 +8,7 @@ import { CircleRing } from "@/components/CircleRing";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { Initials } from "@/components/ui/Initials";
+import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { FlowLocked } from "@/components/wallet/FlowLocked";
@@ -199,7 +199,12 @@ export function FriendsHome() {
                       href={href(`/friends/${f.username}`)}
                       className="flex items-center gap-3 p-3 hover:bg-surface-sunken"
                     >
-                      <Initials name={f.displayName} />
+                      <PersonPhoto
+                        username={f.username}
+                        version={f.photoVersion}
+                        name={f.displayName}
+                        standIn="initials"
+                      />
                       <span className="grid min-w-0 gap-0.5">
                         <span className="truncate text-[16px] leading-5 font-semibold">
                           {f.displayName}

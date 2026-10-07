@@ -69,6 +69,7 @@ export function CirclesHome() {
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
+        tab
         title="Circles"
         subtitle="Save together, one turn at a time."
         backHref={preview ? href("/today") : undefined}
