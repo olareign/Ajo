@@ -100,7 +100,7 @@ function Wallets() {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
-      <ScreenHeader title="Wallet" subtitle="Your money, and where it sits." backHref="/today" />
+      <ScreenHeader tab title="Wallet" subtitle="Your money, and where it sits." />
       {state.phase === "loading" && (
         <div role="status" className="grid gap-4">
           <span className="sr-only">Loading…</span>

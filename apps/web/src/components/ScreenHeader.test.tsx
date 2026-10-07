@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { remember } from "@/lib/visit-cache";
 import { ScreenHeader } from "./ScreenHeader";
 
 describe("ScreenHeader", () => {
@@ -45,12 +46,27 @@ describe("ScreenHeader", () => {
     expect(bar).not.toContainElement(heading);
   });
 
-  it("gives tab screens a large title and no back arrow", () => {
+  it("gives set-up and sign-in screens a large title, with no bar and no back arrow", () => {
     render(<ScreenHeader title="Savings" />);
     expect(screen.queryByRole("link", { name: "Back" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Support" })).toBeNull();
     expect(
       screen.getByRole("heading", { level: 1, name: "Savings" }).closest("[data-app-bar]"),
     ).toBeNull();
+  });
+
+  it("gives signed-in tab screens the top bar, but inner screens keep their back bar", () => {
+    remember("me", { displayName: "Ada", email: "a@b.c", onboarded: true });
+    remember("unread", 0);
+    const tab = render(<ScreenHeader tab title="Savings" />);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Savings" }).closest("[data-app-bar]"),
+    ).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Support" })).toBeInTheDocument();
+    tab.unmount();
+    render(<ScreenHeader tab title="Savings" backHref="/today" />);
+    expect(screen.getByRole("link", { name: "Back" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Support" })).toBeNull();
   });
 
   it("takes a soft edge once the page scrolls", async () => {

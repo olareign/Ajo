@@ -3,16 +3,24 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
+import { TopBar } from "./TopBar";
 
 type Props = Readonly<{
   title: string;
-  eyebrow?: string;
+  eyebrow?: ReactNode;
   /** One calm line under the title saying what this screen is for. */
   subtitle?: string;
   onBack?: () => void;
   backHref?: string;
   /** An optional control on the right of the app bar (inner screens only). */
   action?: ReactNode;
+  /**
+   * A signed-in tab screen (Today, Save, Circles, Wallet, Me): the bar with your picture, support and
+   * messages. Without it (sign-in, set-up) the title stands large on the page.
+   */
+  tab?: boolean;
+  /** Tab screens: the unread count, when the screen already has it (saves asking). */
+  unread?: number | null;
 }>;
 
 /** Titles longer than this read as a question for the person and stay large below the bar. */
@@ -26,17 +34,34 @@ const backClass =
  * title centred, an optional action on the right) that takes a soft shadow once the page scrolls.
  * It sits just under the preview ribbon when there is one.
  */
-export function ScreenHeader({ title, eyebrow, subtitle, onBack, backHref, action }: Props) {
+export function ScreenHeader({
+  title,
+  eyebrow,
+  subtitle,
+  onBack,
+  backHref,
+  action,
+  tab,
+  unread,
+}: Props) {
   const inner = Boolean(onBack || backHref);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    if (!inner) return;
     const onScroll = () => setScrolled(window.scrollY > 4);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [inner]);
+  }, []);
+
+  if (!inner && tab) {
+    return (
+      <header className="mb-5">
+        <TopBar title={title} eyebrow={eyebrow} unread={unread} scrolled={scrolled} />
+        {subtitle && <p className="mt-3 text-[15px] leading-6 text-ink-muted">{subtitle}</p>}
+      </header>
+    );
+  }
 
   if (!inner) {
     return (
@@ -81,7 +106,7 @@ export function ScreenHeader({ title, eyebrow, subtitle, onBack, backHref, actio
         )}
         <div className="grid justify-items-end">{action}</div>
       </div>
-      {eyebrow && (
+      {typeof eyebrow === "string" && eyebrow && (
         <p className="mt-4 text-[13px] font-semibold tracking-[0.01em] text-tertiary">{eyebrow}</p>
       )}
       {!inBar && (

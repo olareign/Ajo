@@ -3,7 +3,7 @@
 import { Check, Clock, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { Initials } from "@/components/ui/Initials";
+import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { Button } from "@/components/ui/Button";
 import type { Failure } from "@/lib/api-send";
@@ -12,7 +12,7 @@ import { useFriends } from "./FriendsFlow";
 import { TierBadge } from "./FriendsFlow";
 
 type Props = Readonly<{
-  person: Pick<Person, "username" | "displayName" | "tier"> & {
+  person: Pick<Person, "username" | "displayName" | "tier" | "photoVersion"> & {
     relation?: Relation;
     mutualFriends?: number;
     trust?: Person["trust"];
@@ -48,7 +48,12 @@ export function PersonRow({ person, href, note, onRelation, onFail }: Props) {
   return (
     <li className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-3 shadow-lift">
       <Link href={href} className="flex min-w-0 grow items-center gap-3">
-        <Initials name={person.displayName} />
+        <PersonPhoto
+          username={person.username}
+          version={person.photoVersion}
+          name={person.displayName}
+          standIn="initials"
+        />
         <span className="grid min-w-0 gap-0.5">
           <span className="truncate text-[16px] leading-5 font-semibold">{person.displayName}</span>
           <span className="truncate text-[13px] text-ink-muted">@{person.username}</span>

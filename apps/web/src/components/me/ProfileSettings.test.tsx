@@ -116,6 +116,18 @@ describe("Me: tier, account rows and closing", () => {
   });
 });
 
+it("leads to help, terms and privacy, and shows which build is running", async () => {
+  api({});
+  render(<MeScreen />);
+  expect(await screen.findByRole("link", { name: /Help and support/ })).toHaveAttribute(
+    "href",
+    "/help",
+  );
+  expect(screen.getByRole("link", { name: /Terms of use/ })).toHaveAttribute("href", "/terms");
+  expect(screen.getByRole("link", { name: /Privacy notice/ })).toHaveAttribute("href", "/privacy");
+  expect(screen.getByText(/Àjọ · build/)).toBeInTheDocument();
+});
+
 describe("the phone number screen", () => {
   it("saves the number and shows it the way it was stored, not verified", async () => {
     let stored: string | null = null;

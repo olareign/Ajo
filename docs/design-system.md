@@ -33,7 +33,8 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `Button` | `primary`, `money` (gold, for moving money), `quiet`, `danger`; 44 or 56px; `block` for full width. `loading={busy}` on every button whose press waits on the server: no second press, and the pressed button alone shows the `Spinner` and `aria-busy` (screens that share one busy flag pass it to all their buttons) |
 | `TextField` | Soft filled field that takes an outline when focused; hint below, error replaces the hint; password fields get a show/hide eye |
 | `ChoiceChips` | Accessible radio group with arrow-key support |
-| `ScreenHeader` | Round filled back button, optional small label, a 28px heading in ink and one calm subtitle. Tab screens (Today, Save, Circles, Me) have no back button; a preview keeps it so it stays a preview |
+| `ScreenHeader` | Inner screens: a slim app bar, back on the left and the title centred. **Tab screens** (Today, Save, Circles, Wallet, Me) pass `tab` and get the `TopBar` (Opay style): your picture (opens Me), the title as the page heading, Support and the bell with its unread count, pinned while the page scrolls. Without `tab` (sign-in, set-up) the title stands large on the page. A preview passes `backHref`, so it stays an inner screen |
+| `TopBar`, `PersonPhoto` | The bar above, and a person's picture in a circle (private, served by our own `/api/photo/<username>?v=<version>`), falling back to the head-and-shoulders bead or initials. Use `PersonPhoto` wherever a person is drawn; never an `<img>` by hand |
 | `AuthScreen` | The frame every sign-in screen shares: full height, content on top, footer line at the bottom, a corner of beads |
 | `OptionCards` | Big tappable single-choice cards for onboarding questions: a title, one calm line, a tick when chosen |
 | `HowItWorks` | Three swipeable scenes shown to a brand-new person before any question: a savings goal filling stitch by stitch with a coin landing each week (solo), the circle of photos with the gold ring travelling from person to person (èsúsú), a shield and three reasons rising in (trust). Pictures are for the eye (hidden from screen readers) and every message is also in words; they hold still when the device asks for less motion; skippable; the buttons stay pinned to the bottom on a short phone |
@@ -42,7 +43,7 @@ Every text pair is checked at 4.5:1 or better and every line or focus ring at 3:
 | `Keypad`, `PinPad`, `CodeBoxes` | Number pad; PIN pad (digits shown as dots); one-time code boxes (digits shown) |
 | `CircleRing` | The group as beads in spot order; member photos when available, initials otherwise; status by ring style as well as colour |
 | `Amount`, `StatusPill`, `Stitches`, `Receipt` | Money from integer minor units; paid / pending / late / covered / your turn; progress as stitches; the payment receipt |
-| `TabBar`, `AppNav` | Home, Save, Circles, Me with the gold + in the centre, which opens the quick-actions sheet (add money, withdraw, start a savings plan, start a circle, invite a friend). `AppNav` (in the root layout) shows it only on the top screen of a section (`HOMES` in `AppNav.tsx`); flows keep the whole screen |
+| `TabBar`, `AppNav` | Five equal tabs, Opay style: Home, Save, Circles, Wallet, Me. There is no raised button or sheet; the things it used to hold are tiles on Today. `AppNav` (in the root layout) shows it only on the top screen of a section (`HOMES` in `AppNav.tsx`); flows keep the whole screen |
 | `WalletSummary`, `BalanceCard`, `BalanceEye` | The money hero: `hero-card` gradient, `Amount` with `size="l" tone="hero"`, the eye that hides every balance (`useHiddenBalance`, remembered on the device) |
 | `Initials` | A person's initials in a soft disc, the same tint every time for the same name |
 | `AppearancePicker` | System / Light / Dark on Me (`useTheme`) |
@@ -63,7 +64,7 @@ rather than inventing new ones, so the app keeps one feel.
   `bg-[var(--hero-chip)]`, and its main action as a gold (`bg-oro text-on-oro`) button inside the card.
   Respect the hidden-balance eye (`useHiddenBalance` / `HiddenAmount`) wherever a balance shows.
 - **Quick actions** as tiles: a 48px rounded-2xl icon square in a tint (`bg-*-tint text-*`) above a
-  12px label, four to a row, inside one raised card.
+  12px label, four to a row (two rows of four on Today), inside one raised card.
 - **Lists** as one grouped card: `divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift`,
   each row `flex items-center gap-3 p-4 hover:bg-surface-sunken` with a 40px icon disc or `Initials`
   on the left and a chevron on the right. Not a stack of separate shadowed cards.

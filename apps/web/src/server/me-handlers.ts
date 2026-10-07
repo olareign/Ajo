@@ -28,29 +28,29 @@ const isExpiredToken = (result: ApiResult) =>
   result.status === 401 && typeof result.data.code !== "string";
 
 /**
- * Calls the API as the signed-in person. An expired access token is swapped once through the
+ * Runs one call as the signed-in person. An expired access token is swapped once through the
  * refresh token (which rotates, so the new pair is stored in the cookie straight away); if the
- * refresh is refused the session is cleared and the caller sees 401.
+ * refresh is refused the session is cleared and the caller sees 401. `respond` turns the API's
+ * answer into ours, so JSON and file answers share all of this.
  */
-export async function withSession(
+export async function withSessionCall<R extends Readonly<{ status: number }>>(
   request: Request,
   { env, fetchFn }: Deps,
-  call: ApiRequest,
+  run: (accessToken: string, client: ReturnType<typeof clientOf>) => Promise<R>,
+  isExpired: (result: R) => boolean,
+  respond: (result: R, cookies: string[]) => Response,
 ): Promise<Response> {
   const cookie = sessionCookie(env.production);
   const session = await openSeal<Session>(readCookie(request, cookie.name), env.sessionSecret);
   const expire = serializeCookie(cookie.name, "", { ...cookie.options, maxAge: 0 });
   if (!session) return json(401, { message: "Please sign in." });
 
-  let result: ApiResult = await callApi(env, fetchFn, {
-    client: clientOf(request),
-    ...call,
-    accessToken: session.accessToken,
-  });
+  const client = clientOf(request);
+  let result = await run(session.accessToken, client);
   const cookies: string[] = [];
-  if (isExpiredToken(result)) {
+  if (isExpired(result)) {
     const refreshed = await callApi(env, fetchFn, {
-      client: clientOf(request),
+      client,
       path: "/auth/refresh",
       body: { refreshToken: session.refreshToken },
     });
@@ -68,12 +68,23 @@ export async function withSession(
       SESSION_TTL_SECONDS,
     );
     cookies.push(serializeCookie(cookie.name, sealed, cookie.options));
-    result = await callApi(env, fetchFn, { ...call, accessToken, client: clientOf(request) });
-    if (isExpiredToken(result)) {
+    result = await run(accessToken, client);
+    if (isExpired(result)) {
       return json(401, { message: "Please sign in again." }, [expire]);
     }
   }
-  return json(result.status, result.data, cookies);
+  return respond(result, cookies);
+}
+
+/** Calls the API as the signed-in person and answers in JSON. */
+export function withSession(request: Request, deps: Deps, call: ApiRequest): Promise<Response> {
+  return withSessionCall(
+    request,
+    deps,
+    (accessToken, client) => callApi(deps.env, deps.fetchFn, { client, ...call, accessToken }),
+    isExpiredToken,
+    (result, cookies) => json(result.status, result.data, cookies),
+  );
 }
 
 async function readObject(request: Request): Promise<Record<string, unknown> | null> {
