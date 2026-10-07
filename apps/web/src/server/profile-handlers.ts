@@ -15,3 +15,13 @@ export const handleSaveEmailSettings = (request: Request, deps: Deps) =>
   proxy(request, deps, "/notifications/settings", "PUT", {
     keys: ["reminders", "savings", "circles", "friends"],
   });
+
+/** Push: whether it is on and the key a browser needs; adding or removing this browser; a test. */
+export const handlePushStatus = (request: Request, deps: Deps) =>
+  withSession(request, deps, { path: "/push", method: "GET" });
+export const handleSubscribePush = (request: Request, deps: Deps) =>
+  proxy(request, deps, "/push/subscriptions", "POST", { keys: ["endpoint", "keys"] });
+export const handleUnsubscribePush = (request: Request, deps: Deps) =>
+  proxy(request, deps, "/push/subscriptions", "DELETE", { keys: ["endpoint"] });
+export const handleTestPush = (request: Request, deps: Deps) =>
+  proxy(request, deps, "/push/test", "POST", {});

@@ -472,7 +472,7 @@ test("the wallet shows the real ledger: balances, a page of activity, then the r
   await expect(page).toHaveURL(/\/today$/);
 
   // Today glances at the wallet and leads to it. Available: 21 x 200 + 2,500 - 1,000 - 500 = 5,200.
-  const card = page.getByRole("link", { name: /wallet/i });
+  const card = page.getByRole("link", { name: /wallet balance/i });
   await expect(card).toContainText("₦5,200");
   await card.click();
   await expect(page).toHaveURL(/\/wallet$/);
@@ -548,7 +548,10 @@ test("Me shows who you are, and signing out of all devices ends the session on e
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/today$/);
 
-  await page.getByRole("link", { name: "Me" }).click();
+  await page
+    .getByRole("navigation", { name: "Main" })
+    .getByRole("link", { name: "Me", exact: true })
+    .click();
   await expect(page).toHaveURL(/\/me$/);
   const card = page.getByRole("region", { name: "Your membership" });
   await expect(card).toContainText(`@${handle}`);
@@ -1244,11 +1247,23 @@ test("friends: find someone by username, ask, be accepted, see them in the circl
   await page.goto("/friends/invite");
   const code = (await page.locator("p.font-mono").innerText()).trim();
   expect(code).toMatch(/^[A-Z0-9]{8}$/);
+  // Signed in, your own link says so, and offers nothing to create or join.
   await page.goto(`/join/${code}`);
-  await expect(page.getByRole("heading", { name: /invited you to Àjọ/ })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "This is your own invite" })).toBeVisible({
     timeout: 45_000,
   });
-  await page.getByRole("link", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(new RegExp(`/sign-up\\?invite=${code}`), { timeout: 45_000 });
-  await page.screenshot({ path: "e2e/screenshots/friends-invite-join.png" });
+  // Someone not signed in sees who invited them, and signing up carries the code through.
+  const stranger = await page
+    .context()
+    .browser()!
+    .newContext({ baseURL: page.url().split("/join")[0] });
+  const anon = await stranger.newPage();
+  await anon.goto(`/join/${code}`);
+  await expect(anon.getByRole("heading", { name: /invited you to Àjọ/ })).toBeVisible({
+    timeout: 45_000,
+  });
+  await anon.getByRole("link", { name: "Create my account" }).click();
+  await expect(anon).toHaveURL(new RegExp(`/sign-up\\?invite=${code}`), { timeout: 45_000 });
+  await anon.screenshot({ path: "e2e/screenshots/friends-invite-join.png" });
+  await stranger.close();
 });

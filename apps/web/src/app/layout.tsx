@@ -9,6 +9,7 @@ import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { AppNav } from "@/components/AppNav";
 import { InstallCapture } from "@/components/install/InstallCapture";
+import { splashFile, splashMedia, SPLASH } from "@/lib/splash";
 import { THEME_SCRIPT } from "@/lib/theme-script";
 
 // Every page gets a fresh CSP nonce (src/proxy.ts), which requires dynamic rendering.
@@ -18,6 +19,13 @@ export const metadata: Metadata = {
   title: "Àjọ",
   description: "Save on your own, or in èsúsú groups with people you trust.",
   applicationName: "Àjọ",
+  // Installed on an iPhone, it opens like an app, with the logo on white while it starts.
+  appleWebApp: {
+    capable: true,
+    title: "Àjọ",
+    statusBarStyle: "default",
+    startupImage: SPLASH.map((s) => ({ url: splashFile(s), media: splashMedia(s) })),
+  },
 };
 
 export const viewport: Viewport = {

@@ -13,6 +13,8 @@ What it makes, and why each is different:
                                             rounds the corners itself, and fills any transparency with black)
   src/app/icon.png (192)                    the pig-and-coin mark only: the browser tab shows it at 16 to 32
                                             pixels, where a wordmark cannot be read
+  public/splash/ios-WxH.png               the whole logo, centred on white, one per iPhone size, shown while the
+                                            installed app starts (list: src/lib/splash.ts)
   public/email/logo.png (480 wide)          the whole logo, cropped to its ink on a transparent ground, for the
                                             emails the API sends (they load it from the web app's address; email
                                             clients cannot show webp or svg)
@@ -63,3 +65,15 @@ save(on_square(mark, 192, height_share=0.8), "src/app/icon.png")
 
 EMAIL_WIDTH = 480
 save(whole.resize((EMAIL_WIDTH, round(whole.height * EMAIL_WIDTH / whole.width)), Image.LANCZOS), "public/email/logo.png")
+
+# iPhone launch screens: the whole logo, centred on white (the manifest's background), one per phone size.
+# Keep this list the same as src/lib/splash.ts.
+SPLASH = [
+    (750, 1334), (828, 1792), (1125, 2436), (1170, 2532), (1179, 2556), (1206, 2622),
+    (1242, 2208), (1242, 2688), (1284, 2778), (1290, 2796), (1320, 2868),
+]
+for width, height in SPLASH:
+    canvas = Image.new("RGBA", (width, height), WHITE)
+    logo = whole.resize((round(width * 0.5), round(whole.height * width * 0.5 / whole.width)), Image.LANCZOS)
+    canvas.alpha_composite(logo, ((width - logo.width) // 2, (height - logo.height) // 2))
+    save(canvas.convert("RGB"), f"public/splash/ios-{width}x{height}.png")

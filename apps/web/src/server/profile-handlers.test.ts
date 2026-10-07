@@ -2,6 +2,10 @@
 import type { Fetch } from "./api-client";
 import { loadServerEnv } from "./env";
 import {
+  handlePushStatus,
+  handleSubscribePush,
+  handleTestPush,
+  handleUnsubscribePush,
   handleEmailSettings,
   handleRemovePhone,
   handleSaveEmailSettings,
@@ -101,6 +105,61 @@ describe("profile settings through the web server", () => {
         { env, fetchFn },
         ["close"],
       ),
+    ]) {
+      expect(res.status).toBe(403);
+    }
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("push through the web server", () => {
+  it("reads the status, and passes on a subscription with only its address and keys", async () => {
+    let fetchFn = ok();
+    await handlePushStatus(await req("GET"), { env, fetchFn });
+    expect(first(fetchFn)).toMatchObject({ url: `${API}/push`, method: "GET" });
+    fetchFn = ok();
+    const keys = { p256dh: "k", auth: "a" };
+    await handleSubscribePush(
+      await req("POST", {
+        endpoint: "https://fcm.googleapis.com/fcm/send/x",
+        keys,
+        expirationTime: null,
+        userId: "x",
+      }),
+      { env, fetchFn },
+    );
+    expect(first(fetchFn)).toEqual({
+      url: `${API}/push/subscriptions`,
+      method: "POST",
+      body: { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys },
+    });
+  });
+
+  it("removes a subscription by its address, and sends a test, from this app only", async () => {
+    let fetchFn = ok();
+    await handleUnsubscribePush(
+      await req("DELETE", { endpoint: "https://fcm.googleapis.com/x", extra: 1 }),
+      { env, fetchFn },
+    );
+    expect(first(fetchFn)).toEqual({
+      url: `${API}/push/subscriptions`,
+      method: "DELETE",
+      body: { endpoint: "https://fcm.googleapis.com/x" },
+    });
+    fetchFn = ok();
+    await handleTestPush(await req("POST", { x: 1 }), { env, fetchFn });
+    expect(first(fetchFn)).toMatchObject({ url: `${API}/push/test`, method: "POST" });
+    fetchFn = ok();
+    for (const res of [
+      await handleSubscribePush(await req("POST", { endpoint: "x" }, "cross-site"), {
+        env,
+        fetchFn,
+      }),
+      await handleUnsubscribePush(await req("DELETE", { endpoint: "x" }, "cross-site"), {
+        env,
+        fetchFn,
+      }),
+      await handleTestPush(await req("POST", {}, "cross-site"), { env, fetchFn }),
     ]) {
       expect(res.status).toBe(403);
     }
