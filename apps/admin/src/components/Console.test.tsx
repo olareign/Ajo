@@ -557,3 +557,25 @@ describe("the team", () => {
     ).toEqual(["Reset", "Turn off"]);
   });
 });
+
+describe("an answer the console does not recognise", () => {
+  it("shows a message on the setup page instead of crashing", async () => {
+    api({ "POST auth/setup/start": () => Response.json({}) });
+    const user = userEvent.setup();
+    render(<SetupScreen />);
+    await user.type(screen.getByLabelText("Email"), "ada@ajo.test");
+    await user.type(screen.getByLabelText("Setup code"), "K7M2Q-9HRX4-BT3EA-WZ6PD");
+    await user.type(screen.getByLabelText("Choose a password"), "harbour-lantern-quiet-orchard");
+    await user.type(screen.getByLabelText("Password again"), "harbour-lantern-quiet-orchard");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("answer we didn't expect");
+    expect(screen.queryByRole("img", { name: /QR code/ })).toBeNull();
+  });
+
+  it("does not open the console on an answer that is not a real member", async () => {
+    api({ "GET me": () => Response.json({}) });
+    render(<ConsoleShell>secret page</ConsoleShell>);
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByText("secret page")).toBeNull();
+  });
+});

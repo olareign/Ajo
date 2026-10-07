@@ -46,7 +46,10 @@ export function ConsoleShell({ children }: Readonly<{ children: ReactNode }>) {
     (async () => {
       const result = await get<Me>("me");
       if (!live) return;
-      if (result.ok) return setMe(result.data);
+      if (result.ok) {
+        // Only a real answer opens the console: anything else is treated as the server being unwell.
+        return setMe(Array.isArray(result.data.permissions) ? result.data : "failed");
+      }
       if (result.failure.signedOut) return router.replace("/login");
       setMe("failed");
     })();
