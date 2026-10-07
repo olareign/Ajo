@@ -438,7 +438,7 @@ describe("an answer that is not from our API", () => {
       (
         await run(
           await req("POST", `users/${ID}/suspend`, { body: {} }),
-          ok({}, 204),
+          vi.fn<Fetch>(async () => new Response(null, { status: 204 })),
           `users/${ID}/suspend`,
         )
       ).status,
