@@ -1179,6 +1179,226 @@ test("saving: start a plan, watch the scheduler take a debit into the pot, read 
   await page.screenshot({ path: "e2e/screenshots/saving-ended.png" });
 });
 
+test("saving: pause and start again, add to the pot, and when the last debit is paid everything goes back to the wallet", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  test.skip(
+    !process.env.E2E_PAYMENTS,
+    "Needs the API started with PAYMENTS_FAKE=true and SWEEP_SECONDS=2; set E2E_PAYMENTS=1.",
+  );
+  const email = `e2e+mature${Date.now()}@example.com`;
+  const token = await onboardedAccount(email);
+  for (const step of ["id", "selfie", "address", "location", "bank"]) {
+    sql(
+      `insert into kyc_steps (user_id, step, status) select id, '${step}', 'approved' from users where email = '${email}'`,
+    );
+  }
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  const enrol = (await api("/auth/mfa/totp", { token })).data;
+  expect(
+    (
+      await api("/auth/mfa/totp/confirm", {
+        token,
+        body: { code: authenticatorCode(enrol.secret!) },
+      })
+    ).status,
+  ).toBe(200);
+  const fund = await fetch(`${apiUrl}/api/v1/payments/fund`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      "Idempotency-Key": `k_${randomBytes(8).toString("hex")}`,
+      "X-Forwarded-For": `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
+    },
+    body: JSON.stringify({ amount: "1000000", method: "card" }),
+  });
+  expect(fund.status).toBe(200);
+  const reference = sql(
+    `select reference from payment_intents where kind = 'funding' and user_id = (select id from users where email = '${email}')`,
+  );
+  await partnerSays({ kind: "funding.succeeded", reference, amount: "1000000", currency: "NGN" });
+
+  // A two-debit plan that starts today, made the way the wizard makes it.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(new Date());
+  const made = await fetch(`${apiUrl}/api/v1/savings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      "Idempotency-Key": `k_${randomBytes(8).toString("hex")}`,
+      "X-Forwarded-For": `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
+    },
+    body: JSON.stringify({
+      name: "Holiday",
+      amount: "100000",
+      frequency: "daily",
+      totalDebits: 2,
+      startDate: today,
+    }),
+  });
+  expect(made.status).toBe(201);
+  const planId = ((await made.json()) as { id: string }).id;
+
+  await page.goto(`/save/${planId}`);
+  await expect(page.getByRole("button", { name: "Pause the plan" })).toBeVisible({
+    timeout: 45_000,
+  });
+
+  // Pausing stops the debits: the scheduler leaves a due debit alone until it is started again.
+  await page.getByRole("button", { name: "Pause the plan" }).click();
+  await expect(page.getByRole("button", { name: "Start it again" })).toBeVisible({
+    timeout: 20_000,
+  });
+  expect(sql(`select status from savings_plans where id = '${planId}'`)).toBe("paused");
+  sql(
+    `update savings_debits set next_attempt_at = now() - interval '1 minute' where plan_id = '${planId}' and seq = 1`,
+  );
+  await page.waitForTimeout(6000);
+  expect(sql(`select status from savings_debits where plan_id = '${planId}' and seq = 1`)).toBe(
+    "scheduled",
+  );
+
+  // Starting again lets it go ahead.
+  await page.getByRole("button", { name: "Start it again" }).click();
+  await expect(page.getByRole("button", { name: "Pause the plan" })).toBeVisible({
+    timeout: 20_000,
+  });
+  expect(sql(`select status from savings_plans where id = '${planId}'`)).toBe("active");
+
+  // Adding to the pot now: from the wallet, once.
+  await page.getByRole("button", { name: "Add to this pot now" }).click();
+  for (const digit of "500")
+    await page
+      .getByRole("group", { name: /number pad/i })
+      .getByRole("button", { name: digit, exact: true })
+      .click();
+  await page.getByRole("button", { name: "Add it" }).click();
+  await expect(page.getByRole("region", { name: "Your pot" })).toContainText("₦500", {
+    timeout: 30_000,
+  });
+  const pot = () =>
+    sql(
+      `select coalesce(sum(case direction when 'credit' then amount else -amount end), 0) from ledger_entries e join ledger_accounts a on a.id = e.account_id where a.kind = 'savings' and a.owner_id = (select id from users where email = '${email}')`,
+    );
+  expect(pot()).toBe("50000");
+
+  // Both debits come due; after the last is paid, the whole pot goes back to the wallet and the plan is complete.
+  sql(
+    `update savings_debits set next_attempt_at = now() - interval '1 minute' where plan_id = '${planId}' and status = 'scheduled'`,
+  );
+  await expect
+    .poll(() => sql(`select status from savings_plans where id = '${planId}'`), { timeout: 60_000 })
+    .toBe("completed");
+  expect(pot()).toBe("0");
+  expect(
+    sql(
+      `select coalesce(sum(case direction when 'credit' then amount else -amount end), 0) from ledger_entries e join ledger_accounts a on a.id = e.account_id where a.kind = 'available' and a.owner_id = (select id from users where email = '${email}')`,
+    ),
+  ).toBe("1000000");
+  await page.reload();
+  await expect(page.getByText(/is in your wallet/)).toBeVisible({ timeout: 30_000 });
+});
+
+test("friends: people you may know, then block, report and unblock, and messages read one by one and all at once", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  test.skip(
+    !process.env.E2E_PAYMENTS,
+    "Set E2E_PAYMENTS=1 (these accounts are approved straight in the database).",
+  );
+  const stamp = Date.now();
+  const [ada, ben, cleo] = [
+    `e2e+sa${stamp}@example.com`,
+    `e2e+sb${stamp}@example.com`,
+    `e2e+sc${stamp}@example.com`,
+  ];
+  const tokens: Record<string, string> = {};
+  for (const email of [ada, ben, cleo]) {
+    tokens[email] = await onboardedAccount(email);
+    for (const step of ["id", "selfie", "address", "location", "bank"]) {
+      sql(
+        `insert into kyc_steps (user_id, step, status) select id, '${step}', 'approved' from users where email = '${email}'`,
+      );
+    }
+  }
+  const name = (email: string) => sql(`select username from users where email = '${email}'`);
+  const [adaName, benName, cleoName] = [name(ada), name(ben), name(cleo)];
+  const befriend = async (from: string, to: string) => {
+    expect(
+      (await api("/friends/requests", { token: tokens[from], body: { username: name(to) } }))
+        .status,
+    ).toBe(200);
+    expect(
+      (await api(`/friends/requests/${name(from)}/accept`, { token: tokens[to] })).status,
+    ).toBe(200);
+  };
+  // Ben is friends with Ada and with Cleo, so Ada and Cleo may know each other.
+  await befriend(ada, ben);
+  await befriend(cleo, ben);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(ada);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // People you may know: the friend of a friend, naming who they have in common.
+  await page.goto("/friends");
+  const suggestions = page
+    .getByRole("heading", { name: "People you may know" })
+    .locator("xpath=ancestor::section");
+  await expect(suggestions).toContainText(`@${cleoName}`, { timeout: 45_000 });
+  await expect(suggestions).toContainText("1 in common");
+
+  // Messages: Ben's acceptance is waiting. Opening one marks it read; "Mark all as read" clears the rest.
+  await page.goto("/notifications");
+  await page.getByRole("button", { name: "Mark all as read" }).click();
+  await expect(page.getByRole("button", { name: "Mark all as read" })).toHaveCount(0);
+  expect(
+    sql(
+      `select count(*) from notifications where read_at is null and user_id = (select id from users where email = '${ada}')`,
+    ),
+  ).toBe("0");
+
+  // Reporting someone: a reason, and it goes to the staff queue (one open report per person).
+  await page.goto(`/friends/${benName}`);
+  await page.getByRole("button", { name: "Report" }).click();
+  await page.getByRole("radio", { name: /Spam/ }).click();
+  await page.getByRole("button", { name: "Send report" }).click();
+  await expect(page.getByText("Thank you. We'll look into it.")).toBeVisible({ timeout: 30_000 });
+  expect(
+    sql(
+      `select count(*) from reports where reporter_id = (select id from users where email = '${ada}')`,
+    ),
+  ).toBe("1");
+
+  // Blocking: the friendship ends, they cannot be found, and the block can be undone.
+  await page.getByRole("button", { name: "Block" }).first().click();
+  await page.getByRole("button", { name: "Block", exact: true }).last().click();
+  await expect(page).toHaveURL(/\/friends$/, { timeout: 45_000 });
+  expect(
+    sql(
+      `select count(*) from friendships where status = 'accepted' and low_id = least((select id from users where email = '${ada}'), (select id from users where email = '${ben}')) and high_id = greatest((select id from users where email = '${ada}'), (select id from users where email = '${ben}'))`,
+    ),
+  ).toBe("0");
+  await page.goto("/friends/find");
+  await page.getByRole("textbox", { name: "Username" }).fill(benName.slice(0, 8));
+  await page.waitForTimeout(2500);
+  await expect(page.getByRole("list", { name: "Results" }).getByText(`@${benName}`)).toHaveCount(0);
+  await page.goto("/friends/blocked");
+  await expect(page.getByText(`@${benName}`)).toBeVisible({ timeout: 45_000 });
+  await page.getByRole("button", { name: /^Unblock / }).click();
+  await expect(page.getByText("You haven't blocked anyone.")).toBeVisible({ timeout: 30_000 });
+  expect(adaName).toBeTruthy();
+});
+
 test("friends: find someone by username, ask, be accepted, see them in the circle, and open an invite link", async ({
   page,
 }) => {
