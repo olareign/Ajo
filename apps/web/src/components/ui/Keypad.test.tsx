@@ -47,4 +47,54 @@ describe("Keypad", () => {
     render(<Harness />);
     expect(screen.getByRole("button", { name: "5" }).className).toContain("h-14");
   });
+
+  describe("on a desktop, without clicking it first", () => {
+    const real = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetParent");
+    beforeEach(() => {
+      // jsdom draws nothing; treat every element as on screen.
+      Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+        configurable: true,
+        get() {
+          return this.parentNode;
+        },
+      });
+    });
+    afterEach(() => {
+      if (real) Object.defineProperty(HTMLElement.prototype, "offsetParent", real);
+    });
+
+    it("takes digits and Backspace typed anywhere on the page", async () => {
+      const spy = vi.fn();
+      render(<Harness length={6} spy={spy} />);
+      await userEvent.keyboard("7886{Backspace}5");
+      expect(spy).toHaveBeenLastCalledWith("7885");
+    });
+
+    it("leaves text fields and shortcuts alone", async () => {
+      const spy = vi.fn();
+      render(
+        <>
+          <input aria-label="Name" />
+          <Harness length={6} spy={spy} />
+        </>,
+      );
+      await userEvent.click(screen.getByLabelText("Name"));
+      await userEvent.keyboard("12");
+      expect(screen.getByLabelText("Name")).toHaveValue("12");
+      (document.activeElement as HTMLElement).blur();
+      await userEvent.keyboard("{Control>}3{/Control}");
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("does nothing while it is not on screen", async () => {
+      Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+        configurable: true,
+        get: () => null,
+      });
+      const spy = vi.fn();
+      render(<Harness length={6} spy={spy} />);
+      await userEvent.keyboard("5");
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
 });
