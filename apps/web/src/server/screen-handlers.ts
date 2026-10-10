@@ -17,8 +17,13 @@ export const SCREENS = {
     friends: "/friends",
     requests: "/friends/requests",
     groups: "/groups",
+    fx: "/fx/wallet",
   },
-  wallet: { wallets: "/wallet", transactions: "/wallet/transactions?limit=20" },
+  wallet: {
+    wallets: "/wallet",
+    transactions: "/wallet/transactions?limit=20",
+    fx: "/fx/wallet",
+  },
   friends: {
     friends: "/friends",
     requests: "/friends/requests",

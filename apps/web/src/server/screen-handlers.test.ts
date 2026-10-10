@@ -44,13 +44,17 @@ describe("a screen's data in one reply", () => {
     });
     const res = await handleScreen(await req(), { env, fetchFn }, "wallet");
     expect(res.status).toBe(200);
-    expect(most).toBe(2);
+    expect(most).toBe(3);
     expect(fetchFn.mock.calls.map(([u]) => pathOf(u)).sort()).toEqual(
       Object.values(SCREENS.wallet).sort(),
     );
     expect(await res.json()).toEqual({
       wallets: { status: 200, data: { wallets: [] } },
       transactions: {
+        status: 403,
+        data: { message: "Finish your passport first.", code: "kyc_required" },
+      },
+      fx: {
         status: 403,
         data: { message: "Finish your passport first.", code: "kyc_required" },
       },
