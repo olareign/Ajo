@@ -25,11 +25,12 @@ export const FUND_METHODS: Readonly<Record<Country, readonly FundMethod[]>> = {
       detail: "Pay from any phone with your bank's code, no data needed",
     },
   ],
+  // The UK partner (Stripe) takes cards; bank transfers in need a partner that issues accounts.
   GB: [
     {
-      value: "transfer",
-      title: "Bank transfer",
-      detail: "Faster Payments from your bank app to your own Àjọ account",
+      value: "card",
+      title: "Debit or credit card",
+      detail: "Pay with a UK card on Stripe's secure page",
     },
   ],
 };
