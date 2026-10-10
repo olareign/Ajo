@@ -17,6 +17,10 @@
   --ink: #0f1f17;
   --ink-muted: #4a5750;
   --primary: #057a3f;
+  /* Chart marks only (validated pair: money in, money out). Text never wears these. */
+  --chart-in: #0a8a48;
+  --chart-out: #4a5bc4;
+  --chart-grid: #e8ebee;
   --primary-deep: #035e30;
   --primary-tint: #e3f5eb;
   --on-primary: #ffffff;
@@ -51,6 +55,9 @@
   --ink: #edf6f0;
   --ink-muted: #a3b5aa;
   --primary: #4ccb84;
+  --chart-in: #34ad6b;
+  --chart-out: #6f7fe8;
+  --chart-grid: #1f2d26;
   --primary-deep: #7fe0a8;
   --primary-tint: #12301f;
   --on-primary: #03140a;
@@ -86,6 +93,9 @@
     --ink: #edf6f0;
     --ink-muted: #a3b5aa;
     --primary: #4ccb84;
+    --chart-in: #34ad6b;
+    --chart-out: #6f7fe8;
+    --chart-grid: #1f2d26;
     --primary-deep: #7fe0a8;
     --primary-tint: #12301f;
     --on-primary: #03140a;

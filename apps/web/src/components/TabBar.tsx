@@ -17,7 +17,7 @@ export function TabBar({ current }: Readonly<{ current: string }>) {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
     >
       <div className="mx-auto grid max-w-md grid-cols-5 px-2 pt-1.5 pb-1.5">
         {TABS.map(({ href, label, Icon }) => {

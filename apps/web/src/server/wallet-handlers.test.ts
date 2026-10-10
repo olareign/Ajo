@@ -2,7 +2,12 @@
 import type { Fetch } from "./api-client";
 import { loadServerEnv } from "./env";
 import { seal } from "./session";
-import { handleTransactions, handleWallet } from "./wallet-handlers";
+import {
+  handleInsights,
+  handleStatement,
+  handleTransactions,
+  handleWallet,
+} from "./wallet-handlers";
 
 const env = loadServerEnv({
   NODE_ENV: "production",
@@ -98,6 +103,71 @@ describe("wallet history", () => {
       fetchFn,
     });
     expect(res.status).toBe(401);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("statements and insights", () => {
+  it("passes only two well-formed dates on, and refuses anything else without asking the API", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => ok({ lines: [] }));
+    await handleStatement(await get("/api/wallet/statement?from=2026-09-01&to=2026-09-30&x=1"), {
+      env,
+      fetchFn,
+    });
+    expect(fetchFn.mock.calls[0]![0]).toBe(
+      "https://api.ajo.example/api/v1/wallet/statement?from=2026-09-01&to=2026-09-30",
+    );
+    const refused = vi.fn<Fetch>();
+    for (const q of [
+      "",
+      "?from=2026-09-01",
+      "?from=yesterday&to=today",
+      "?from=2026-13-01&to=2026-09-30",
+      "?from=2026-09-01&to=2026-09-30%26admin=1",
+    ]) {
+      expect(
+        (await handleStatement(await get(`/api/wallet/statement${q}`), { env, fetchFn: refused }))
+          .status,
+      ).toBe(400);
+    }
+    expect(refused).not.toHaveBeenCalled();
+  });
+
+  it("asks for 12 months unless told, and only between 1 and 24", async () => {
+    const fetchFn = vi.fn<Fetch>(async () => ok({ months: [] }));
+    await handleInsights(await get("/api/wallet/insights"), { env, fetchFn });
+    await handleInsights(await get("/api/wallet/insights?months=6"), { env, fetchFn });
+    expect(fetchFn.mock.calls.map(([u]) => u)).toEqual([
+      "https://api.ajo.example/api/v1/wallet/insights?months=12",
+      "https://api.ajo.example/api/v1/wallet/insights?months=6",
+    ]);
+    const refused = vi.fn<Fetch>();
+    for (const m of ["0", "25", "abc", "-1", "6.5"]) {
+      expect(
+        (
+          await handleInsights(await get(`/api/wallet/insights?months=${m}`), {
+            env,
+            fetchFn: refused,
+          })
+        ).status,
+      ).toBe(400);
+    }
+    expect(refused).not.toHaveBeenCalled();
+  });
+
+  it("is 401 without a session", async () => {
+    const fetchFn = vi.fn<Fetch>();
+    expect(
+      (
+        await handleStatement(
+          await get("/api/wallet/statement?from=2026-09-01&to=2026-09-30", false),
+          { env, fetchFn },
+        )
+      ).status,
+    ).toBe(401);
+    expect(
+      (await handleInsights(await get("/api/wallet/insights", false), { env, fetchFn })).status,
+    ).toBe(401);
     expect(fetchFn).not.toHaveBeenCalled();
   });
 });

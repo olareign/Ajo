@@ -33,3 +33,28 @@ export function handleTransactions(request: Request, deps: Deps): Promise<Respon
   const suffix = query.size > 0 ? `?${query}` : "";
   return withSession(request, deps, { path: `/wallet/transactions${suffix}`, method: "GET" });
 }
+
+const DAY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** A statement for a date range. Only two well-formed dates reach the API, which checks the range. */
+export function handleStatement(request: Request, deps: Deps): Promise<Response> {
+  const params = new URL(request.url).searchParams;
+  const from = params.get("from") ?? "";
+  const to = params.get("to") ?? "";
+  if (!DAY.test(from) || !DAY.test(to)) {
+    return Promise.resolve(json(400, { message: "Choose a first and last day." }));
+  }
+  return withSession(request, deps, {
+    path: `/wallet/statement?${new URLSearchParams({ from, to })}`,
+    method: "GET",
+  });
+}
+
+/** Month-by-month figures; only a small whole number of months reaches the API. */
+export function handleInsights(request: Request, deps: Deps): Promise<Response> {
+  const months = new URL(request.url).searchParams.get("months") ?? "12";
+  if (!/^\d{1,2}$/.test(months) || Number(months) < 1 || Number(months) > 24) {
+    return Promise.resolve(json(400, { message: "That many months isn't allowed." }));
+  }
+  return withSession(request, deps, { path: `/wallet/insights?months=${months}`, method: "GET" });
+}

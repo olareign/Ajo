@@ -7,7 +7,9 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
+import { AppFrame } from "@/components/AppFrame";
 import { AppNav } from "@/components/AppNav";
+import { DesktopNav } from "@/components/DesktopNav";
 import { InstallCapture } from "@/components/install/InstallCapture";
 import { splashFile, splashMedia, SPLASH } from "@/lib/splash";
 import { THEME_SCRIPT } from "@/lib/theme-script";
@@ -53,8 +55,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body>
         <InstallCapture />
-        {/* Mobile-first: phones get the full width, larger screens a phone-sized column. */}
-        <div className="mx-auto min-h-dvh max-w-md bg-surface">{children}</div>
+        <DesktopNav />
+        <AppFrame>{children}</AppFrame>
         <AppNav />
       </body>
     </html>

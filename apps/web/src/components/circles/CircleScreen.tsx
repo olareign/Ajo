@@ -1,6 +1,16 @@
 "use client";
 
-import { Check, Clock, Copy, Crown, MessageCircle, ShieldAlert, Sparkles, X } from "lucide-react";
+import {
+  Check,
+  Clock,
+  Copy,
+  Crown,
+  MessageCircle,
+  ShieldAlert,
+  Sparkles,
+  Table2,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -172,6 +182,17 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
         title={g.name}
         subtitle={g.community ?? undefined}
         backHref={href("/circles")}
+        action={
+          g.rounds.length > 0 ? (
+            <Link
+              href={href(`/circles/${g.id}/board`)}
+              className="hidden min-h-9 items-center gap-1.5 rounded-full bg-surface-sunken px-3 text-[13px] font-semibold text-ink hover:bg-line lg:inline-flex"
+            >
+              <Table2 aria-hidden className="size-4" />
+              Board
+            </Link>
+          ) : undefined
+        }
       />
 
       {fresh && g.status === "open" && (

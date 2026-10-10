@@ -157,7 +157,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
       <ScreenHeader tab title="Me" subtitle="Your account, and how it is kept safe." />
       <div className="grid grid-cols-1 gap-8">
         <MemberCard me={me} />
