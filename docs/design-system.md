@@ -122,7 +122,7 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 
 ## Desktop (E1.26, Oct 10)
 
-- **Breakpoint `lg` (1024px).** Below it, every app screen is the phone layout, unchanged. At `lg` and up, pages inside the app (`isAppRoute` in `src/lib/app-routes.ts`) get the `DesktopNav` sidebar (248px) and the bottom `TabBar` hides. Sign-in and its neighbours become a split screen (form left, the circle on the money-hero gradient right). Set-up and invites keep the phone-sized column. The public pages (`isPublicPage`) lay themselves out at every width.
+- **Breakpoint `lg` (1024px).** Below it, every app screen is the phone layout, unchanged. At `lg` and up, pages inside the app (`isAppRoute` in `src/lib/app-routes.ts`) get the `DesktopNav` sidebar (248px) and the bottom `TabBar` hides. Sign-in and its neighbours become a split screen (form left, a showcase panel right). Set-up and invites keep the phone-sized column. The public pages (`isPublicPage`) lay themselves out at every width.
 - **Inner screens on a desk** keep the back button and the header action (the circle board link exists only there); the title stands large on the left instead of centred in a bar.
 - **Width.** Screens keep `px-4` at every size (the sticky bars rely on it) and widen with `lg:max-w-*`: Today, Wallet, Statements, Insights `lg:max-w-6xl`; Save, Circles, Friends, Messages, Me `lg:max-w-3xl`; the circle board `lg:max-w-7xl`. Forms stay phone-width.
 - **Columns.** Today: money and to-dos left, savings, circles and friends right. Wallet: balance and actions left (sticky), activity right.
@@ -133,43 +133,37 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 - **Logo in two themes.** The green wordmark has a lighter twin for dark mode (`ajo-wordmark-dark.webp`, `ajo-logo-dark.webp`, green `#4ED388`, made from the original artwork; the gold coin and sparkles are shared). `Logo` draws both and the `.theme-light-only` / `.theme-dark-only` classes show the one for the page's theme, including a theme picked on Me. Never put the light logo on a dark surface.
 
 
-## Public pages and voice (Oct 10): the consistency rules
+## Public pages and voice (Oct 11): the consistency rules
 
-The pages anyone can read before signing in (`/`, How it works, Safety, About, Help, Terms,
-Privacy) and the sign-in split screen. They share `PublicShell` (header, footer with the support
-email staff set in the admin console) and `PageIntro`. These rules keep them one product with the
-app, and keep them honest.
+The pages anyone can read before signing in (`/` on a desk, How it works, Safety, About, Help)
+and the sign-in split screen. **The owner's design is the reference** (`src/components/landing/`,
+`src/components/help/PublicHelpCenter.tsx`, the three pages under `src/app`): its header and
+footer, the soft background decorations, rounded bordered cards with an icon tile and a small
+badge, the live dashboard mockup, and the hero-card call to action. New public pages reuse those
+pieces rather than inventing new ones. Terms and Privacy keep the app's own narrow column.
 
-**Say only what the app does.**
-- Every number or rule comes from `src/components/public/facts.ts`, which names the API rule it was
-  checked against. Change the rule there and every page follows; never type a figure into a page.
-- No promises the code can't keep: no "guaranteed", "100%", "zero risk", "24/7", "bank-grade",
-  "biometric", status badges ("all systems operational"), invented testimonials, people, partners or
-  company names, or response times. `Public.test.tsx` fails if one of those words comes back.
-- Say what isn't there yet, plainly ("Withdrawals to UK banks aren't switched on yet").
+**Say only what the app does.** This is the rule the design must never break.
+- No promises the code can't keep: no "guaranteed", "100% payout", "zero default/risk", "24/7",
+  response times, "bank-grade", "biometric", "cryptographic", status badges ("all systems
+  operational"), made-up testimonials, company names, or "licensed/regulated partner" claims.
+  `src/components/landing/Claims.test.ts` fails if one of those comes back.
+- Deposits cover a missed share only for members who lock one; members with a good record have
+  none, so a round they miss pays what came in. Say "deposits cover a missed share", never "every
+  payout is guaranteed".
+- Numbers match the API: circles of 3 to 30, weekly / every two weeks / monthly, two days of
+  retries, a 90-day pause after a miss, a 6-digit PIN. UK money comes in by card; withdrawals to UK
+  banks aren't switched on yet. Say what isn't there yet.
 - Use they/them for anyone in an example; names don't tell you pronouns.
 
-**Write like a person.**
-- Short sentences, everyday words, second person. A title is something a person would say ("How
-  can we help?"), not a slogan. Lead with the answer, then the detail.
-- One kicker line above a title, in sentence case and `text-primary`; no uppercase eyebrows and no
-  pill badges on every card.
-- Name things the way the app does: circle, round, turn, pot, deposit, wallet, saving plan, PIN,
-  authenticator app.
+**Inclusive by default.**
+- Anything that moves on its own (the dashboard demo) pauses for people whose device asks for
+  reduced motion, has a visible play/pause control, and stops all its timers when the page goes.
+- Every control has a name a screen reader can say; colour is never the only signal.
 
-**Look like Àjọ, not a template.**
-- Use the brand's own pieces before inventing decoration: the `CircleRing` with real photos, the
-  passport `Stamp`, the `hero-card` gradient, the `.receipt` (a torn paper edge for sums), the gold
-  underline under one word of a headline. No dot grids, orbit rings, glows, gradients on cards, or
-  pulsing dots.
-- One idea per section, alternating `bg-surface` and `bg-surface-sunken` bands with a `border-line`
-  between them. Width `max-w-6xl` (`band` in `PublicShell`), text measure about 65 characters.
-- Lists of facts as one bordered grid (`gap-px bg-line` with raised cells) or a timeline with a
-  mono label; not four identical icon cards.
-- Headings `font-display` bold with tight tracking; body 16–19px with `leading-7`/`leading-8`.
-
-**Motion only when asked.** Nothing on a public page moves on its own. Interactive pieces (the round
-player) change when the person presses something; reduced motion is respected everywhere.
+**Help.** Visitors use `/help` (the Help Center). Inside the app, every Help link goes to
+`/me/help`, the app's own help screen, so the sidebar and tab bar stay. Both show the support
+email staff set in the admin console (Settings), read on the server, `info@ajo.com` if the API
+can't answer.
 
 **Privacy notice.** `PrivacyNotice` shows once per device (bump `NOTICE_VERSION` when its words
 change). It is a notice, not a consent choice, because everything Àjọ stores is needed for it to

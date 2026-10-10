@@ -25,6 +25,7 @@ export function loadServerEnv(source: Record<string, string | undefined>): Serve
   const rawSecret = source.SESSION_SECRET?.trim();
   const sessionSecret = (rawSecret ? rawSecret : undefined) ?? (production ? "" : DEV_SECRET);
   const problems: string[] = [];
+  // The Vercel project names it `turnstile_key`; the documented name works too. It is public.
   const siteKey = (source.TURNSTILE_SITE_KEY || source.turnstile_key)?.trim() || undefined;
   if (siteKey && !SITE_KEY.test(siteKey)) problems.push("TURNSTILE_SITE_KEY: not a valid key");
   const bffSecret = source.BFF_SHARED_SECRET?.trim() || undefined;

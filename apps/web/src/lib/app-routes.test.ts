@@ -34,7 +34,7 @@ describe("which pages are inside the app", () => {
   });
 
   it("lets the public pages lay themselves out at every width, and sign-in on a desk", () => {
-    for (const path of ["/how-it-works", "/safety", "/about", "/help", "/terms", "/privacy"]) {
+    for (const path of ["/how-it-works", "/safety", "/about", "/help"]) {
       expect(isPublicPage(path)).toBe(true);
       expect(isFullWidthRoute(path)).toBe(true);
     }
@@ -42,6 +42,8 @@ describe("which pages are inside the app", () => {
       expect(isPublicPage(path)).toBe(false);
       expect(isFullWidthRoute(path)).toBe(true);
     }
-    for (const path of ["/helpful", "/aboutus", "/me/help"]) expect(isPublicPage(path)).toBe(false);
+    for (const path of ["/helpful", "/aboutus", "/me/help", "/terms", "/privacy"])
+      expect(isPublicPage(path)).toBe(false);
+    expect(isAppRoute("/me/help")).toBe(true);
   });
 });

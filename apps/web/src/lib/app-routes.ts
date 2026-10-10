@@ -15,7 +15,7 @@ export const isAppRoute = (path: string): boolean =>
   APP_SECTIONS.some((section) => path === section || path.startsWith(`${section}/`));
 
 /** The public pages that lay themselves out at every width (they bring their own header and footer). */
-const PUBLIC_PAGES = ["/how-it-works", "/safety", "/about", "/help", "/terms", "/privacy"] as const;
+const PUBLIC_PAGES = ["/how-it-works", "/safety", "/about", "/help"] as const;
 
 const matches = (path: string, prefixes: readonly string[]) =>
   prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
