@@ -28,6 +28,7 @@ import type { Plan } from "@/lib/savings-client";
 import { loadScreen, partData, type ScreenData } from "@/lib/screen-client";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Wallet } from "@/lib/wallet";
+import { readFx, type FxEquivalents } from "@/lib/fx";
 
 export function TodayScreen() {
   return <MeGate needs="onboarded">{(me) => <Today me={me} />}</MeGate>;
@@ -40,6 +41,8 @@ type TodayData = Readonly<{
   unread: number;
   friends: FriendsGlance | null;
   groups: readonly GroupSummary[] | null;
+  /** The balance in other currencies; null when there are no rates. */
+  fx: FxEquivalents | null;
 }>;
 
 const list = <T,>(body: Record<string, unknown> | null, key: string): readonly T[] | null =>
@@ -55,10 +58,18 @@ export function readToday(parts: ScreenData): TodayData {
     unread: typeof notices?.unread === "number" ? notices.unread : 0,
     friends: friends ? { friends: friends.length, waiting: incoming?.length ?? 0 } : null,
     groups: list<GroupSummary>(partData(parts.groups), "groups"),
+    fx: readFx(partData(parts.fx)),
   };
 }
 
-const NOTHING: TodayData = { wallets: null, plans: null, unread: 0, friends: null, groups: null };
+const NOTHING: TodayData = {
+  wallets: null,
+  plans: null,
+  unread: 0,
+  friends: null,
+  groups: null,
+  fx: null,
+};
 
 function Today({ me }: Readonly<{ me: Me }>) {
   const router = useRouter();
@@ -83,57 +94,68 @@ function Today({ me }: Readonly<{ me: Me }>) {
   }, [router]);
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-6xl lg:pt-8 lg:pb-12">
       <ScreenHeader
         tab
         title={`Hello, ${me.displayName}`}
         eyebrow={<TimeOfDay />}
         unread={data ? data.unread : null}
       />
-      <WalletSummary wallets={data?.wallets} currency={countryConfig(me.country)?.currency} />
-      <QuickActions />
-      {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
-        <Link
-          href="/verify"
-          className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] border border-primary/20 bg-primary-tint p-4 text-ink"
-        >
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-on-primary">
-            <BookUser aria-hidden className="size-6" />
-          </span>
-          <span className="grid gap-0.5">
-            <span className="text-[15px] font-semibold">Get your passport stamped</span>
-            <span className="text-[14px] leading-5 text-ink-muted">
-              {me.kycStatus === "rejected"
-                ? "A stamp needs another try."
-                : me.kycStatus === "pending"
-                  ? "We're checking your details."
-                  : "Five short steps open saving, circles and friends."}
-            </span>
-          </span>
-          <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
-        </Link>
-      )}
-      {me.mfaEnabled === false && (
-        <Link
-          href="/me/security"
-          className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] border border-oro/30 bg-oro-tint p-4 text-oro-ink"
-        >
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-oro text-on-oro">
-            <ShieldAlert aria-hidden className="size-6" />
-          </span>
-          <span className="grid gap-0.5">
-            <span className="text-[15px] font-semibold">Add a second lock</span>
-            <span className="text-[14px] leading-5">
-              Needed before you can move money. It takes a minute.
-            </span>
-          </span>
-          <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
-        </Link>
-      )}
-      <TodaySavings plans={data?.plans} />
-      <TodayCircles groups={data?.groups} />
-      <TodayFriends state={data?.friends} />
-      <InstallCard />
+      {/* On a wide screen: money and what needs doing on the left, savings, circles and friends on the right. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="lg:min-w-0">
+          <WalletSummary
+            wallets={data?.wallets}
+            currency={countryConfig(me.country)?.currency}
+            fx={data?.fx}
+          />
+          <QuickActions />
+          {me.kycStatus !== undefined && me.kycStatus !== "approved" && (
+            <Link
+              href="/verify"
+              className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] border border-primary/20 bg-primary-tint p-4 text-ink"
+            >
+              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-on-primary">
+                <BookUser aria-hidden className="size-6" />
+              </span>
+              <span className="grid gap-0.5">
+                <span className="text-[15px] font-semibold">Get your passport stamped</span>
+                <span className="text-[14px] leading-5 text-ink-muted">
+                  {me.kycStatus === "rejected"
+                    ? "A stamp needs another try."
+                    : me.kycStatus === "pending"
+                      ? "We're checking your details."
+                      : "Five short steps open saving, circles and friends."}
+                </span>
+              </span>
+              <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
+            </Link>
+          )}
+          {me.mfaEnabled === false && (
+            <Link
+              href="/me/security"
+              className="mt-4 flex items-center gap-4 rounded-[var(--radius-l)] border border-oro/30 bg-oro-tint p-4 text-oro-ink"
+            >
+              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-oro text-on-oro">
+                <ShieldAlert aria-hidden className="size-6" />
+              </span>
+              <span className="grid gap-0.5">
+                <span className="text-[15px] font-semibold">Add a second lock</span>
+                <span className="text-[14px] leading-5">
+                  Needed before you can move money. It takes a minute.
+                </span>
+              </span>
+              <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
+            </Link>
+          )}
+        </div>
+        <div className="lg:min-w-0">
+          <TodaySavings plans={data?.plans} />
+          <TodayCircles groups={data?.groups} />
+          <TodayFriends state={data?.friends} />
+          <InstallCard />
+        </div>
+      </div>
     </main>
   );
 }

@@ -119,3 +119,14 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 | Password recovery typo ("Passsword") | "Password recovery" | Corrected |
 | Photo avatars | Initials, until photos are added to `public/people/` | Photos need licensed images; see `public/people/CREDITS.md` |
 | Date "Jan 19" | Dates formatted for the user's locale | Spec E11.7 |
+
+## Desktop (E1.26, Oct 10)
+
+- **Breakpoint `lg` (1024px).** Below it, every screen is the phone layout, unchanged. At `lg` and up, pages inside the app (`isAppRoute` in `src/lib/app-routes.ts`) get the `DesktopNav` sidebar (248px) and the bottom `TabBar` hides. Sign-in, set-up, invites and public pages keep the phone-sized column.
+- **Width.** Screens keep `px-4` at every size (the sticky bars rely on it) and widen with `lg:max-w-*`: Today, Wallet, Statements, Insights `lg:max-w-6xl`; Save, Circles, Friends, Messages, Me `lg:max-w-3xl`; the circle board `lg:max-w-7xl`. Forms stay phone-width.
+- **Columns.** Today: money and to-dos left, savings, circles and friends right. Wallet: balance and actions left (sticky), activity right.
+- **Desktop-first features.** Statements (`/wallet/statements`, table on desktop, list on phones, CSV download), Insights (`/insights`, charts), the circle board (`/circles/<id>/board`, linked from a circle's top bar on desktop). They work on phones too, but are only linked from the sidebar or desktop-only buttons.
+- **Charts.** Marks use `--chart-in` / `--chart-out` / `--chart-grid` only (validated for colour-blind separation and contrast in both themes); text never wears them; always a legend for two series, hover details, and a table view.
+- **Keypads** take typed digits on desktop without being clicked first.
+- **Landing page.** `/` shows `Landing` on wide screens and the `Welcome` screen on phones.
+

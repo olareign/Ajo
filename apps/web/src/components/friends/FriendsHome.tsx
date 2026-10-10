@@ -69,7 +69,7 @@ export function FriendsHome() {
   const incoming = data && data !== "failed" ? data.requests.incoming.length : 0;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader
         title="Friends"

@@ -76,6 +76,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.23 | Profile picture | ✅ | ☐ | Built on `phase-5/photo-and-shell`: Me, then Profile picture (also by tapping your picture): choose, slide and zoom inside a circle, save; or remove. Only the cropped square leaves the phone (JPEG, 512 px at most); the server checks it by its bytes (SVG is refused), redraws it as a 512 px WebP so no location or camera data survives, and keeps it in a **private Cloudflare R2 bucket**. Shown on Me, the top bar, friends, requests and a friend's page, only to you and people you are connected to (never in search, never across a block). **You:** create the bucket and paste four values in Render (see the runbook); until then the screen says pictures are not switched on |
 | E1.24 | Close account | ✅ | ☐ | Password (and code), plus an explicit yes; refused with the reason while money, a plan, a running circle, a payment or auto-debit remains; then signs out everywhere and emails a confirmation. Records stay; the ledger is never touched |
 | E1.25 | Help, terms and privacy | ✅ | ☐ | Built Oct 5 on `phase-4.5/profile-and-speed`: `/help` (support email with a ready subject, a never-share-your-codes warning, five quick answers), `/terms` and `/privacy` as plain-language **drafts** marked "under legal review" (flip `LEGAL.draft` in `src/lib/support.ts` once your lawyer signs them off), all open without signing in; Me gets a Help and legal group and the build number. **You:** a phone/WhatsApp contact later, and the lawyer's review |
+| E1.26 | Desktop version | ✅ | ☐ | Built Oct 10 on `phase-7/desktop-and-fx`: sidebar, wider two-column screens, Statements with CSV, Insights charts, the circle board, a desktop landing page at `/`, and keypads that take typed digits. Phones are unchanged |
 
 ### E2. KYC
 
@@ -182,6 +183,16 @@ A separate app (`apps/admin`) on its own address, with its own sign-in. How to s
 | E9.5 | Reconciliation | ⬜ | | Waits for the daily reconciliation job (E3.7) |
 | E9.6 | Reports | ⬜ | | Second step, after the core |
 | E9.7 | Audit log | ✅ | ☐ | Every look and every change, refusals too; the database itself refuses to update, delete or empty it; readable by compliance and the owner, and reading it is logged too |
+
+### E11. Global and multi-currency (Oct 10, `phase-7/stripe-and-fx`)
+
+| ID | Feature | Mark | Hand test | Note |
+| --- | --- | --- | --- | --- |
+| E11.1 | Country configuration | 🟡 | ☐ | **The UK now has a payment partner: Stripe** (card top-ups through Checkout, Bacs Direct Debit), in test mode until you paste live keys. **UK withdrawals are not connected:** an ordinary Stripe account pays out only to its owner's bank, so paying people out needs Stripe Connect or a payout partner (your choice). Countries are still NG and GB only |
+| E11.2 | Multi-currency ledger and wallets | 🟡 | | The ledger keeps every currency apart; a UK person's wallet is in GBP |
+| E11.3 | Exchange-rate quotes | 🟡 | ☐ | **Shown, not converted (your choice):** each wallet's value in GBP, USD and EUR at Open Exchange Rates' hourly rate, cached for an hour, marked stale when the source is down, never older than a day; exact integer conversion. No money changes currency: real conversion waits for a licensed FX partner |
+
+The API commit "feat(E3.6): statements and monthly insights" is E1.26 (desktop) work; E3.6 is the webhook inbox.
 
 ## Phases 2 to 6
 

@@ -4,9 +4,14 @@ import { Amount } from "@/components/ui/Amount";
 import { useHiddenBalance } from "@/lib/hidden-balance";
 import { currencyName, type Wallet } from "@/lib/wallet";
 import { BalanceEye, HiddenAmount, SIGN } from "./BalanceEye";
+import type { FxEquivalents } from "@/lib/fx";
+import { Equivalents } from "./Equivalents";
 
 /** One currency's money: what can be spent, then what is held back and what is saved. */
-export function BalanceCard({ wallet }: Readonly<{ wallet: Wallet }>) {
+export function BalanceCard({
+  wallet,
+  fx,
+}: Readonly<{ wallet: Wallet; fx?: FxEquivalents | null }>) {
   const name = currencyName(wallet.currency);
   const [hidden, toggle] = useHiddenBalance();
   const sign = SIGN[wallet.currency] ?? wallet.currency;
@@ -38,6 +43,7 @@ export function BalanceCard({ wallet }: Readonly<{ wallet: Wallet }>) {
         <p className="text-[13px] text-on-hero-muted">Available</p>
         {money(wallet.available, "l")}
       </div>
+      <Equivalents fx={fx} currency={wallet.currency} hidden={hidden} />
       <dl className="grid grid-cols-2 gap-3">
         <div className="grid gap-1 rounded-m bg-[var(--hero-chip)] p-3">
           <dt className="text-[12px] text-on-hero-muted">Locked</dt>

@@ -4,7 +4,9 @@ import { ArrowDownToLine, ArrowUpFromLine, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Amount } from "@/components/ui/Amount";
 import { useHiddenBalance } from "@/lib/hidden-balance";
+import type { FxEquivalents } from "@/lib/fx";
 import type { Wallet } from "@/lib/wallet";
+import { Equivalents } from "./Equivalents";
 import { BalanceEye, HiddenAmount, SIGN } from "./BalanceEye";
 
 /**
@@ -14,7 +16,10 @@ import { BalanceEye, HiddenAmount, SIGN } from "./BalanceEye";
 export function WalletSummary({
   wallets,
   currency,
+  fx,
 }: Readonly<{
+  /** What the balance is worth in other currencies (an estimate), when rates are known. */
+  fx?: FxEquivalents | null;
   /** undefined while loading, null when it could not be loaded. */
   wallets: readonly Wallet[] | null | undefined;
   /** The person's own currency: an empty wallet then reads as zero in it, as money apps do. */
@@ -71,6 +76,9 @@ export function WalletSummary({
         </Link>
         <BalanceEye hidden={hidden} onToggle={toggle} />
       </div>
+      {wallets?.map((wallet) => (
+        <Equivalents key={wallet.currency} fx={fx} currency={wallet.currency} hidden={hidden} />
+      ))}
       <nav aria-label="Move money" className="grid grid-cols-2 gap-3">
         <Link
           href="/wallet/add"

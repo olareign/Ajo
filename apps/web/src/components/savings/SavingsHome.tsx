@@ -94,7 +94,7 @@ export function SavingsHome() {
     totals.set(p.saved.currency, (totals.get(p.saved.currency) ?? 0n) + BigInt(p.saved.amount));
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
       {preview && <PreviewRibbon exitHref="/save" />}
       <ScreenHeader
         tab

@@ -4,10 +4,19 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MeGate } from "@/components/onboarding/MeGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Gauge, Landmark } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  BarChart3,
+  ChevronRight,
+  FileText,
+  Gauge,
+  Landmark,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import type { Wallet, WalletTransaction } from "@/lib/wallet";
+import { readFx, type FxEquivalents } from "@/lib/fx";
 import { loadScreen, partData } from "@/lib/screen-client";
 import { recall, remember } from "@/lib/visit-cache";
 import { loadTransactions, type TransactionPage } from "@/lib/wallet-client";
@@ -20,6 +29,7 @@ type State =
   | Readonly<{
       phase: "ready";
       wallets: Wallet[];
+      fx: FxEquivalents | null;
       items: WalletTransaction[];
       next: string | null;
       moreFailed: boolean;
@@ -62,6 +72,7 @@ function Wallets() {
       const next: State = {
         phase: "ready",
         wallets: balances.wallets as Wallet[],
+        fx: result.status === "ok" ? readFx(partData(result.data.fx)) : null,
         items: page.items,
         next: typeof page.next === "string" ? page.next : null,
         moreFailed: false,
@@ -99,7 +110,7 @@ function Wallets() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-6xl lg:pt-8 lg:pb-12">
       <ScreenHeader tab title="Wallet" subtitle="Your money, and where it sits." />
       {state.phase === "loading" && (
         <div role="status" className="grid gap-4">
@@ -126,19 +137,21 @@ function Wallets() {
         </div>
       )}
       {state.phase === "ready" && (
-        <div className="grid gap-6">
-          {state.wallets.length === 0 ? (
-            <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
-              No money here yet. When you add or receive money, it shows up here.
-            </p>
-          ) : (
-            <div className="grid gap-4">
-              {state.wallets.map((wallet) => (
-                <BalanceCard key={wallet.currency} wallet={wallet} />
-              ))}
-            </div>
-          )}
-          <MoneyActions />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start lg:gap-8">
+          <div className="grid gap-6 lg:sticky lg:top-24">
+            {state.wallets.length === 0 ? (
+              <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
+                No money here yet. When you add or receive money, it shows up here.
+              </p>
+            ) : (
+              <div className="grid gap-4">
+                {state.wallets.map((wallet) => (
+                  <BalanceCard key={wallet.currency} wallet={wallet} fx={state.fx} />
+                ))}
+              </div>
+            )}
+            <MoneyActions />
+          </div>
           <section aria-labelledby="activity" className="grid gap-2">
             <h2 id="activity" className="font-display text-[18px] leading-6 font-semibold">
               Recent activity
@@ -193,6 +206,8 @@ function MoneyActions() {
           [
             ["/wallet/mandate", "Auto-debit", "Lets your bank top up a short wallet", Landmark],
             ["/wallet/limits", "Your limits", "How much can move each day", Gauge],
+            ["/wallet/statements", "Statements", "Every payment, and a copy to download", FileText],
+            ["/insights", "Insights", "Money in, out and saved, month by month", BarChart3],
           ] as const
         ).map(([href, label, hint, Icon]) => (
           <Link
