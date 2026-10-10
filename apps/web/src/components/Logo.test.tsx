@@ -2,11 +2,11 @@ import { render, screen } from "@testing-library/react";
 import { Logo } from "./Logo";
 
 describe("Logo", () => {
-  it("is one image named Àjọ for screen readers; the three layers are decoration", () => {
+  it("is one image named Àjọ for screen readers; the layers are decoration", () => {
     const { container } = render(<Logo />);
     expect(screen.getByRole("img", { name: "Àjọ" })).toBeInTheDocument();
     const layers = [...container.querySelectorAll("img")];
-    expect(layers).toHaveLength(3);
+    expect(layers).toHaveLength(4);
     for (const layer of layers) expect(layer).toHaveAttribute("alt", "");
   });
 
@@ -17,7 +17,20 @@ describe("Logo", () => {
       "/brand/ajo-rays.webp",
       "/brand/ajo-coin.webp",
       "/brand/ajo-wordmark.webp",
+      "/brand/ajo-wordmark-dark.webp",
     ]);
+  });
+
+  it("has a lighter wordmark for dark mode, and CSS shows the one for the page's theme", () => {
+    const { container } = render(<Logo />);
+    const light = container.querySelector('img[src="/brand/ajo-wordmark.webp"]');
+    const dark = container.querySelector('img[src="/brand/ajo-wordmark-dark.webp"]');
+    expect(light).toHaveClass("theme-light-only");
+    expect(dark).toHaveClass("theme-dark-only");
+    // The gold coin and sparkles read on both, so they are drawn once.
+    expect(container.querySelector('img[src="/brand/ajo-coin.webp"]')?.className).not.toMatch(
+      /theme-/,
+    );
   });
 
   it("keeps the logo's own proportions, so nothing jumps when the images load", () => {

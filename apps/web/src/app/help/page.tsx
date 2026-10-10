@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
-import { HelpScreen } from "@/components/legal/HelpScreen";
+import { PublicHelpCenter } from "@/components/help/PublicHelpCenter";
+import { supportEmail } from "@/server/site-contact";
 
-export const metadata: Metadata = { title: "Help" };
+export const metadata: Metadata = {
+  title: "Help Center — Àjọ",
+  description:
+    "Find answers about Èsúsú rotating circles, security deposits, saving in naira and pounds, and contact our team.",
+};
 
-export default function Page() {
-  return <HelpScreen />;
+export default async function Page() {
+  return <PublicHelpCenter supportEmail={await supportEmail()} />;
 }

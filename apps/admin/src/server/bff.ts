@@ -125,6 +125,13 @@ const ROUTES: readonly Route[] = [
     api: (m) => `/admin/team/${m[1]}/${m[2]}`,
     keys: ["code"],
   },
+  { method: "GET", pattern: /^settings$/, api: () => "/admin/settings" },
+  {
+    method: "POST",
+    pattern: /^settings\/support-email$/,
+    api: () => "/admin/settings/support-email",
+    keys: ["email", "code", "reason"],
+  },
 ];
 
 const json = (status: number, body: unknown, cookies: string[] = []) => {

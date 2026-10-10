@@ -119,9 +119,10 @@ describe("Me: tier, account rows and closing", () => {
 it("leads to help, terms and privacy, and shows which build is running", async () => {
   api({});
   render(<MeScreen />);
+  // Help inside the app keeps the app's frame; /help is the public page.
   expect(await screen.findByRole("link", { name: /Help and support/ })).toHaveAttribute(
     "href",
-    "/help",
+    "/me/help",
   );
   expect(screen.getByRole("link", { name: /Terms of use/ })).toHaveAttribute("href", "/terms");
   expect(screen.getByRole("link", { name: /Privacy notice/ })).toHaveAttribute("href", "/privacy");

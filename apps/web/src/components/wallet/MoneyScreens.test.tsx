@@ -138,16 +138,17 @@ describe("adding money", () => {
     expect(screen.queryByRole("group", { name: /number pad/ })).not.toBeInTheDocument();
   });
 
-  it("offers only the UK bank transfer, with a sort code, and no cards or Direct Debit", async () => {
+  it("offers UK people a card, the one way the UK partner takes money in, and goes on to the amount", async () => {
     api({ ...me, country: "GB" });
     const user = userEvent.setup();
     open(<AddMoney />);
-    await screen.findByRole("radio", { name: /Bank transfer/ });
-    expect(screen.queryByRole("radio", { name: /Debit card/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: /Direct Debit/ })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("radio", { name: /Bank transfer/ }));
+    const card = await screen.findByRole("radio", { name: /Debit or credit card/ });
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+    expect(screen.queryByRole("radio", { name: /Bank transfer/ })).not.toBeInTheDocument();
+    await user.click(card);
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByText("04-00-04")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: /number pad/ })).toBeInTheDocument();
+    expect(screen.queryByText("04-00-04")).not.toBeInTheDocument();
   });
 
   it("goes back a step at a time", async () => {

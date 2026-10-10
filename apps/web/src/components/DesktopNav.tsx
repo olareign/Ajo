@@ -43,8 +43,12 @@ const GROUPS: readonly {
   { items: [{ href: "/me", label: "Me", Icon: User }] },
 ];
 
+const HELP = "/me/help";
+
 /** The most specific section a path is in, so "/wallet/statements" lights Statements and not Wallet. */
 function activeHref(path: string): string | undefined {
+  // Help sits under Me but has its own link at the foot of the sidebar.
+  if (path === HELP || path.startsWith(`${HELP}/`)) return HELP;
   const all = GROUPS.flatMap((g) => g.items.map((i) => i.href));
   return all
     .filter((href) => path === href || path.startsWith(`${href}/`))
@@ -62,7 +66,22 @@ export function DesktopNav() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-surface-raised lg:flex">
       <Link href="/today" className="flex items-center gap-2 px-6 pt-6 pb-5" aria-label="Àjọ home">
-        <Image src="/brand/ajo-logo.webp" alt="" width={84} height={52} priority />
+        <Image
+          src="/brand/ajo-logo.webp"
+          alt=""
+          width={84}
+          height={52}
+          priority
+          className="theme-light-only"
+        />
+        <Image
+          src="/brand/ajo-logo-dark.webp"
+          alt=""
+          width={84}
+          height={52}
+          priority
+          className="theme-dark-only"
+        />
       </Link>
       <nav
         aria-label="Desktop"
@@ -98,8 +117,14 @@ export function DesktopNav() {
         ))}
       </nav>
       <Link
-        href="/help"
-        className="mx-3 mb-5 flex min-h-11 items-center gap-3 rounded-m px-3 text-[14px] font-semibold text-ink-muted hover:bg-surface-sunken"
+        href={HELP}
+        aria-current={active === HELP ? "page" : undefined}
+        className={cn(
+          "mx-3 mb-5 flex min-h-11 items-center gap-3 rounded-m px-3 text-[14px] font-semibold",
+          active === HELP
+            ? "bg-primary-tint text-primary"
+            : "text-ink-muted hover:bg-surface-sunken hover:text-ink",
+        )}
       >
         <Headset aria-hidden className="size-5" />
         Help and support

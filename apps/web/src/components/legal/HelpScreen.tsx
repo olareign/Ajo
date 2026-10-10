@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight, FileText, Lock, Mail, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
+import { supportMailto } from "@/lib/support";
 import { InfoShell } from "./InfoShell";
 
 /** Answers to what people ask most, each pointing at the screen that does it. */
@@ -23,16 +23,17 @@ const ANSWERS = [
   },
   {
     q: "How do I close my account?",
-    a: "Empty your wallet, end any saving plans, wait for your circles to finish and cancel auto-debit. Then go to Me and tap Close account.",
+    a: "Empty your wallet, end any saving plans, wait for your circles to finish and cancel auto-debit. Then go to Me, tap Close account, and confirm with your password (and your authenticator code, if it's on).",
   },
 ] as const;
 
-export function HelpScreen() {
+/** `supportEmail` is the address staff set in the admin console, read on the server. */
+export function HelpScreen({ supportEmail }: Readonly<{ supportEmail: string }>) {
   return (
     <InfoShell title="Help" subtitle="Quick answers, and a person when you need one.">
       <div className="grid gap-6">
         <a
-          href={supportMailto("Àjọ help")}
+          href={supportMailto(supportEmail, "Àjọ help")}
           className="flex items-center gap-4 rounded-[var(--radius-l)] bg-primary-tint p-5"
         >
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-on-primary">
@@ -40,7 +41,7 @@ export function HelpScreen() {
           </span>
           <span className="grid min-w-0">
             <span className="text-[16px] font-semibold">Email us</span>
-            <span className="truncate text-[14px] text-ink-muted">{SUPPORT_EMAIL}</span>
+            <span className="truncate text-[14px] text-ink-muted">{supportEmail}</span>
           </span>
           <ChevronRight aria-hidden className="ml-auto size-5 shrink-0 text-ink-muted" />
         </a>

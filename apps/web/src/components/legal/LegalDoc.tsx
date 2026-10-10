@@ -1,19 +1,22 @@
 import { FilePen } from "lucide-react";
 import Link from "next/link";
-import { LEGAL, SUPPORT_EMAIL, supportMailto } from "@/lib/support";
+import { LEGAL, supportMailto } from "@/lib/support";
+import { supportEmail } from "@/server/site-contact";
 import { InfoShell } from "./InfoShell";
 
-export type LegalSection = Readonly<{ heading: string; body: readonly string[] }>;
+/** `id` gives a section a fixed address to link to (the privacy pop-up links to #cookies). */
+export type LegalSection = Readonly<{ id?: string; heading: string; body: readonly string[] }>;
 
 /**
  * A terms or privacy page: plain-language sections, the date, how to reach us, and, until a lawyer
  * has reviewed the text, a banner saying it is a draft.
  */
-export function LegalDoc({
+export async function LegalDoc({
   title,
   intro,
   sections,
 }: Readonly<{ title: string; intro: string; sections: readonly LegalSection[] }>) {
+  const email = await supportEmail();
   return (
     <InfoShell title={title}>
       <article className="grid gap-6">
@@ -34,7 +37,12 @@ export function LegalDoc({
           <p className="text-[15px] leading-6">{intro}</p>
         </div>
         {sections.map((s, i) => (
-          <section key={s.heading} aria-labelledby={`s${i}`} className="grid gap-2">
+          <section
+            key={s.heading}
+            id={s.id}
+            aria-labelledby={`s${i}`}
+            className="grid scroll-mt-20 gap-2"
+          >
             <h2 id={`s${i}`} className="font-display text-[18px] leading-6 font-semibold">
               {i + 1}. {s.heading}
             </h2>
@@ -50,10 +58,10 @@ export function LegalDoc({
           <p className="text-[14px] leading-5 text-ink-muted">
             Email{" "}
             <a
-              href={supportMailto(`Question about the ${title}`)}
+              href={supportMailto(email, `Question about the ${title}`)}
               className="font-semibold text-primary"
             >
-              {SUPPORT_EMAIL}
+              {email}
             </a>{" "}
             or see{" "}
             <Link href="/help" className="font-semibold text-primary">

@@ -9,7 +9,8 @@ export type Permission =
   | "cases:read"
   | "cases:write"
   | "audit:read"
-  | "team:manage";
+  | "team:manage"
+  | "settings:manage";
 
 export type Me = Readonly<{
   id: string;
@@ -142,3 +143,10 @@ export type TeamMember = Readonly<{
 }>;
 
 export type SetupCodeResult = Readonly<{ setupCode: string; expiresAt: string }>;
+
+/** What customers see as the address to write to for help, and who last changed it. */
+export type SupportContact = Readonly<{
+  supportEmail: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}>;

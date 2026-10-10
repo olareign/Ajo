@@ -101,6 +101,16 @@ export const PRIVACY: readonly LegalSection[] = [
     ],
   },
   {
+    id: "cookies",
+    heading: "Cookies and storage on your device",
+    body: [
+      "We only use what Àjọ needs to work. When you sign in, we set a few cookies that keep you signed in, remember a device you asked us to remember, and hold a sign-in step for a few minutes. Scripts on the page can't read them, and they're never shared with advertisers.",
+      "When you create an account, Cloudflare's bot check (Turnstile) runs on the page and may store its own data to tell people from bots.",
+      "Your browser also remembers a few choices on your device, such as light or dark mode, whether your balance is hidden, and that you've seen this notice. They stay on your device; we don't receive them.",
+      "We don't use advertising cookies or analytics that follow you around the web. Because everything here is needed for Àjọ to work, there's nothing to switch off. If we ever add something optional, we'll ask you first.",
+    ],
+  },
+  {
     heading: "How long we keep it",
     body: [
       "We keep your information while your account is open. Old sessions and used sign-in links are deleted automatically. When you close your account, you can no longer sign in, and we keep only what the law and our payment partners require us to keep, for as long as they require.",

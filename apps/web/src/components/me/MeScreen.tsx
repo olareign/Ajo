@@ -264,7 +264,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
             Help and legal
           </h2>
           <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-            <Row href="/help" label="Help and support" Icon={LifeBuoy} />
+            <Row href="/me/help" label="Help and support" Icon={LifeBuoy} />
             <Row href="/terms" label="Terms of use" Icon={FileText} />
             <Row href="/privacy" label="Privacy notice" Icon={Lock} />
           </div>

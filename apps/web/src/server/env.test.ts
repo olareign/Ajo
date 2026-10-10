@@ -22,6 +22,17 @@ describe("loadServerEnv", () => {
     expect(env.production).toBe(false);
   });
 
+  it("uses local defaults in development when empty strings are provided", () => {
+    const env = loadServerEnv({
+      NODE_ENV: "development",
+      API_BASE_URL: "",
+      SESSION_SECRET: "",
+    });
+    expect(env.apiBaseUrl).toBe("http://localhost:4000");
+    expect(env.sessionSecret.length).toBeGreaterThanOrEqual(32);
+    expect(env.production).toBe(false);
+  });
+
   it("requires an https API and a strong session secret in production", () => {
     expect(() => loadServerEnv({ ...prod, API_BASE_URL: "http://api.ajo.example" })).toThrow(
       /API_BASE_URL/,

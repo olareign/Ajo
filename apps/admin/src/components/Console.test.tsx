@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import * as React from "react";
 import userEvent from "@testing-library/user-event";
 import type { Failure } from "@/lib/admin-client";
+import type { SupportContact } from "@/lib/types";
 import { ConsoleShell } from "./ConsoleShell";
 import { ConfirmAction } from "./ui/ConfirmAction";
 import { CaseScreen } from "./screens/CaseScreen";
@@ -9,6 +10,7 @@ import { KycPersonScreen } from "./screens/KycPersonScreen";
 import { LoginScreen } from "./screens/LoginScreen";
 import { PeopleScreen } from "./screens/PeopleScreen";
 import { PersonScreen } from "./screens/PersonScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
 import { SetupScreen } from "./screens/SetupScreen";
 import { TeamScreen } from "./screens/TeamScreen";
 
@@ -74,6 +76,7 @@ describe("the console frame", () => {
         "cases:read",
         "audit:read",
         "team:manage",
+        "settings:manage",
       ]),
     });
     render(<ConsoleShell>x</ConsoleShell>);
@@ -82,7 +85,7 @@ describe("the console frame", () => {
       within(nav)
         .getAllByRole("link")
         .map((l) => l.textContent),
-    ).toEqual(["Overview", "People", "Identity", "Cases", "Audit log", "Team"]);
+    ).toEqual(["Overview", "People", "Identity", "Cases", "Audit log", "Team", "Settings"]);
   });
 
   it("sends anyone without a session to the sign-in page, and draws nothing of the console", async () => {
@@ -577,5 +580,49 @@ describe("an answer the console does not recognise", () => {
     render(<ConsoleShell>secret page</ConsoleShell>);
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(screen.queryByText("secret page")).toBeNull();
+  });
+});
+
+describe("settings", () => {
+  it("shows the support email customers see, and changes it with a reason and a fresh code", async () => {
+    let current: SupportContact = {
+      supportEmail: "info@ajo.com",
+      updatedAt: null,
+      updatedBy: null,
+    };
+    const mock = api({
+      "GET settings": () => Response.json(current),
+      "POST settings/support-email": () => {
+        current = {
+          supportEmail: "help@ajo.com",
+          updatedAt: "2026-10-10T12:00:00Z",
+          updatedBy: "ada@ajo.test",
+        };
+        return none();
+      },
+    });
+    const user = userEvent.setup();
+    render(<SettingsScreen />);
+    expect(await screen.findByText("info@ajo.com")).toBeInTheDocument();
+    expect(screen.getByText(/built-in address/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Change" }));
+    const dialog = screen.getByRole("dialog");
+    const save = within(dialog).getByRole("button", { name: "Save" });
+    const field = within(dialog).getByLabelText("New address");
+    await user.clear(field);
+    await user.type(field, "Help <help@ajo.com>");
+    await user.type(within(dialog).getByLabelText(/reason/i), "The new shared inbox is live");
+    await user.type(within(dialog).getByLabelText(/code/i), "123456");
+    expect(save).toBeDisabled();
+    await user.clear(field);
+    await user.type(field, " Help@Ajo.com ");
+    await user.click(save);
+    expect(await screen.findByRole("status")).toHaveTextContent("help@ajo.com");
+    expect(body(mock, "POST settings/support-email")).toEqual({
+      email: "help@ajo.com",
+      code: "123456",
+      reason: "The new shared inbox is live",
+    });
+    expect(await screen.findByText(/by ada@ajo.test/)).toBeInTheDocument();
   });
 });

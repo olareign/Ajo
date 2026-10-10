@@ -1,4 +1,4 @@
-import { isAppRoute, isFullWidthRoute } from "./app-routes";
+import { isAppRoute, isFullWidthRoute, isPublicPage } from "./app-routes";
 
 describe("which pages are inside the app", () => {
   it("knows the signed-in sections and the pages under them", () => {
@@ -31,5 +31,19 @@ describe("which pages are inside the app", () => {
     }
     expect(isFullWidthRoute("/")).toBe(true);
     expect(isFullWidthRoute("/today")).toBe(false);
+  });
+
+  it("lets the public pages lay themselves out at every width, and sign-in on a desk", () => {
+    for (const path of ["/how-it-works", "/safety", "/about", "/help"]) {
+      expect(isPublicPage(path)).toBe(true);
+      expect(isFullWidthRoute(path)).toBe(true);
+    }
+    for (const path of ["/sign-in", "/sign-up", "/forgot-password"]) {
+      expect(isPublicPage(path)).toBe(false);
+      expect(isFullWidthRoute(path)).toBe(true);
+    }
+    for (const path of ["/helpful", "/aboutus", "/me/help", "/terms", "/privacy"])
+      expect(isPublicPage(path)).toBe(false);
+    expect(isAppRoute("/me/help")).toBe(true);
   });
 });

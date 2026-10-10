@@ -173,7 +173,7 @@ const TILES = [
   },
   { href: "/wallet/limits", label: "Limits", Icon: Gauge, tone: "bg-primary-tint text-primary" },
   { href: "/verify", label: "Identity", Icon: BookUser, tone: "bg-tertiary-tint text-tertiary" },
-  { href: "/help", label: "Help", Icon: Headset, tone: "bg-leaf-tint text-leaf" },
+  { href: "/me/help", label: "Help", Icon: Headset, tone: "bg-leaf-tint text-leaf" },
 ] as const;
 
 /** Where people go most after their balance, one tap each, in two rows of four. */

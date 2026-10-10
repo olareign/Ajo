@@ -38,6 +38,13 @@ describe("ScreenHeader", () => {
     expect(bar).toContainElement(screen.getByRole("button", { name: "Help" }));
   });
 
+  it("keeps back and the action on a wide screen too (some actions exist only there)", () => {
+    render(<ScreenHeader title="Cousins" backHref="/circles" action={<a href="/b">Board</a>} />);
+    const back = screen.getByRole("link", { name: "Back" });
+    const action = screen.getByRole("link", { name: "Board" }).parentElement!;
+    for (const el of [back, action]) expect(el.className).not.toMatch(/(^|\s)lg:hidden/);
+  });
+
   it("keeps a long, question-like title large under the bar instead of cutting it", () => {
     render(<ScreenHeader title="How much would you like to save?" onBack={() => undefined} />);
     const bar = screen.getByRole("button", { name: "Back" }).parentElement!;
