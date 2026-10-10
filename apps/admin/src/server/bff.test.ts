@@ -275,6 +275,19 @@ describe("what the console may ask for", () => {
       role: "support",
       code: "123456",
     });
+    const f4 = ok({}, 204);
+    await run(
+      await req("POST", "settings/support-email", {
+        body: { email: "help@ajo.com", code: "123456", reason: "New inbox", role: "owner" },
+      }),
+      f4,
+      "settings/support-email",
+    );
+    expect(call(f4)).toMatchObject({
+      url: `${API}/admin/settings/support-email`,
+      body: { email: "help@ajo.com", code: "123456", reason: "New inbox" },
+    });
+    expect(call(f4).body).not.toHaveProperty("role");
   });
 
   it("changes things only from the console's own pages", async () => {
@@ -286,6 +299,7 @@ describe("what the console may ask for", () => {
       `cases/${ID}/notes`,
       "team",
       `team/${ID}/disable`,
+      "settings/support-email",
       "auth/logout",
     ]) {
       const res = await run(

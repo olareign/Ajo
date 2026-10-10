@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   ScrollText,
+  Settings,
   ShieldCheck,
   Users,
   UsersRound,
@@ -29,6 +30,7 @@ const NAV: readonly { href: string; label: string; Icon: LucideIcon; needs: Perm
   { href: "/cases", label: "Cases", Icon: ClipboardList, needs: "cases:read" },
   { href: "/audit", label: "Audit log", Icon: ScrollText, needs: "audit:read" },
   { href: "/team", label: "Team", Icon: UsersRound, needs: "team:manage" },
+  { href: "/settings", label: "Settings", Icon: Settings, needs: "settings:manage" },
 ];
 
 /**

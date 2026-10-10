@@ -6,12 +6,14 @@ The staff back office (plan E9). It is its own app (`apps/admin`), deployed as i
 
 | Role | Can |
 | --- | --- |
-| **Owner** | Everything, including adding, resetting and turning off staff |
+| **Owner** | Everything, including adding, resetting and turning off staff, and Settings (the support email customers see) |
 | **Support** | Look people up, suspend an account, read recovery cases |
 | **Compliance** | Look people up, suspend and reinstate, review identity (decide steps, approve or hold by hand), read the audit log |
 | **Finance** | Look people up, work recovery cases (notes, record an outcome) |
 
 Every sensitive action (suspend, reinstate, an identity decision, closing a case, anything on the team) asks for a written reason and a **fresh authenticator code** on top of being signed in. Everything staff do, including every look at a person's details and every refusal, is written to the audit log, which the database refuses to change or empty.
+
+**Settings (owners):** the support email shown on Help, Safety, the legal pages and every footer. It starts as `info@ajo.com`; Change asks for the new address, a reason and a fresh code, and customers see it within a minute. Use an inbox Àjọ controls: people write there about their money.
 
 Not built yet: reconciliation (E9.5, waits for E3.7) and reports (E9.6). Identity documents: none are stored yet (identity checks are not connected to a partner), so there is nothing to open; signed links come with that.
 
