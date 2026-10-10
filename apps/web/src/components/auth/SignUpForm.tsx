@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
@@ -114,8 +115,8 @@ export function SignUpForm({ turnstileSiteKey, invite }: Props) {
           )}
         </div>
       )}
-      {/* Pinned to the bottom of the screen, where the thumb is, like the buttons on the welcome screen. */}
-      <div className="mt-auto pt-8">
+      {/* Pinned to the bottom on mobile; comfortably spaced on desktop. */}
+      <div className="mt-auto pt-8 lg:mt-6 lg:pt-2">
         <Button
           type="submit"
           size="lg"
@@ -126,6 +127,23 @@ export function SignUpForm({ turnstileSiteKey, invite }: Props) {
         >
           {busy ? "One moment…" : "Create account"}
         </Button>
+        {/* Opened in a new tab so nothing typed here is lost. */}
+        <p className="mt-3 text-center text-[13px] leading-5 text-ink-muted">
+          By creating an account you agree to our{" "}
+          <Link href="/terms" target="_blank" rel="noopener" className="font-semibold text-primary">
+            Terms of use
+          </Link>{" "}
+          and confirm you&apos;ve read our{" "}
+          <Link
+            href="/privacy"
+            target="_blank"
+            rel="noopener"
+            className="font-semibold text-primary"
+          >
+            Privacy notice
+          </Link>
+          .
+        </p>
       </div>
     </form>
   );

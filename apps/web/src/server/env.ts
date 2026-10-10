@@ -20,12 +20,14 @@ const DEV_SECRET = randomBytes(32).toString("base64url");
 /** Server-only settings for the BFF. Errors name variables, never their values. */
 export function loadServerEnv(source: Record<string, string | undefined>): ServerEnv {
   const production = source.NODE_ENV === "production";
-  const apiBaseUrl = source.API_BASE_URL ?? (production ? "" : "http://localhost:4000");
-  const sessionSecret = source.SESSION_SECRET ?? (production ? "" : DEV_SECRET);
+  const rawApi = source.API_BASE_URL?.trim();
+  const apiBaseUrl = (rawApi ? rawApi : undefined) ?? (production ? "" : "http://localhost:4000");
+  const rawSecret = source.SESSION_SECRET?.trim();
+  const sessionSecret = (rawSecret ? rawSecret : undefined) ?? (production ? "" : DEV_SECRET);
   const problems: string[] = [];
-  const siteKey = source.TURNSTILE_SITE_KEY?.trim() || undefined;
+  const siteKey = (source.TURNSTILE_SITE_KEY || source.turnstile_key)?.trim() || undefined;
   if (siteKey && !SITE_KEY.test(siteKey)) problems.push("TURNSTILE_SITE_KEY: not a valid key");
-  const bffSecret = source.BFF_SHARED_SECRET || undefined;
+  const bffSecret = source.BFF_SHARED_SECRET?.trim() || undefined;
   if (bffSecret !== undefined && bffSecret.length < 32)
     problems.push("BFF_SHARED_SECRET: must be at least 32 characters");
 

@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { AppFrame } from "@/components/AppFrame";
+import { PrivacyNotice } from "@/components/PrivacyNotice";
 import { AppNav } from "@/components/AppNav";
 import { DesktopNav } from "@/components/DesktopNav";
 import { InstallCapture } from "@/components/install/InstallCapture";
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <DesktopNav />
         <AppFrame>{children}</AppFrame>
         <AppNav />
+        <PrivacyNotice />
       </body>
     </html>
   );

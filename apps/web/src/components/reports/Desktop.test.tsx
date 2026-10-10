@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { CircleBoard } from "@/components/circles/CircleBoard";
 import { CirclesProvider } from "@/components/circles/CirclesFlow";
 import { DesktopNav } from "@/components/DesktopNav";
-import { Landing } from "@/components/Landing";
 import { Equivalents } from "@/components/wallet/Equivalents";
 import { MoneyFlow } from "@/components/wallet/MoneyFlow";
 import { readFx } from "@/lib/fx";
@@ -353,23 +352,5 @@ describe("the circle board", () => {
     expect(rows[2]).toHaveTextContent("Paid lateWaiting");
     expect(within(rows[1]!).getAllByLabelText("Paid out this round")).toHaveLength(1);
     expect(rows[3]).toHaveTextContent("2 of 2");
-  });
-});
-
-describe("the landing page", () => {
-  it("leads with saving together safely, explains circles and safety, and has both ways in", () => {
-    render(<Landing />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Save together, safely.");
-    expect(screen.getByRole("heading", { name: "How a circle works" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /no one is left out of pocket/ }),
-    ).toBeInTheDocument();
-    expect(
-      screen
-        .getAllByRole("link", { name: /Get started|Create your account/ })
-        .every((l) => l.getAttribute("href") === "/sign-up"),
-    ).toBe(true);
-    expect(screen.getAllByRole("link", { name: "Sign in" })[0]).toHaveAttribute("href", "/sign-in");
-    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
   });
 });

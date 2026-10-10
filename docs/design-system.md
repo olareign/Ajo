@@ -122,11 +122,56 @@ Only transform and opacity move. Everything is skipped when the device asks for 
 
 ## Desktop (E1.26, Oct 10)
 
-- **Breakpoint `lg` (1024px).** Below it, every screen is the phone layout, unchanged. At `lg` and up, pages inside the app (`isAppRoute` in `src/lib/app-routes.ts`) get the `DesktopNav` sidebar (248px) and the bottom `TabBar` hides. Sign-in, set-up, invites and public pages keep the phone-sized column.
+- **Breakpoint `lg` (1024px).** Below it, every app screen is the phone layout, unchanged. At `lg` and up, pages inside the app (`isAppRoute` in `src/lib/app-routes.ts`) get the `DesktopNav` sidebar (248px) and the bottom `TabBar` hides. Sign-in and its neighbours become a split screen (form left, the circle on the money-hero gradient right). Set-up and invites keep the phone-sized column. The public pages (`isPublicPage`) lay themselves out at every width.
+- **Inner screens on a desk** keep the back button and the header action (the circle board link exists only there); the title stands large on the left instead of centred in a bar.
 - **Width.** Screens keep `px-4` at every size (the sticky bars rely on it) and widen with `lg:max-w-*`: Today, Wallet, Statements, Insights `lg:max-w-6xl`; Save, Circles, Friends, Messages, Me `lg:max-w-3xl`; the circle board `lg:max-w-7xl`. Forms stay phone-width.
 - **Columns.** Today: money and to-dos left, savings, circles and friends right. Wallet: balance and actions left (sticky), activity right.
 - **Desktop-first features.** Statements (`/wallet/statements`, table on desktop, list on phones, CSV download), Insights (`/insights`, charts), the circle board (`/circles/<id>/board`, linked from a circle's top bar on desktop). They work on phones too, but are only linked from the sidebar or desktop-only buttons.
 - **Charts.** Marks use `--chart-in` / `--chart-out` / `--chart-grid` only (validated for colour-blind separation and contrast in both themes); text never wears them; always a legend for two series, hover details, and a table view.
 - **Keypads** take typed digits on desktop without being clicked first.
 - **Landing page.** `/` shows `Landing` on wide screens and the `Welcome` screen on phones.
+- **Logo in two themes.** The green wordmark has a lighter twin for dark mode (`ajo-wordmark-dark.webp`, `ajo-logo-dark.webp`, green `#4ED388`, made from the original artwork; the gold coin and sparkles are shared). `Logo` draws both and the `.theme-light-only` / `.theme-dark-only` classes show the one for the page's theme, including a theme picked on Me. Never put the light logo on a dark surface.
 
+
+## Public pages and voice (Oct 10): the consistency rules
+
+The pages anyone can read before signing in (`/`, How it works, Safety, About, Help, Terms,
+Privacy) and the sign-in split screen. They share `PublicShell` (header, footer with the support
+email staff set in the admin console) and `PageIntro`. These rules keep them one product with the
+app, and keep them honest.
+
+**Say only what the app does.**
+- Every number or rule comes from `src/components/public/facts.ts`, which names the API rule it was
+  checked against. Change the rule there and every page follows; never type a figure into a page.
+- No promises the code can't keep: no "guaranteed", "100%", "zero risk", "24/7", "bank-grade",
+  "biometric", status badges ("all systems operational"), invented testimonials, people, partners or
+  company names, or response times. `Public.test.tsx` fails if one of those words comes back.
+- Say what isn't there yet, plainly ("Withdrawals to UK banks aren't switched on yet").
+- Use they/them for anyone in an example; names don't tell you pronouns.
+
+**Write like a person.**
+- Short sentences, everyday words, second person. A title is something a person would say ("How
+  can we help?"), not a slogan. Lead with the answer, then the detail.
+- One kicker line above a title, in sentence case and `text-primary`; no uppercase eyebrows and no
+  pill badges on every card.
+- Name things the way the app does: circle, round, turn, pot, deposit, wallet, saving plan, PIN,
+  authenticator app.
+
+**Look like Àjọ, not a template.**
+- Use the brand's own pieces before inventing decoration: the `CircleRing` with real photos, the
+  passport `Stamp`, the `hero-card` gradient, the `.receipt` (a torn paper edge for sums), the gold
+  underline under one word of a headline. No dot grids, orbit rings, glows, gradients on cards, or
+  pulsing dots.
+- One idea per section, alternating `bg-surface` and `bg-surface-sunken` bands with a `border-line`
+  between them. Width `max-w-6xl` (`band` in `PublicShell`), text measure about 65 characters.
+- Lists of facts as one bordered grid (`gap-px bg-line` with raised cells) or a timeline with a
+  mono label; not four identical icon cards.
+- Headings `font-display` bold with tight tracking; body 16–19px with `leading-7`/`leading-8`.
+
+**Motion only when asked.** Nothing on a public page moves on its own. Interactive pieces (the round
+player) change when the person presses something; reduced motion is respected everywhere.
+
+**Privacy notice.** `PrivacyNotice` shows once per device (bump `NOTICE_VERSION` when its words
+change). It is a notice, not a consent choice, because everything Àjọ stores is needed for it to
+work; if anything optional is ever added (analytics), it needs a real choice first. It never covers
+a phone's bottom buttons: top of the screen outside the app, above the tab bar inside it.

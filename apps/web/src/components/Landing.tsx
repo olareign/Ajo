@@ -1,338 +1,284 @@
-import {
-  ArrowRight,
-  BellRing,
-  Fingerprint,
-  Globe2,
-  HandCoins,
-  KeyRound,
-  ListChecks,
-  Orbit,
-  PiggyBank,
-  ShieldCheck,
-  Shuffle,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Fingerprint, KeyRound, Laptop, Lock, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { CircleRing } from "./CircleRing";
-import { Logo } from "./Logo";
-import { SAMPLE_CIRCLE } from "@/lib/sample-circle";
+import { band, PublicShell } from "./public/PublicShell";
+import { FACTS, FIRST_QUESTIONS, MISSED } from "./public/facts";
+import { RoundPlayer } from "./public/RoundPlayer";
 
-const STEPS: readonly { title: string; body: string; Icon: LucideIcon }[] = [
+const GUARDS = [
+  { Icon: Fingerprint, text: "Everyone checks who they are before any money moves." },
   {
-    title: "Start or join a circle",
-    body: "Choose the amount, how often, and how many people. Friends first, or find one near your goal.",
-    Icon: Users,
-  },
-  {
-    title: "Agree the order",
-    body: "By a draw anyone can check, by picking turns, or by who joined first. Two members can swap.",
-    Icon: Shuffle,
-  },
-  {
-    title: "Everyone pays in",
-    body: "On each date, every member's share is collected from their wallet, or from their bank by auto-debit.",
-    Icon: HandCoins,
-  },
-  {
-    title: "One person is paid",
-    body: "The whole pot goes to whoever's turn it is, until everyone has had theirs.",
-    Icon: Orbit,
-  },
-];
-
-const SAFETY: readonly { title: string; body: string; Icon: LucideIcon }[] = [
-  {
-    title: "Deposits cover a missed payment",
-    body: "New members lock a small deposit. If someone can't pay, it covers them, so the round still pays out in full.",
-    Icon: ShieldCheck,
-  },
-  {
-    title: "Trust that's earned",
-    body: "Every payment on time builds a member's record. Early turns go to people others can count on.",
-    Icon: ListChecks,
-  },
-  {
-    title: "A second lock on your money",
-    body: "Moving money needs your PIN and a code from an authenticator app, and every sign-in is recorded for you to see.",
     Icon: KeyRound,
+    text: "Sending money out needs your PIN and a fresh code from your authenticator app, so a stolen password alone can't move it.",
   },
   {
-    title: "Real people, checked",
-    body: "Everyone verifies who they are before money moves, so you know who you're saving with.",
-    Icon: Fingerprint,
+    Icon: Laptop,
+    text: "A new device signing in gets you an email, and you can sign any device out.",
   },
-];
+  {
+    Icon: Lock,
+    text: "We will never ask for your password, PIN or codes. Not by phone, not by email.",
+  },
+] as const;
 
-const FAQ: readonly { q: string; a: string }[] = [
-  {
-    q: "What is an èsúsú circle?",
-    a: "A group of people who each pay the same amount on the same dates. Each round, the whole pot goes to one member, until everyone has had a turn. It's how many families and friends have always saved; Àjọ makes it organised and fair.",
-  },
-  {
-    q: "What happens if someone doesn't pay?",
-    a: "They get a short grace period and reminders. After that, their deposit covers the payment so the round pays out in full, their record shows it, and they can't join new circles for a while.",
-  },
-  {
-    q: "Can I save on my own too?",
-    a: "Yes. Saving plans take a set amount on your chosen days into a pot you can see grow, and pay it all back to your wallet at the end.",
-  },
-  {
-    q: "Who is Àjọ for?",
-    a: "People in Nigeria and the UK, and the diaspora saving with people back home. Your wallet is in your own currency.",
-  },
-  {
-    q: "How do I get my money out?",
-    a: "From your wallet to your bank account, with your PIN and authenticator code.",
-  },
-];
-
-const band = "mx-auto w-full max-w-6xl px-8";
+const h2 =
+  "font-display text-[34px] leading-[1.1] font-bold tracking-[-0.025em] text-balance lg:text-[44px]";
 
 /**
- * The home page on a wide screen: what Àjọ is, how a circle works, why it's safe, and the two ways in.
- * Phones keep the shorter welcome screen. Everything said here describes what the app actually does.
+ * The front door on a wide screen. One idea per section, said plainly, and nothing the app can't
+ * back up: every number comes from FACTS, which is checked against the API's rules.
  */
 export function Landing({ photos = [] }: Readonly<{ photos?: readonly string[] }>) {
   return (
-    <div className="min-h-dvh bg-surface text-ink">
-      <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur-md">
-        <div className={`${band} flex h-16 items-center justify-between`}>
-          <Link href="/" aria-label="Àjọ home">
-            <Logo width={96} />
-          </Link>
-          <nav aria-label="Landing" className="flex items-center gap-6 text-[15px] font-semibold">
-            <a href="#how" className="text-ink-muted hover:text-ink">
-              How it works
-            </a>
-            <a href="#safe" className="text-ink-muted hover:text-ink">
-              Safety
-            </a>
-            <a href="#questions" className="text-ink-muted hover:text-ink">
-              Questions
-            </a>
-            <Link href="/sign-in" className="text-primary">
-              Sign in
-            </Link>
+    <PublicShell>
+      <section
+        className={`${band} grid items-center gap-12 pt-14 pb-20 lg:grid-cols-[1fr_1.05fr] lg:pt-20`}
+      >
+        <div className="grid content-center gap-6">
+          <p className="text-[15px] font-semibold text-primary">
+            Èsúsú, ajo, adashe, susu: one idea, many names.
+          </p>
+          <h1 className="font-display text-[52px] leading-[1] font-bold tracking-[-0.04em] xl:text-[66px]">
+            Save together, <br />
+            <span className="relative inline-block text-primary">
+              safely.
+              <svg
+                aria-hidden
+                viewBox="0 0 220 14"
+                preserveAspectRatio="none"
+                className="absolute -bottom-2 left-0 h-3 w-full text-oro"
+              >
+                <path
+                  d="M2 9 C 50 2, 120 2, 218 8"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+          </h1>
+          <p className="max-w-[34rem] text-[19px] leading-8 text-ink-muted">
+            Àjọ runs your savings circle for you. Everyone pays in on the same day, the whole pot
+            goes to one person each round, and new members&apos; deposits cover a missed payment.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/sign-up"
-              className="inline-flex min-h-10 items-center rounded-m bg-primary px-4 text-on-primary hover:bg-primary-deep"
+              className="inline-flex min-h-13 items-center gap-2 rounded-m bg-primary px-6 text-[16px] font-semibold text-on-primary hover:bg-primary-deep"
             >
-              Get started
+              Create your account
+              <ArrowRight aria-hidden className="size-4" />
             </Link>
-          </nav>
-        </div>
-      </header>
-
-      <main>
-        <section className={`${band} grid grid-cols-[1.1fr_1fr] items-center gap-12 py-20`}>
-          <div className="grid gap-6">
-            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary-tint px-3 py-1 text-[13px] font-semibold text-primary">
-              <Globe2 aria-hidden className="size-4" />
-              For Nigeria, the UK and the diaspora
-            </p>
-            <h1 className="font-display text-[56px] leading-[60px] font-bold tracking-[-0.03em] text-balance">
-              Save together, <span className="text-primary">safely.</span>
-            </h1>
-            <p className="max-w-xl text-[19px] leading-8 text-ink-muted">
-              Àjọ turns the èsúsú circle you already trust into something organised and fair:
-              everyone pays in on time, the order is clear, and deposits cover anyone who
-              can&apos;t.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/sign-up"
-                className="inline-flex min-h-14 items-center gap-2 rounded-m bg-primary px-6 text-base font-semibold text-on-primary hover:bg-primary-deep"
-              >
-                Create your account
-                <ArrowRight aria-hidden className="size-5" />
-              </Link>
-              <Link
-                href="/sign-in"
-                className="inline-flex min-h-14 items-center rounded-m px-6 text-base font-semibold text-primary shadow-[inset_0_0_0_1.5px_var(--line-strong)] hover:bg-primary-tint"
-              >
-                Sign in
-              </Link>
-            </div>
-          </div>
-          <div className="grid place-items-center">
-            <CircleRing
-              members={SAMPLE_CIRCLE.map((member, i) => ({ ...member, photo: photos[i] }))}
-              recipient={2}
-              title="An example circle of eight"
-              center={{ label: "THIS ROUND", value: "₦80,000" }}
-              size={380}
-              roll
-            />
-          </div>
-        </section>
-
-        <section id="how" aria-labelledby="how-title" className="bg-surface-sunken py-20">
-          <div className={`${band} grid gap-10`}>
-            <div className="grid max-w-2xl gap-3">
-              <h2
-                id="how-title"
-                className="font-display text-[36px] leading-10 font-bold tracking-[-0.02em]"
-              >
-                How a circle works
-              </h2>
-              <p className="text-[17px] leading-7 text-ink-muted">
-                Four steps, and everyone can see each one.
-              </p>
-            </div>
-            <ol className="grid grid-cols-4 gap-5">
-              {STEPS.map(({ title, body, Icon }, i) => (
-                <li
-                  key={title}
-                  className="grid content-start gap-3 rounded-[var(--radius-l)] bg-surface-raised p-6 shadow-lift"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="grid size-11 place-items-center rounded-2xl bg-primary-tint text-primary">
-                      <Icon aria-hidden className="size-6" />
-                    </span>
-                    <span className="font-display text-[14px] font-bold text-ink-muted">
-                      Step {i + 1}
-                    </span>
-                  </span>
-                  <h3 className="text-[18px] leading-6 font-semibold">{title}</h3>
-                  <p className="text-[15px] leading-6 text-ink-muted">{body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section id="safe" aria-labelledby="safe-title" className="py-20">
-          <div className={`${band} grid gap-10`}>
-            <div className="grid max-w-2xl gap-3">
-              <h2
-                id="safe-title"
-                className="font-display text-[36px] leading-10 font-bold tracking-[-0.02em]"
-              >
-                Built so no one is left out of pocket
-              </h2>
-              <p className="text-[17px] leading-7 text-ink-muted">
-                The things that go wrong in a circle, handled before they happen.
-              </p>
-            </div>
-            <ul className="grid grid-cols-2 gap-5">
-              {SAFETY.map(({ title, body, Icon }) => (
-                <li
-                  key={title}
-                  className="flex gap-4 rounded-[var(--radius-l)] bg-surface-raised p-6 shadow-lift"
-                >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-leaf-tint text-leaf">
-                    <Icon aria-hidden className="size-6" />
-                  </span>
-                  <span className="grid gap-1.5">
-                    <h3 className="text-[18px] leading-6 font-semibold">{title}</h3>
-                    <p className="text-[15px] leading-6 text-ink-muted">{body}</p>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section aria-labelledby="solo-title" className="bg-surface-sunken py-20">
-          <div className={`${band} grid grid-cols-2 items-center gap-12`}>
-            <div className="grid gap-4">
-              <h2
-                id="solo-title"
-                className="font-display text-[36px] leading-10 font-bold tracking-[-0.02em]"
-              >
-                And for saving on your own
-              </h2>
-              <p className="text-[17px] leading-7 text-ink-muted">
-                Saving plans put a set amount aside on your chosen days, into a pot you can watch
-                fill. Pause, top up, or finish, and it all comes back to your wallet.
-              </p>
-            </div>
-            <ul className="grid gap-3">
-              {(
-                [
-                  [PiggyBank, "A pot for each goal: rent, school fees, a trip home"],
-                  [BellRing, "A reminder the day before each payment"],
-                  [Users, "Friends who save with you, and see the same circle you do"],
-                ] as const
-              ).map(([Icon, text]) => (
-                <li
-                  key={text}
-                  className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift text-[16px] font-medium"
-                >
-                  <Icon aria-hidden className="size-5 shrink-0 text-primary" />
-                  {text}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section id="questions" aria-labelledby="questions-title" className="py-20">
-          <div className={`${band} grid grid-cols-[1fr_1.6fr] gap-12`}>
-            <h2
-              id="questions-title"
-              className="font-display text-[36px] leading-10 font-bold tracking-[-0.02em]"
+            <Link
+              href="/how-it-works"
+              className="inline-flex min-h-13 items-center rounded-m px-5 text-[16px] font-semibold text-primary hover:bg-primary-tint"
             >
-              Questions
+              How a circle works
+            </Link>
+          </div>
+          <p className="text-[14px] text-ink-muted">
+            For people in {FACTS.countries}. Your wallet is in your own currency.
+          </p>
+        </div>
+        <div className="rounded-[28px] border border-line bg-surface-sunken p-6 xl:p-8">
+          <p className="mb-5 text-[15px] leading-6 text-ink-muted">
+            <span className="font-semibold text-ink">Try one.</span> Pick what each person pays,
+            then step through the rounds.
+          </p>
+          <RoundPlayer photos={photos} />
+        </div>
+      </section>
+
+      <section aria-labelledby="missed" className="border-y border-line bg-surface-sunken py-20">
+        <div className={`${band} grid gap-12 lg:grid-cols-[0.8fr_1.2fr]`}>
+          <div className="grid content-start gap-4">
+            <h2 id="missed" className={h2}>
+              The question everyone asks: what if someone doesn&apos;t pay?
             </h2>
-            <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-              {FAQ.map(({ q, a }) => (
-                <details key={q} className="group">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-[17px] font-semibold [&::-webkit-details-marker]:hidden">
-                    {q}
-                    <ArrowRight
-                      aria-hidden
-                      className="size-5 shrink-0 text-ink-muted transition-transform group-open:rotate-90"
-                    />
-                  </summary>
-                  <p className="px-5 pb-5 text-[15px] leading-6 text-ink-muted">{a}</p>
-                </details>
-              ))}
-            </div>
+            <p className="text-[17px] leading-7 text-ink-muted">
+              It&apos;s why most circles end in a quarrel. Here&apos;s exactly what Àjọ does, and
+              when.
+            </p>
           </div>
-        </section>
-
-        <section aria-labelledby="start-title" className="pb-20">
-          <div className={`${band}`}>
-            <div className="hero-card grid grid-cols-[1fr_auto] items-center gap-8 rounded-[var(--radius-xl)] p-10 shadow-lift">
-              <div className="grid gap-2">
-                <h2
-                  id="start-title"
-                  className="font-display text-[32px] leading-10 font-bold text-on-hero"
+          <ol className="grid">
+            {MISSED.map((step, i) => (
+              <li key={step.when} className="grid grid-cols-[7.5rem_1fr] gap-5 pb-8 last:pb-0">
+                <p className="pt-0.5 font-mono text-[13px] font-semibold tracking-wide text-primary uppercase">
+                  {step.when}
+                </p>
+                <p
+                  className={`relative border-l-2 pl-6 text-[17px] leading-7 ${i === 2 ? "border-oro" : "border-line-strong"}`}
                 >
-                  Your circle, organised.
-                </h2>
-                <p className="text-[17px] text-on-hero-muted">It takes a few minutes to set up.</p>
-              </div>
-              <Link
-                href="/sign-up"
-                className="inline-flex min-h-14 items-center gap-2 rounded-m bg-oro px-6 text-base font-semibold text-on-oro hover:brightness-95"
-              >
-                Get started
-                <ArrowRight aria-hidden className="size-5" />
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-line py-8">
-        <div className={`${band} flex items-center justify-between text-[14px] text-ink-muted`}>
-          <span>© {new Date().getFullYear()} Àjọ</span>
-          <nav aria-label="Footer" className="flex gap-6">
-            <Link href="/help" className="hover:text-ink">
-              Help
-            </Link>
-            <Link href="/terms" className="hover:text-ink">
-              Terms
-            </Link>
-            <Link href="/privacy" className="hover:text-ink">
-              Privacy
-            </Link>
-          </nav>
+                  <span
+                    aria-hidden
+                    className={`absolute top-1.5 -left-[7px] size-3 rounded-full ${i === 2 ? "bg-oro" : "bg-line-strong"}`}
+                  />
+                  {step.what}
+                </p>
+              </li>
+            ))}
+          </ol>
         </div>
-      </footer>
-    </div>
+      </section>
+
+      <section aria-labelledby="two-homes" className="py-20">
+        <div className={`${band} grid gap-10`}>
+          <h2 id="two-homes" className={`${h2} max-w-2xl`}>
+            Lagos and London, in the same circle of friends.
+          </h2>
+          <div className="grid gap-5 md:grid-cols-2">
+            {[
+              {
+                place: "Nigeria",
+                mark: "₦",
+                body: "Your wallet is in naira. Add money by card, bank transfer or USSD, let your bank top you up by auto-debit, and withdraw to your own account.",
+              },
+              {
+                place: "The UK",
+                mark: "£",
+                body: "Your wallet is in pounds, and you add money by card. Direct Debit top-ups and withdrawals to UK banks are still being switched on.",
+              },
+            ].map((home) => (
+              <article
+                key={home.place}
+                className="relative overflow-hidden rounded-[24px] border border-line bg-surface-raised p-7"
+              >
+                <span
+                  aria-hidden
+                  className="absolute -top-6 -right-2 font-display text-[150px] leading-none font-bold text-primary-tint"
+                >
+                  {home.mark}
+                </span>
+                <h3 className="relative font-display text-[24px] font-bold">{home.place}</h3>
+                <p className="relative mt-3 max-w-md text-[16px] leading-7 text-ink-muted">
+                  {home.body}
+                </p>
+              </article>
+            ))}
+          </div>
+          <p className="max-w-2xl text-[15px] leading-6 text-ink-muted">
+            Your balance also shows roughly what it&apos;s worth in pounds, dollars and euros. That
+            is an estimate to help you think, not a conversion: your money stays in its own
+            currency.
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="solo" className="border-y border-line bg-surface-sunken py-20">
+        <div className={`${band} grid items-center gap-10 lg:grid-cols-2`}>
+          <div className="grid gap-4">
+            <h2 id="solo" className={h2}>
+              Saving on your own? That works too.
+            </h2>
+            <p className="text-[17px] leading-7 text-ink-muted">
+              A saving plan takes a set amount every day, week or month, for as many payments as you
+              choose, into a pot you can watch fill. Pause it when money is tight, top it up when it
+              isn&apos;t, and at the end it all lands back in your wallet.
+            </p>
+          </div>
+          <ul className="grid gap-3 text-[16px]">
+            {["Rent due in March", "School fees for September", "A flight home for Christmas"].map(
+              (goal, i) => (
+                <li
+                  key={goal}
+                  className="flex items-center justify-between gap-4 rounded-[18px] bg-surface-raised px-5 py-4 shadow-lift"
+                >
+                  <span className="font-medium">{goal}</span>
+                  <span aria-hidden className="h-2 w-28 overflow-hidden rounded-full bg-line">
+                    <span
+                      className="block h-full rounded-full bg-primary"
+                      style={{ width: `${[72, 40, 15][i]}%` }}
+                    />
+                  </span>
+                </li>
+              ),
+            )}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="locks" className="py-20">
+        <div className={`${band} grid gap-10 lg:grid-cols-[0.8fr_1.2fr]`}>
+          <div className="grid content-start gap-4">
+            <ShieldCheck aria-hidden className="size-10 text-primary" strokeWidth={1.6} />
+            <h2 id="locks" className={h2}>
+              Locked the way your money should be.
+            </h2>
+            <Link
+              href="/safety"
+              className="w-fit text-[16px] font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              Everything we do to keep it safe
+            </Link>
+          </div>
+          <ul className="grid gap-px overflow-hidden rounded-[24px] border border-line bg-line">
+            {GUARDS.map(({ Icon, text }) => (
+              <li key={text} className="flex gap-4 bg-surface-raised p-5 text-[16px] leading-7">
+                <Icon aria-hidden className="mt-1 size-5 shrink-0 text-primary" />
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="questions" className="border-t border-line bg-surface-sunken py-20">
+        <div className={`${band} grid gap-10 lg:grid-cols-[0.8fr_1.2fr]`}>
+          <div className="grid content-start gap-4">
+            <h2 id="questions" className={h2}>
+              Fair questions.
+            </h2>
+            <Link
+              href="/help"
+              className="w-fit text-[16px] font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              More answers in Help
+            </Link>
+          </div>
+          <div className="divide-y divide-line border-y border-line">
+            {FIRST_QUESTIONS.map(({ q, a }) => (
+              <details key={q} className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-[18px] font-semibold [&::-webkit-details-marker]:hidden">
+                  {q}
+                  <span
+                    aria-hidden
+                    className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-raised text-[20px] leading-none text-primary transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <p className="max-w-2xl pb-6 text-[16px] leading-7 text-ink-muted">{a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="start" className="py-20">
+        <div className={band}>
+          <div className="hero-card grid gap-6 rounded-[32px] p-10 md:grid-cols-[1fr_auto] md:items-center lg:p-14">
+            <div className="grid gap-3">
+              <h2
+                id="start"
+                className="font-display text-[36px] leading-tight font-bold lg:text-[44px]"
+              >
+                Your circle, without the notebook.
+              </h2>
+              <p className="max-w-xl text-[17px] leading-7 text-on-hero-muted">
+                Setting up takes a few minutes. Invite the people you already save with, or start a
+                plan on your own.
+              </p>
+            </div>
+            <Link
+              href="/sign-up"
+              className="inline-flex min-h-14 items-center gap-2 justify-self-start rounded-m bg-oro px-7 text-[16px] font-bold text-on-oro hover:brightness-105"
+            >
+              Create your account
+              <ArrowRight aria-hidden className="size-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+    </PublicShell>
   );
 }

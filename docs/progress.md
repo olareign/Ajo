@@ -34,7 +34,7 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | P0.1 | Product spec open questions | ⬜ | Deposit size, trust rule, payout fee, early-spot rule, app name: all unanswered. **You** |
 | P0.2 | Launch countries and legal review | ⬜ | **You** and legal |
 | P0.3 | Partners and sandbox keys | 🟡 | Partners chosen; no sandbox keys yet. Mail and password-check adapters exist with stand-ins for tests |
-| P0.4 | Brand | 🟡 | Colours, fonts and logo are in code. Name ("Àjọ" or "Alajo") undecided. The intro circle shows eight real human photos (Nappy, credited in `public/people/CREDITS.md`), with a person silhouette, never initials, for any bead without one. Release forms for the people shown are unchecked: legal, with P0.11 |
+| P0.4 | Brand | 🟡 | Colours, fonts and logo are in code. Name ("Àjọ" or "Alajo") undecided. The intro circle shows eight real human photos (Nappy, credited in `public/people/CREDITS.md`), with a person silhouette, never initials, for any bead without one. Release forms for the people shown are unchecked: legal, with P0.11. **Oct 10 (`phase-8/desktop-polish`): a dark-mode logo** (the green lightened to the dark theme's `#4ED388`, made from the original file; gold unchanged), shown automatically with the page's theme |
 | P0.5 | UX flows and prototype | 🟡 | Sign-in, sign-up, code, solo savings and groups drawn. KYC, funding, withdrawal and friends are not; no user testing |
 | P0.6 | Design system | 🟡 | Tokens and components in code; Figma component library unconfirmed |
 | P0.7 | Repositories and standards | ✅ | Both repositories |
@@ -75,8 +75,8 @@ Engineering gate (P0.6–P0.10, P0.12, P0.13) must close before Phase 1 is calle
 | E1.22 | Phone number | ✅ | ☐ | Add, change or remove on Me; local numbers read by the account's country and stored in international form; one account per number; shown as **Not verified** until text-message checks are built |
 | E1.23 | Profile picture | ✅ | ☐ | Built on `phase-5/photo-and-shell`: Me, then Profile picture (also by tapping your picture): choose, slide and zoom inside a circle, save; or remove. Only the cropped square leaves the phone (JPEG, 512 px at most); the server checks it by its bytes (SVG is refused), redraws it as a 512 px WebP so no location or camera data survives, and keeps it in a **private Cloudflare R2 bucket**. Shown on Me, the top bar, friends, requests and a friend's page, only to you and people you are connected to (never in search, never across a block). **You:** create the bucket and paste four values in Render (see the runbook); until then the screen says pictures are not switched on |
 | E1.24 | Close account | ✅ | ☐ | Password (and code), plus an explicit yes; refused with the reason while money, a plan, a running circle, a payment or auto-debit remains; then signs out everywhere and emails a confirmation. Records stay; the ledger is never touched |
-| E1.25 | Help, terms and privacy | ✅ | ☐ | Built Oct 5 on `phase-4.5/profile-and-speed`: `/help` (support email with a ready subject, a never-share-your-codes warning, five quick answers), `/terms` and `/privacy` as plain-language **drafts** marked "under legal review" (flip `LEGAL.draft` in `src/lib/support.ts` once your lawyer signs them off), all open without signing in; Me gets a Help and legal group and the build number. **You:** a phone/WhatsApp contact later, and the lawyer's review |
-| E1.26 | Desktop version | ✅ | ☐ | Built Oct 10 on `phase-7/desktop-and-fx`: sidebar, wider two-column screens, Statements with CSV, Insights charts, the circle board, a desktop landing page at `/`, and keypads that take typed digits. Phones are unchanged |
+| E1.25 | Help, terms and privacy | ✅ | ☐ | **Oct 10 (`phase-8/desktop-polish`): a once-per-device privacy notice (essential cookies only, no tracking, links to the new "Cookies and storage" section of the privacy notice), and a line under Create account agreeing to the terms and privacy notice.** Built Oct 5 on `phase-4.5/profile-and-speed`: `/help` (support email with a ready subject, a never-share-your-codes warning, five quick answers), `/terms` and `/privacy` as plain-language **drafts** marked "under legal review" (flip `LEGAL.draft` in `src/lib/support.ts` once your lawyer signs them off), all open without signing in; Me gets a Help and legal group and the build number. **You:** a phone/WhatsApp contact later, and the lawyer's review |
+| E1.26 | Desktop version | ✅ | ☐ | Built Oct 10 on `phase-7/desktop-and-fx`: sidebar, wider two-column screens, Statements with CSV, Insights charts, the circle board, a desktop landing page at `/`, and keypads that take typed digits. Phones are unchanged. **Reviewed Oct 10 (`phase-8/desktop-polish`):** public pages (landing, How it works, Safety, About, Help) rewritten in plain words that match the app, with claims it couldn't back removed ("100% guaranteed", a fake testimonial, "all systems operational", biometrics, 24/7 support, Faster Payments); an interactive round player replaces the self-playing demo; split-screen sign-in; inner screens keep back and the board link on a desk; rules in `docs/design-system.md` → "Public pages and voice" |
 
 ### E2. KYC
 
@@ -183,6 +183,12 @@ A separate app (`apps/admin`) on its own address, with its own sign-in. How to s
 | E9.5 | Reconciliation | ⬜ | | Waits for the daily reconciliation job (E3.7) |
 | E9.6 | Reports | ⬜ | | Second step, after the core |
 | E9.7 | Audit log | ✅ | ☐ | Every look and every change, refusals too; the database itself refuses to update, delete or empty it; readable by compliance and the owner, and reading it is logged too |
+
+### E10. Launch readiness (started Oct 10, `phase-8/desktop-polish` and API `phase-8/support-settings`)
+
+| ID | Feature | Mark | Hand test | Note |
+| --- | --- | --- | --- | --- |
+| E10.6 | Support setup | 🟡 | ☐ | **The support email is `info@ajo.com` and owners change it in the admin console (Settings) without a deploy**, with a fresh authenticator code and a reason; the audit log keeps the old and new address. Customers see a change within a minute on Help, Safety, the terms, the privacy notice and every footer; if the API can't be reached the pages show `info@ajo.com`. New table `site_settings` (migration 1790900220000, in the Neon script: 27 migrations). **You:** make sure `info@ajo.com` is a real inbox Àjọ controls; a response process is still to set |
 
 ### E11. Global and multi-currency (Oct 10, `phase-7/stripe-and-fx`)
 

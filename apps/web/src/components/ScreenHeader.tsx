@@ -32,7 +32,9 @@ const backClass =
 /**
  * Tab screens: a large title. Inner screens: a slim app bar pinned to the top (back on the left, the
  * title centred, an optional action on the right) that takes a soft shadow once the page scrolls.
- * It sits just under the preview ribbon when there is one.
+ * It sits just under the preview ribbon when there is one. On a wide screen the bar stops being
+ * pinned and the title stands large on the left; back and the action stay, since some actions
+ * (the circle board) exist only on a desk.
  */
 export function ScreenHeader({
   title,
@@ -86,7 +88,7 @@ export function ScreenHeader({
         data-app-bar=""
         data-scrolled={scrolled || undefined}
         style={{ top: "var(--app-bar-top, 0px)" }}
-        className="sticky z-20 -mx-4 -mt-6 grid h-14 grid-cols-[48px_1fr_48px] items-center bg-surface/95 px-1 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)]"
+        className="sticky z-20 -mx-4 -mt-6 grid h-14 grid-cols-[48px_1fr_48px] items-center bg-surface/95 px-1 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] lg:static lg:mx-0 lg:mt-0 lg:h-auto lg:grid-cols-[44px_minmax(0,1fr)_auto] lg:gap-3 lg:bg-transparent lg:px-0 lg:backdrop-blur-none lg:data-[scrolled]:shadow-none"
       >
         {onBack ? (
           <button type="button" onClick={onBack} aria-label="Back" className={backClass}>
@@ -98,7 +100,7 @@ export function ScreenHeader({
           </Link>
         )}
         {inBar ? (
-          <h1 className="truncate text-center font-display text-[17px] leading-6 font-semibold text-ink">
+          <h1 className="truncate text-center font-display text-[17px] leading-6 font-semibold text-ink lg:overflow-visible lg:whitespace-normal lg:text-left lg:font-display lg:text-[28px] lg:leading-[34px] lg:font-bold lg:tracking-[-0.015em]">
             {title}
           </h1>
         ) : (
