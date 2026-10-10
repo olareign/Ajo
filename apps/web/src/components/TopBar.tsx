@@ -45,7 +45,7 @@ export function TopBar({
           {title}
         </h1>
       </div>
-      <Link href="/help" aria-label="Support" className={round}>
+      <Link href="/me/help" aria-label="Support" className={round}>
         <Headset aria-hidden className="size-5" />
       </Link>
       <Link

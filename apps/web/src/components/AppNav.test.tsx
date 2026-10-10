@@ -14,7 +14,7 @@ describe("AppNav", () => {
     },
   );
 
-  it.each(["/wallet/add", "/me/phone", "/save/new", "/circles/new", "/help"])(
+  it.each(["/wallet/add", "/me/phone", "/save/new", "/circles/new", "/help", "/me/help"])(
     "stays out of the way inside %s",
     (deep) => {
       path = deep;

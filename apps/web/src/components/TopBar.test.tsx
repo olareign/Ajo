@@ -24,7 +24,7 @@ describe("the top bar on tab screens", () => {
     const mine = screen.getByRole("link", { name: "Me" });
     expect(mine).toHaveAttribute("href", "/me");
     expect(mine.querySelector("img")).toHaveAttribute("src", "/api/photo/ada_ola?v=99");
-    expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("href", "/help");
+    expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("href", "/me/help");
     expect(screen.getByRole("link", { name: "Messages" })).toHaveAttribute(
       "href",
       "/notifications",

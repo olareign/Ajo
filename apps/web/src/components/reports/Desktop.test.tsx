@@ -112,6 +112,15 @@ describe("the desktop sidebar", () => {
     expect(within(nav).getByRole("link", { name: "Wallet" })).not.toHaveAttribute("aria-current");
   });
 
+  it("keeps Help inside the app, and lights Help (not Me) while you're there", () => {
+    path = "/me/help";
+    render(<DesktopNav />);
+    const help = screen.getByRole("link", { name: "Help and support" });
+    expect(help).toHaveAttribute("href", "/me/help");
+    expect(help).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Me" })).not.toHaveAttribute("aria-current");
+  });
+
   it("stays away from sign-in and the landing page", () => {
     for (const p of ["/sign-in", "/", "/join/ABCD"]) {
       path = p;
