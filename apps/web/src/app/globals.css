@@ -82,6 +82,25 @@
   color-scheme: dark;
 }
 
+/* Artwork drawn once per theme (the logo): only the copy for the current theme shows. */
+.theme-dark-only {
+  display: none;
+}
+:root[data-theme="dark"] .theme-light-only {
+  display: none;
+}
+:root[data-theme="dark"] .theme-dark-only {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-light-only {
+    display: none;
+  }
+  :root:not([data-theme="light"]) .theme-dark-only {
+    display: block;
+  }
+}
+
 /* No choice made: follow the device. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {

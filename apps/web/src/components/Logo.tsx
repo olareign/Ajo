@@ -10,11 +10,14 @@ type Props = Readonly<{
 
 // The logo is three transparent layers cut from the same artwork: sparkles and coin sit underneath
 // the wordmark, so the coin can drop in behind the pig's back. Together they equal the original.
+// The green wordmark has a lighter twin for dark mode (the gold reads on both); CSS shows the one
+// that matches the page's theme, including a theme picked on Me.
 const LAYERS = [
-  { src: "/brand/ajo-rays.webp", name: "logo-rays" },
-  { src: "/brand/ajo-coin.webp", name: "logo-coin" },
-  { src: "/brand/ajo-wordmark.webp", name: "logo-wordmark" },
-] as const;
+  { src: "/brand/ajo-rays.webp", motion: "logo-rays" },
+  { src: "/brand/ajo-coin.webp", motion: "logo-coin" },
+  { src: "/brand/ajo-wordmark.webp", theme: "theme-light-only" },
+  { src: "/brand/ajo-wordmark-dark.webp", theme: "theme-dark-only" },
+] as const satisfies readonly { src: string; motion?: string; theme?: string }[];
 
 /** The Àjọ logo. One image to a screen reader; its layers are decoration. */
 export function Logo({ width = 280, animated = false, className }: Props) {
@@ -27,7 +30,7 @@ export function Logo({ width = 280, animated = false, className }: Props) {
       style={{ width, aspectRatio: "916 / 562" }}
     >
       {LAYERS.map((layer) => (
-        // Plain <img>: three small static files that must stack exactly, with nothing to optimise.
+        // Plain <img>: small static files that must stack exactly, with nothing to optimise.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={layer.src}
@@ -37,7 +40,11 @@ export function Logo({ width = 280, animated = false, className }: Props) {
           height={562}
           decoding="async"
           draggable={false}
-          className={cn("absolute inset-0 size-full select-none", animated && layer.name)}
+          className={cn(
+            "absolute inset-0 size-full select-none",
+            "theme" in layer && layer.theme,
+            animated && "motion" in layer && layer.motion,
+          )}
         />
       ))}
     </span>

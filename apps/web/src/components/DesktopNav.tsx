@@ -62,7 +62,22 @@ export function DesktopNav() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-surface-raised lg:flex">
       <Link href="/today" className="flex items-center gap-2 px-6 pt-6 pb-5" aria-label="Àjọ home">
-        <Image src="/brand/ajo-logo.webp" alt="" width={84} height={52} priority />
+        <Image
+          src="/brand/ajo-logo.webp"
+          alt=""
+          width={84}
+          height={52}
+          priority
+          className="theme-light-only"
+        />
+        <Image
+          src="/brand/ajo-logo-dark.webp"
+          alt=""
+          width={84}
+          height={52}
+          priority
+          className="theme-dark-only"
+        />
       </Link>
       <nav
         aria-label="Desktop"
