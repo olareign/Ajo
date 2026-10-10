@@ -33,8 +33,16 @@ export function SetupScreen() {
     setBusy(true);
     const result = await post<Started>("auth/setup/start", { email, setupCode, password });
     setBusy(false);
-    if (result.ok) return setStarted(result.data);
-    setError(result.failure.message);
+    if (
+      result.ok &&
+      typeof result.data.secret === "string" &&
+      typeof result.data.otpauthUri === "string"
+    ) {
+      return setStarted(result.data);
+    }
+    setError(
+      result.ok ? "The server gave an answer we didn't expect. Try again." : result.failure.message,
+    );
   }
 
   async function finish() {

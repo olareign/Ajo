@@ -391,3 +391,60 @@ describe("server settings", () => {
     ).toThrow(/at least 32/);
   });
 });
+
+describe("an answer that is not from our API", () => {
+  const html = () =>
+    vi.fn<Fetch>(
+      async () =>
+        new Response("<html>Service is waking up…</html>", {
+          status: 200,
+          headers: { "Content-Type": "text/html" },
+        }),
+    );
+
+  it("is refused plainly, for sign-in, the setup key and everything else, and starts no session", async () => {
+    for (const [path, open] of [
+      ["auth/login", true],
+      ["auth/setup/start", true],
+      ["auth/setup/confirm", true],
+      ["me", false],
+      ["overview", false],
+    ] as const) {
+      const res = await run(
+        await req(path === "me" || path === "overview" ? "GET" : "POST", path, {
+          signedIn: !open,
+          body: open ? {} : undefined,
+        }),
+        html(),
+        path,
+      );
+      expect(res.status).toBe(502);
+      expect((await res.json()).code).toBe("unexpected_answer");
+      expect(res.headers.get("set-cookie")).toBeNull();
+    }
+  });
+
+  it("will not pass on a setup answer without the key and address, even from a 200", async () => {
+    const res = await run(
+      await req("POST", "auth/setup/start", { signedIn: false, body: {} }),
+      ok({ ok: true }),
+      "auth/setup/start",
+    );
+    expect(res.status).toBe(502);
+  });
+
+  it("still passes an empty 204 and a JSON error", async () => {
+    expect(
+      (
+        await run(
+          await req("POST", `users/${ID}/suspend`, { body: {} }),
+          vi.fn<Fetch>(async () => new Response(null, { status: 204 })),
+          `users/${ID}/suspend`,
+        )
+      ).status,
+    ).toBe(204);
+    expect(
+      (await run(await req("GET", "overview"), ok({ message: "No." }, 403), "overview")).status,
+    ).toBe(403);
+  });
+});

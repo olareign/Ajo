@@ -1,4 +1,4 @@
-import { callApi, type ApiResult, type Fetch } from "./api-client";
+import { callApi, UNEXPECTED, type ApiResult, type Fetch } from "./api-client";
 import { clientOf } from "./client-context";
 import { readCookie, serializeCookie } from "./cookies";
 import type { ServerEnv } from "./env";
@@ -212,7 +212,12 @@ export async function handleAdmin(
     if (result.status !== 200 || (route.open !== "setup-start" && typeof data.token !== "string")) {
       return json(result.status === 200 ? 502 : result.status, said(result));
     }
-    if (route.open === "setup-start") return json(200, data);
+    if (route.open === "setup-start") {
+      if (typeof data.secret !== "string" || typeof data.otpauthUri !== "string") {
+        return json(502, { message: UNEXPECTED, code: "unexpected_answer" });
+      }
+      return json(200, { secret: data.secret, otpauthUri: data.otpauthUri });
+    }
     // A session starts: the token is sealed into a cookie only the server can open, and never sent to the browser.
     const expiresAt = typeof data.expiresAt === "string" ? Date.parse(data.expiresAt) : NaN;
     const remaining = Math.floor((expiresAt - Date.now()) / 1000);
