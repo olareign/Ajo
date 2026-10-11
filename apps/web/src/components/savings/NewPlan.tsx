@@ -21,6 +21,8 @@ import type { Frequency, PlanInput, PlanPreview } from "@/lib/savings-client";
 import { Beads } from "./Beads";
 import { Pot } from "./Pot";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
+import { FormPage } from "@/components/desk/FormPage";
+import { PlanAside } from "@/components/desk/asides";
 
 type Step = "name" | "amount" | "rhythm" | "review";
 
@@ -140,7 +142,7 @@ export function NewPlan() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<PlanAside />}>
       {preview && <PreviewRibbon exitHref="/save" />}
       <ScreenHeader
         title={title[step]}
@@ -379,6 +381,6 @@ export function NewPlan() {
           </Button>
         </div>
       )}
-    </main>
+    </FormPage>
   );
 }

@@ -10,6 +10,7 @@ import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { DiscoveredGroup } from "@/lib/groups-client";
 import { CircleCard } from "./CirclesHome";
 import { useCircles, useCirclesLock } from "./CirclesFlow";
+import { PAGE } from "@/lib/page";
 
 /** Public circles that are still open, the ones with your friends in them first. */
 export function DiscoverCircles() {
@@ -40,7 +41,7 @@ export function DiscoverCircles() {
   if (lock) return <FlowLocked lock={lock} title="Find a circle" path="/circles/discover" />;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
         title="Find a circle"

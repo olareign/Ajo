@@ -25,6 +25,7 @@ import { Pot } from "./Pot";
 import { ratioOf, StatusWord, toneOf } from "./SavingsHome";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
 import { whenText } from "@/lib/when";
+import { PAGE } from "@/lib/page";
 
 type Panel = "topup" | "end" | null;
 
@@ -148,7 +149,7 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
   const sampleNote = preview ? " (sample)" : "";
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/save" />}
       <ScreenHeader title={plan.name} backHref={href("/save")} />
 

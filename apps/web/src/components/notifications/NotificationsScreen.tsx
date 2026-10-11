@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { loadNotices, readAllNotices, readNotice, type Notice } from "@/lib/savings-client";
 import { recall, remember } from "@/lib/visit-cache";
 import { whenText } from "@/lib/when";
+import { PAGE } from "@/lib/page";
 
 export function NotificationsScreen() {
   return <MeGate needs="onboarded">{() => <Messages />}</MeGate>;
@@ -142,7 +143,7 @@ function Messages() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       <ScreenHeader title="Notifications" backHref="/today" />
       {state.phase === "loading" && (
         <p role="status" className="text-ink-muted">

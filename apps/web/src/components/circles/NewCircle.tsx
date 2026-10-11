@@ -27,6 +27,8 @@ import { toMinor } from "@/lib/money-flow";
 import { newAttemptKey } from "@/lib/payments-client";
 import { addDays, longDayText, todayIn } from "@/lib/schedule";
 import { FREQ_WORDS, ORDER_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
+import { FormPage } from "@/components/desk/FormPage";
+import { CircleAside } from "@/components/desk/asides";
 
 type Step = "name" | "money" | "rules" | "review";
 
@@ -142,7 +144,7 @@ export function NewCircle() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<CircleAside />}>
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
         title={title[step]}
@@ -399,6 +401,6 @@ export function NewCircle() {
           </Button>
         </div>
       )}
-    </main>
+    </FormPage>
   );
 }

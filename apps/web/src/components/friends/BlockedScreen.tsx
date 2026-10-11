@@ -9,6 +9,7 @@ import { FlowLocked } from "@/components/wallet/FlowLocked";
 import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { Blocked } from "@/lib/friends-client";
 import { useFriends, useFriendsLock } from "./FriendsFlow";
+import { PAGE } from "@/lib/page";
 
 /** The people you have blocked, and a way to undo it. */
 export function BlockedScreen() {
@@ -53,7 +54,7 @@ export function BlockedScreen() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader
         title="Blocked people"

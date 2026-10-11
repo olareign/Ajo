@@ -18,6 +18,7 @@ import { dayText } from "@/lib/schedule";
 import { recall, remember } from "@/lib/visit-cache";
 import { TierBadge, useFriends, useFriendsLock } from "./FriendsFlow";
 import { PersonRow } from "./PersonRow";
+import { PAGE } from "@/lib/page";
 
 type Loaded = Readonly<{
   friends: readonly Friend[];
@@ -69,7 +70,7 @@ export function FriendsHome() {
   const incoming = data && data !== "failed" ? data.requests.incoming.length : 0;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader
         title="Friends"
@@ -99,131 +100,141 @@ export function FriendsHome() {
       )}
 
       {data && data !== "failed" && (
-        <div className="grid gap-6">
-          <section
-            aria-label="Your circle"
-            className="flex items-center gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift"
-          >
-            <CircleRing
-              members={data.friends
-                .slice(0, 12)
-                .map((f) => ({ name: f.displayName, status: "paid" as const }))}
-              title="Your circle of friends"
-              size={112}
-            />
-            <div className="grid min-w-0 gap-1">
-              <p className="font-display text-[20px] leading-7 font-semibold">
-                {data.friends.length === 0
-                  ? "No friends yet"
-                  : `${data.friends.length} ${data.friends.length === 1 ? "friend" : "friends"}`}
-              </p>
-              <p className="text-[14px] leading-5 text-ink-muted">
-                {data.friends.length === 0
-                  ? "Your circle is empty. Find people you trust, or send them your invite link."
-                  : "People you can start a circle with."}
-              </p>
+        // On a desk: your circle, the ways to grow it and requests on the left (kept in view);
+        // people you may know and your friends beside them. A phone keeps the same order.
+        <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+          <div className="grid gap-6 lg:sticky lg:top-28">
+            <section
+              aria-label="Your circle"
+              className="flex items-center gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift"
+            >
+              <CircleRing
+                members={data.friends
+                  .slice(0, 12)
+                  .map((f) => ({ name: f.displayName, status: "paid" as const }))}
+                title="Your circle of friends"
+                size={112}
+              />
+              <div className="grid min-w-0 gap-1">
+                <p className="font-display text-[20px] leading-7 font-semibold">
+                  {data.friends.length === 0
+                    ? "No friends yet"
+                    : `${data.friends.length} ${data.friends.length === 1 ? "friend" : "friends"}`}
+                </p>
+                <p className="text-[14px] leading-5 text-ink-muted">
+                  {data.friends.length === 0
+                    ? "Your circle is empty. Find people you trust, or send them your invite link."
+                    : "People you can start a circle with."}
+                </p>
+              </div>
+            </section>
+
+            <div className="grid grid-cols-2 gap-3">
+              <ButtonLink href={href("/friends/find")} size="lg" className="whitespace-nowrap">
+                <Search aria-hidden className="size-5" />
+                Find people
+              </ButtonLink>
+              <ButtonLink
+                href={href("/friends/invite")}
+                size="lg"
+                variant="quiet"
+                className="whitespace-nowrap"
+              >
+                <Link2 aria-hidden className="size-5" />
+                Invite
+              </ButtonLink>
             </div>
-          </section>
 
-          <div className="grid grid-cols-2 gap-3">
-            <ButtonLink href={href("/friends/find")} size="lg" className="whitespace-nowrap">
-              <Search aria-hidden className="size-5" />
-              Find people
-            </ButtonLink>
-            <ButtonLink
-              href={href("/friends/invite")}
-              size="lg"
-              variant="quiet"
-              className="whitespace-nowrap"
-            >
-              <Link2 aria-hidden className="size-5" />
-              Invite
-            </ButtonLink>
+            {error && (
+              <p role="alert" className="text-center text-[15px] font-medium text-danger">
+                {error}
+              </p>
+            )}
+
+            {(incoming > 0 || data.requests.outgoing.length > 0) && (
+              <Link
+                href={href("/friends/requests")}
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-l)] border border-oro/30 bg-oro-tint p-4 text-oro-ink"
+              >
+                <span className="flex items-center gap-3 text-[15px] font-semibold">
+                  <UserRoundCheck aria-hidden className="size-6" />
+                  {incoming > 0
+                    ? `${incoming} ${incoming === 1 ? "request is" : "requests are"} waiting for you`
+                    : `${data.requests.outgoing.length} sent, waiting for an answer`}
+                </span>
+                <span aria-hidden>›</span>
+              </Link>
+            )}
           </div>
+          <div className="grid gap-6">
+            {data.suggestions.length === 0 && data.friends.length === 0 && (
+              <p className="hidden rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted lg:block">
+                People you add show up here. Find someone you trust, or send your invite link.
+              </p>
+            )}
+            {data.suggestions.length > 0 && (
+              <section aria-labelledby="may-know" className="grid gap-3">
+                <h2 id="may-know" className="font-display text-[18px] leading-6 font-semibold">
+                  People you may know
+                </h2>
+                <ul className="grid gap-3 xl:grid-cols-2">
+                  {data.suggestions.map((s) => (
+                    <PersonRow
+                      key={s.username}
+                      person={s}
+                      href={href(`/friends/${s.username}`)}
+                      note={
+                        s.reason === "mutual"
+                          ? `${s.mutualFriends} in common${s.mutualNames.length ? `: ${s.mutualNames.join(", ")}` : ""}`
+                          : REASON[s.reason]
+                      }
+                      onFail={(f) =>
+                        setError(f.kind === "signed-out" ? "Please sign in again." : f.message)
+                      }
+                    />
+                  ))}
+                </ul>
+              </section>
+            )}
 
-          {error && (
-            <p role="alert" className="text-center text-[15px] font-medium text-danger">
-              {error}
-            </p>
-          )}
-
-          {(incoming > 0 || data.requests.outgoing.length > 0) && (
-            <Link
-              href={href("/friends/requests")}
-              className="flex items-center justify-between gap-3 rounded-[var(--radius-l)] border border-oro/30 bg-oro-tint p-4 text-oro-ink"
-            >
-              <span className="flex items-center gap-3 text-[15px] font-semibold">
-                <UserRoundCheck aria-hidden className="size-6" />
-                {incoming > 0
-                  ? `${incoming} ${incoming === 1 ? "request is" : "requests are"} waiting for you`
-                  : `${data.requests.outgoing.length} sent, waiting for an answer`}
-              </span>
-              <span aria-hidden>›</span>
-            </Link>
-          )}
-
-          {data.suggestions.length > 0 && (
-            <section aria-labelledby="may-know" className="grid gap-3">
-              <h2 id="may-know" className="font-display text-[18px] leading-6 font-semibold">
-                People you may know
-              </h2>
-              <ul className="grid gap-3">
-                {data.suggestions.map((s) => (
-                  <PersonRow
-                    key={s.username}
-                    person={s}
-                    href={href(`/friends/${s.username}`)}
-                    note={
-                      s.reason === "mutual"
-                        ? `${s.mutualFriends} in common${s.mutualNames.length ? `: ${s.mutualNames.join(", ")}` : ""}`
-                        : REASON[s.reason]
-                    }
-                    onFail={(f) =>
-                      setError(f.kind === "signed-out" ? "Please sign in again." : f.message)
-                    }
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {data.friends.length > 0 && (
-            <section aria-labelledby="your-friends" className="grid gap-3">
-              <h2 id="your-friends" className="font-display text-[18px] leading-6 font-semibold">
-                Your friends
-              </h2>
-              <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-                {data.friends.map((f) => (
-                  <li key={f.username}>
-                    <Link
-                      href={href(`/friends/${f.username}`)}
-                      className="flex items-center gap-3 p-3 hover:bg-surface-sunken"
-                    >
-                      <PersonPhoto
-                        username={f.username}
-                        version={f.photoVersion}
-                        name={f.displayName}
-                        standIn="initials"
-                      />
-                      <span className="grid min-w-0 gap-0.5">
-                        <span className="truncate text-[16px] leading-5 font-semibold">
-                          {f.displayName}
+            {data.friends.length > 0 && (
+              <section aria-labelledby="your-friends" className="grid gap-3">
+                <h2 id="your-friends" className="font-display text-[18px] leading-6 font-semibold">
+                  Your friends
+                </h2>
+                <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+                  {data.friends.map((f) => (
+                    <li key={f.username}>
+                      <Link
+                        href={href(`/friends/${f.username}`)}
+                        className="flex items-center gap-3 p-3 hover:bg-surface-sunken"
+                      >
+                        <PersonPhoto
+                          username={f.username}
+                          version={f.photoVersion}
+                          name={f.displayName}
+                          standIn="initials"
+                        />
+                        <span className="grid min-w-0 gap-0.5">
+                          <span className="truncate text-[16px] leading-5 font-semibold">
+                            {f.displayName}
+                          </span>
+                          <span className="truncate text-[13px] text-ink-muted">@{f.username}</span>
+                          <span className="text-[12px] text-ink-muted">
+                            Friends since {dayText(f.since.slice(0, 10))}
+                          </span>
                         </span>
-                        <span className="truncate text-[13px] text-ink-muted">@{f.username}</span>
-                        <span className="text-[12px] text-ink-muted">
-                          Friends since {dayText(f.since.slice(0, 10))}
+                        <span className="ml-auto grid shrink-0 justify-items-end gap-1">
+                          <TierBadge tier={f.tier} />
+                          <TrustBadge level={f.trust.level} />
                         </span>
-                      </span>
-                      <span className="ml-auto grid shrink-0 justify-items-end gap-1">
-                        <TierBadge tier={f.tier} />
-                        <TrustBadge level={f.trust.level} />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
         </div>
       )}
     </main>

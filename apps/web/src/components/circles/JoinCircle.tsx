@@ -15,6 +15,8 @@ import type { GroupSummary } from "@/lib/groups-client";
 import { formatMoney } from "@/lib/money-format";
 import { longDayText } from "@/lib/schedule";
 import { FREQ_WORDS, ORDER_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
+import { FormPage } from "@/components/desk/FormPage";
+import { CircleAside } from "@/components/desk/asides";
 
 /** Where an invite to a circle lands: what it is, what joining means, and one button to join. */
 export function JoinCircle({ code }: Readonly<{ code: string }>) {
@@ -93,7 +95,7 @@ export function JoinCircle({ code }: Readonly<{ code: string }>) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<CircleAside />}>
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
         title={`Join ${g.name}`}
@@ -174,6 +176,6 @@ export function JoinCircle({ code }: Readonly<{ code: string }>) {
           </Button>
         )}
       </div>
-    </main>
+    </FormPage>
   );
 }

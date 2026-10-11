@@ -29,6 +29,7 @@ import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { Button } from "@/components/ui/Button";
 import { AppearancePicker } from "./AppearancePicker";
 import { TierCard } from "./TierCard";
+import { PAGE } from "@/lib/page";
 
 export function MeScreen() {
   return <MeGate needs="onboarded">{(me) => <Account me={me} />}</MeGate>;
@@ -157,188 +158,200 @@ function Account({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       <ScreenHeader tab title="Me" subtitle="Your account, and how it is kept safe." />
-      <div className="grid grid-cols-1 gap-8">
-        <MemberCard me={me} />
+      {/* On a desk: who you are and your level on the left (kept in view), every setting on the
+          right. A phone reads them top to bottom, in the same order. */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:items-start">
+        <div className="grid grid-cols-1 gap-8 lg:sticky lg:top-28">
+          <MemberCard me={me} />
 
-        <TierCard me={me} />
+          <TierCard me={me} />
 
-        <InstallRow />
+          <InstallRow />
+        </div>
+        <div className="grid grid-cols-1 gap-8">
+          <section aria-labelledby="account" className="grid grid-cols-1 gap-3">
+            <h2 id="account" className="font-display text-[18px] leading-6 font-semibold">
+              Account
+            </h2>
+            <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+              <Row
+                href="/me/photo"
+                label="Profile picture"
+                Icon={Camera}
+                value={me.photoVersion != null ? "Change" : "Add"}
+              />
+              <Row
+                href="/me/phone"
+                label="Phone number"
+                Icon={Phone}
+                value={
+                  me.phone ? (
+                    <span className="grid justify-items-end">
+                      <span className="truncate tabular-nums">{me.phone}</span>
+                      <span className="text-[12px] text-oro-ink">Not verified</span>
+                    </span>
+                  ) : (
+                    "Add"
+                  )
+                }
+              />
+              <Row
+                href="/friends/invite"
+                label="Invite friends"
+                Icon={UserPlus}
+                value="Your code"
+              />
+              <Row href="/me/notifications" label="Notification settings" Icon={BellRing} />
+            </div>
+          </section>
 
-        <section aria-labelledby="account" className="grid grid-cols-1 gap-3">
-          <h2 id="account" className="font-display text-[18px] leading-6 font-semibold">
-            Account
-          </h2>
-          <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-            <Row
-              href="/me/photo"
-              label="Profile picture"
-              Icon={Camera}
-              value={me.photoVersion != null ? "Change" : "Add"}
-            />
-            <Row
-              href="/me/phone"
-              label="Phone number"
-              Icon={Phone}
-              value={
-                me.phone ? (
-                  <span className="grid justify-items-end">
-                    <span className="truncate tabular-nums">{me.phone}</span>
-                    <span className="text-[12px] text-oro-ink">Not verified</span>
-                  </span>
-                ) : (
-                  "Add"
-                )
-              }
-            />
-            <Row href="/friends/invite" label="Invite friends" Icon={UserPlus} value="Your code" />
-            <Row href="/me/notifications" label="Notification settings" Icon={BellRing} />
-          </div>
-        </section>
-
-        <section aria-labelledby="security" className="grid grid-cols-1 gap-3">
-          <h2 id="security" className="font-display text-[18px] leading-6 font-semibold">
-            Security
-          </h2>
-          <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-            <Link
-              href="/verify"
-              className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
-            >
-              <p className="flex items-center gap-3 text-[15px] font-semibold">
-                <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
-                  <BookUser aria-hidden className="size-5" />
-                </span>
-                Identity
-              </p>
-              <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
-                {IDENTITY_WORDS[me.kycStatus ?? "not_started"]}
-                <ChevronRight aria-hidden className="size-5" />
-              </p>
-            </Link>
-            <Link
-              href="/me/security"
-              className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
-            >
-              <p className="flex items-center gap-3 text-[15px] font-semibold">
-                <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
-                  <ShieldCheck aria-hidden className="size-5" />
-                </span>
-                Authenticator app
-              </p>
-              <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
-                {me.mfaEnabled ? "On" : "Set up"}
-                <ChevronRight aria-hidden className="size-5" />
-              </p>
-            </Link>
-            {SECURITY_ROWS.map(({ href, label, Icon }) => (
+          <section aria-labelledby="security" className="grid grid-cols-1 gap-3">
+            <h2 id="security" className="font-display text-[18px] leading-6 font-semibold">
+              Security
+            </h2>
+            <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
               <Link
-                key={href}
-                href={href}
+                href="/verify"
                 className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
               >
                 <p className="flex items-center gap-3 text-[15px] font-semibold">
                   <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
-                    <Icon aria-hidden className="size-5" />
+                    <BookUser aria-hidden className="size-5" />
                   </span>
-                  {label}
+                  Identity
                 </p>
-                <ChevronRight aria-hidden className="size-5 text-ink-muted" />
+                <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
+                  {IDENTITY_WORDS[me.kycStatus ?? "not_started"]}
+                  <ChevronRight aria-hidden className="size-5" />
+                </p>
               </Link>
-            ))}
-          </div>
-        </section>
-
-        <section aria-labelledby="preferences" className="grid grid-cols-1 gap-3">
-          <h2 id="preferences" className="font-display text-[18px] leading-6 font-semibold">
-            Preferences
-          </h2>
-          <div className="overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-            <AppearancePicker />
-          </div>
-        </section>
-
-        <section aria-labelledby="help" className="grid grid-cols-1 gap-3">
-          <h2 id="help" className="font-display text-[18px] leading-6 font-semibold">
-            Help and legal
-          </h2>
-          <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-            <Row href="/me/help" label="Help and support" Icon={LifeBuoy} />
-            <Row href="/terms" label="Terms of use" Icon={FileText} />
-            <Row href="/privacy" label="Privacy notice" Icon={Lock} />
-          </div>
-        </section>
-
-        <section aria-label="Sign out" className="grid grid-cols-1 gap-3">
-          <div className="grid grid-cols-1 gap-3">
-            <Button
-              variant="quiet"
-              size="lg"
-              block
-              loading={busy !== undefined}
-              disabled={busy !== undefined}
-              onClick={() => void signOut()}
-            >
-              {busy === "here" ? "One moment…" : "Sign out"}
-            </Button>
-            <Button
-              variant="danger"
-              size="lg"
-              block
-              aria-expanded={confirming}
-              loading={busy !== undefined}
-              disabled={busy !== undefined}
-              onClick={() => setConfirming((open) => !open)}
-            >
-              Sign out of all devices
-            </Button>
-            {confirming && (
-              <div
-                ref={question}
-                className="grid grid-cols-1 gap-4 rounded-[var(--radius-l)] border-[1.5px] border-danger/40 bg-danger-tint p-4"
+              <Link
+                href="/me/security"
+                className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
               >
-                <p className="text-[15px] leading-[22px] text-ink">
-                  This signs you out everywhere, including this phone. Use it if you lost a device
-                  or think someone else got in. You&apos;ll sign in again with your password.
+                <p className="flex items-center gap-3 text-[15px] font-semibold">
+                  <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
+                    <ShieldCheck aria-hidden className="size-5" />
+                  </span>
+                  Authenticator app
                 </p>
-                {error && (
-                  <p role="alert" className="text-[14px] font-medium text-danger">
-                    {error}
+                <p className="flex items-center gap-1 text-[14px] font-medium text-ink-muted">
+                  {me.mfaEnabled ? "On" : "Set up"}
+                  <ChevronRight aria-hidden className="size-5" />
+                </p>
+              </Link>
+              {SECURITY_ROWS.map(({ href, label, Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center justify-between gap-4 p-4 hover:bg-surface-sunken"
+                >
+                  <p className="flex items-center gap-3 text-[15px] font-semibold">
+                    <span className="grid size-10 place-items-center rounded-full bg-primary-tint text-primary">
+                      <Icon aria-hidden className="size-5" />
+                    </span>
+                    {label}
                   </p>
-                )}
-                <div className="grid grid-cols-[auto_1fr] gap-3">
-                  <Button
-                    variant="quiet"
-                    loading={busy !== undefined}
-                    disabled={busy !== undefined}
-                    onClick={() => setConfirming(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="danger"
-                    loading={busy !== undefined}
-                    disabled={busy !== undefined}
-                    onClick={() => void signOutEverywhere()}
-                  >
-                    {busy === "everywhere" ? "One moment…" : "Sign out everywhere"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+                  <ChevronRight aria-hidden className="size-5 text-ink-muted" />
+                </Link>
+              ))}
+              {/* Deliberately quiet and last: findable when someone means it, never in the way. */}
+              <Link
+                href="/me/close"
+                className="flex items-center justify-between gap-4 px-4 py-3 text-[13px] text-ink-muted hover:bg-surface-sunken hover:text-ink"
+              >
+                Close account
+                <ChevronRight aria-hidden className="size-4" />
+              </Link>
+            </div>
+          </section>
 
-        <Link
-          href="/me/close"
-          className="justify-self-center px-4 py-2 text-[14px] font-semibold text-danger"
-        >
-          Close account
-        </Link>
-        <p className="-mt-6 text-center text-[12px] text-ink-muted">
-          Àjọ · build {process.env.NEXT_PUBLIC_APP_BUILD ?? "local"}
-        </p>
+          <section aria-labelledby="preferences" className="grid grid-cols-1 gap-3">
+            <h2 id="preferences" className="font-display text-[18px] leading-6 font-semibold">
+              Preferences
+            </h2>
+            <div className="overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+              <AppearancePicker />
+            </div>
+          </section>
+
+          <section aria-labelledby="help" className="grid grid-cols-1 gap-3">
+            <h2 id="help" className="font-display text-[18px] leading-6 font-semibold">
+              Help and legal
+            </h2>
+            <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+              <Row href="/me/help" label="Help and support" Icon={LifeBuoy} />
+              <Row href="/terms" label="Terms of use" Icon={FileText} />
+              <Row href="/privacy" label="Privacy notice" Icon={Lock} />
+            </div>
+          </section>
+
+          <section aria-label="Sign out" className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-3">
+              <Button
+                variant="quiet"
+                size="lg"
+                block
+                loading={busy !== undefined}
+                disabled={busy !== undefined}
+                onClick={() => void signOut()}
+              >
+                {busy === "here" ? "One moment…" : "Sign out"}
+              </Button>
+              <Button
+                variant="danger"
+                size="lg"
+                block
+                aria-expanded={confirming}
+                loading={busy !== undefined}
+                disabled={busy !== undefined}
+                onClick={() => setConfirming((open) => !open)}
+              >
+                Sign out of all devices
+              </Button>
+              {confirming && (
+                <div
+                  ref={question}
+                  className="grid grid-cols-1 gap-4 rounded-[var(--radius-l)] border-[1.5px] border-danger/40 bg-danger-tint p-4"
+                >
+                  <p className="text-[15px] leading-[22px] text-ink">
+                    This signs you out everywhere, including this phone. Use it if you lost a device
+                    or think someone else got in. You&apos;ll sign in again with your password.
+                  </p>
+                  {error && (
+                    <p role="alert" className="text-[14px] font-medium text-danger">
+                      {error}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-[auto_1fr] gap-3">
+                    <Button
+                      variant="quiet"
+                      loading={busy !== undefined}
+                      disabled={busy !== undefined}
+                      onClick={() => setConfirming(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="danger"
+                      loading={busy !== undefined}
+                      disabled={busy !== undefined}
+                      onClick={() => void signOutEverywhere()}
+                    >
+                      {busy === "everywhere" ? "One moment…" : "Sign out everywhere"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <p className="text-center text-[12px] text-ink-muted">
+            Àjọ · build {process.env.NEXT_PUBLIC_APP_BUILD ?? "local"}
+          </p>
+        </div>
       </div>
     </main>
   );

@@ -17,6 +17,7 @@ import { recall, remember } from "@/lib/visit-cache";
 import type { Plan } from "@/lib/savings-client";
 import { Pot } from "./Pot";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
+import { PAGE } from "@/lib/page";
 
 export const ratioOf = (plan: Plan) => {
   const target = BigInt(plan.target.amount);
@@ -94,7 +95,7 @@ export function SavingsHome() {
     totals.set(p.saved.currency, (totals.get(p.saved.currency) ?? 0n) + BigInt(p.saved.amount));
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/save" />}
       <ScreenHeader
         tab
@@ -144,78 +145,85 @@ export function SavingsHome() {
       )}
 
       {Array.isArray(plans) && plans.length > 0 && (
-        <div className="grid gap-6">
-          {[...totals].map(([currency, total]) => (
-            <section
-              key={currency}
-              aria-label="Saved so far"
-              className="hero-card grid gap-4 overflow-hidden rounded-[var(--radius-xl)] p-5 shadow-lift"
-            >
-              <div className="grid gap-1">
-                <p className="text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted">
-                  IN YOUR POTS
-                </p>
-                <Amount
-                  amount={total.toString()}
-                  currency={currency}
-                  locale={locale}
-                  size="l"
-                  tone="hero"
-                />
-                <p className="text-[14px] text-on-hero-muted">
-                  across {open.length} {open.length === 1 ? "plan" : "plans"}
-                </p>
-              </div>
-              <Link
-                href={href("/save/new")}
-                className="flex min-h-12 items-center justify-center gap-2 rounded-m bg-oro px-4 text-[15px] font-semibold text-on-oro transition-[filter] hover:brightness-95"
-              >
-                <Plus aria-hidden className="size-5" />
-                New plan
-              </Link>
-            </section>
-          ))}
+        // On a desk: what's in your pots on the left (kept in view), every plan as cards beside it.
+        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
+          {totals.size > 0 && (
+            <div className="grid gap-6 lg:sticky lg:top-28">
+              {[...totals].map(([currency, total]) => (
+                <section
+                  key={currency}
+                  aria-label="Saved so far"
+                  className="hero-card grid gap-4 overflow-hidden rounded-[var(--radius-xl)] p-5 shadow-lift"
+                >
+                  <div className="grid gap-1">
+                    <p className="text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted">
+                      IN YOUR POTS
+                    </p>
+                    <Amount
+                      amount={total.toString()}
+                      currency={currency}
+                      locale={locale}
+                      size="l"
+                      tone="hero"
+                    />
+                    <p className="text-[14px] text-on-hero-muted">
+                      across {open.length} {open.length === 1 ? "plan" : "plans"}
+                    </p>
+                  </div>
+                  <Link
+                    href={href("/save/new")}
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-m bg-oro px-4 text-[15px] font-semibold text-on-oro transition-[filter] hover:brightness-95"
+                  >
+                    <Plus aria-hidden className="size-5" />
+                    New plan
+                  </Link>
+                </section>
+              ))}
+            </div>
+          )}
 
-          {open.length > 0 && (
-            <section aria-labelledby="going" className="grid gap-3">
-              <h2 id="going" className="font-display text-[18px] leading-6 font-semibold">
-                Going now
-              </h2>
-              <ul className="grid gap-3">
-                {open.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    locale={locale}
-                    href={href(`/save/${plan.id}`)}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-          {finished.length > 0 && (
-            <section aria-labelledby="done" className="grid gap-3">
-              <h2 id="done" className="font-display text-[18px] leading-6 font-semibold">
-                Finished
-              </h2>
-              <ul className="grid gap-3">
-                {finished.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    locale={locale}
-                    href={href(`/save/${plan.id}`)}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-          {totals.size === 0 && (
-            <ButtonLink href={href("/save/new")} size="lg" block>
-              <Plus aria-hidden className="size-5" />
-              Start a plan
-            </ButtonLink>
-          )}
+          <div className={totals.size > 0 ? "grid gap-6" : "grid gap-6 lg:col-span-2"}>
+            {open.length > 0 && (
+              <section aria-labelledby="going" className="grid gap-3">
+                <h2 id="going" className="font-display text-[18px] leading-6 font-semibold">
+                  Going now
+                </h2>
+                <ul className="grid gap-3 lg:grid-cols-2">
+                  {open.map((plan) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      locale={locale}
+                      href={href(`/save/${plan.id}`)}
+                    />
+                  ))}
+                </ul>
+              </section>
+            )}
+            {finished.length > 0 && (
+              <section aria-labelledby="done" className="grid gap-3">
+                <h2 id="done" className="font-display text-[18px] leading-6 font-semibold">
+                  Finished
+                </h2>
+                <ul className="grid gap-3 lg:grid-cols-2">
+                  {finished.map((plan) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      locale={locale}
+                      href={href(`/save/${plan.id}`)}
+                    />
+                  ))}
+                </ul>
+              </section>
+            )}
+            {totals.size === 0 && (
+              <ButtonLink href={href("/save/new")} size="lg" block>
+                <Plus aria-hidden className="size-5" />
+                Start a plan
+              </ButtonLink>
+            )}
+          </div>
         </div>
       )}
     </main>

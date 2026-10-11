@@ -15,6 +15,8 @@ import { FlowLocked } from "./FlowLocked";
 import { WithdrawLive } from "./WithdrawLive";
 import { WithdrawTicket } from "./WithdrawTicket";
 import { useMoneyFlow } from "./MoneyFlow";
+import { FormPage } from "@/components/desk/FormPage";
+import { WithdrawAside } from "@/components/desk/asides";
 
 type Step = "amount" | "review" | "pin" | "sent";
 
@@ -52,7 +54,7 @@ export function Withdraw() {
   if (!preview) return <WithdrawLive />;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<WithdrawAside />}>
       {preview && <PreviewRibbon exitHref="/wallet/withdraw" />}
       <ScreenHeader
         title={
@@ -187,6 +189,6 @@ export function Withdraw() {
           )}
         </div>
       )}
-    </main>
+    </FormPage>
   );
 }

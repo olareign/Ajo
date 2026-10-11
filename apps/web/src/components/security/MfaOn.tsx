@@ -10,6 +10,8 @@ import { TextField } from "@/components/ui/TextField";
 import { renewRecoveryCodes } from "@/lib/security-client";
 import { RecoveryTicket } from "./RecoveryTicket";
 import { signedOut } from "./MfaSetup";
+import { FormPage } from "@/components/desk/FormPage";
+import { SafetyAside } from "@/components/desk/asides";
 
 /** The second lock is on. Turning it off needs the password and a code, so a borrowed phone can't. */
 export function MfaOn() {
@@ -53,7 +55,7 @@ export function MfaOn() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<SafetyAside />}>
       <ScreenHeader
         title="Your second lock is on"
         subtitle="You enter a code from your phone when you sign in on a new device, and before any money moves."
@@ -177,6 +179,6 @@ export function MfaOn() {
           </form>
         )}
       </div>
-    </main>
+    </FormPage>
   );
 }

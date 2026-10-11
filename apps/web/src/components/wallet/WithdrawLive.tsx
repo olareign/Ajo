@@ -29,6 +29,8 @@ import { usePayment } from "@/lib/use-payment";
 import { loadWallets } from "@/lib/wallet-client";
 import { useMoneyFlow } from "./MoneyFlow";
 import { WithdrawTicket } from "./WithdrawTicket";
+import { FormPage } from "@/components/desk/FormPage";
+import { WithdrawAside } from "@/components/desk/asides";
 
 type Step = "bank" | "bank-code" | "amount" | "review" | "pin" | "code" | "sent";
 
@@ -204,7 +206,7 @@ export function WithdrawLive() {
 
   if (needsMfa) {
     return (
-      <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+      <FormPage aside={<WithdrawAside />}>
         <ScreenHeader title="Withdraw" backHref="/wallet" />
         <div className="grid justify-items-center gap-5 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift">
           <span className="grid size-20 place-items-center rounded-full bg-oro-tint text-oro-ink">
@@ -219,7 +221,7 @@ export function WithdrawLive() {
           </p>
           <ButtonLink href="/me/security">Set it up</ButtonLink>
         </div>
-      </main>
+      </FormPage>
     );
   }
 
@@ -285,7 +287,7 @@ export function WithdrawLive() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<WithdrawAside />}>
       <ScreenHeader
         title={
           step === "bank"
@@ -502,6 +504,6 @@ export function WithdrawLive() {
           )}
         </div>
       )}
-    </main>
+    </FormPage>
   );
 }

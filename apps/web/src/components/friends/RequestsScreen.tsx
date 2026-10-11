@@ -11,6 +11,7 @@ import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { Failure } from "@/lib/api-send";
 import type { FriendRequest, Requests } from "@/lib/friends-client";
 import { TierBadge, useFriends, useFriendsLock } from "./FriendsFlow";
+import { PAGE } from "@/lib/page";
 
 /** Requests to you, to answer, and requests from you, to take back. */
 export function RequestsScreen() {
@@ -80,7 +81,7 @@ export function RequestsScreen() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader title="Requests" backHref={href("/friends")} />
       {requests === undefined && (

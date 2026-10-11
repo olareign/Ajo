@@ -2,6 +2,7 @@ import { Coins, Lock } from "lucide-react";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import type { Lock as LockKind } from "./MoneyFlow";
+import { FormPage } from "@/components/desk/FormPage";
 
 type Props = Readonly<{
   lock: Exclude<LockKind, null>;
@@ -13,7 +14,7 @@ type Props = Readonly<{
 /** What a person sees where money would move, when it cannot yet: why, and how to look around anyway. */
 export function FlowLocked({ lock, title, path }: Props) {
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage>
       <ScreenHeader title={title} backHref="/wallet" />
       <div className="grid justify-items-center gap-5 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift">
         <span className="grid size-20 place-items-center rounded-full bg-oro-tint text-oro-ink">
@@ -49,6 +50,6 @@ export function FlowLocked({ lock, title, path }: Props) {
           </>
         )}
       </div>
-    </main>
+    </FormPage>
   );
 }

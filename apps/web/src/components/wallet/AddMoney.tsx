@@ -18,6 +18,8 @@ import { newAttemptKey, startFunding } from "@/lib/payments-client";
 import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
 import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
+import { FormPage } from "@/components/desk/FormPage";
+import { AddMoneyAside } from "@/components/desk/asides";
 
 type Step = "method" | "details" | "amount" | "review" | "done";
 
@@ -111,7 +113,7 @@ export function AddMoney() {
 
   if (step === "done") {
     return (
-      <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+      <FormPage aside={<AddMoneyAside />}>
         {preview && <PreviewRibbon exitHref="/wallet" />}
         <div className="grid justify-items-center gap-6 pt-6 text-center">
           <div className="relative w-[256px] pt-6">
@@ -132,12 +134,12 @@ export function AddMoney() {
             Back to my wallet
           </ButtonLink>
         </div>
-      </main>
+      </FormPage>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<AddMoneyAside />}>
       {preview && <PreviewRibbon exitHref="/wallet/add" />}
       <ScreenHeader
         title={
@@ -284,6 +286,6 @@ export function AddMoney() {
           )}
         </div>
       )}
-    </main>
+    </FormPage>
   );
 }

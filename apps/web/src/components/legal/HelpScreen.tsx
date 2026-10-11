@@ -30,11 +30,13 @@ const ANSWERS = [
 /** `supportEmail` is the address staff set in the admin console, read on the server. */
 export function HelpScreen({ supportEmail }: Readonly<{ supportEmail: string }>) {
   return (
-    <InfoShell title="Help" subtitle="Quick answers, and a person when you need one.">
-      <div className="grid gap-6">
+    <InfoShell wide title="Help" subtitle="Quick answers, and a person when you need one.">
+      {/* On a desk: reaching us, the warning and the fine print on the left; the answers fill the
+          right. A phone reads email, warning, answers, fine print, as before. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:items-start">
         <a
           href={supportMailto(supportEmail, "Àjọ help")}
-          className="flex items-center gap-4 rounded-[var(--radius-l)] bg-primary-tint p-5"
+          className="flex items-center gap-4 rounded-[var(--radius-l)] bg-primary-tint p-5 lg:col-start-1 lg:row-start-1"
         >
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-on-primary">
             <Mail aria-hidden className="size-6" />
@@ -46,7 +48,7 @@ export function HelpScreen({ supportEmail }: Readonly<{ supportEmail: string }>)
           <ChevronRight aria-hidden className="ml-auto size-5 shrink-0 text-ink-muted" />
         </a>
 
-        <p className="flex gap-3 rounded-[var(--radius-l)] border-[1.5px] border-danger/40 bg-danger-tint p-4 text-[14px] leading-5">
+        <p className="flex gap-3 rounded-[var(--radius-l)] border-[1.5px] border-danger/40 bg-danger-tint p-4 text-[14px] leading-5 lg:col-start-1 lg:row-start-2">
           <ShieldAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-danger" />
           <span>
             <strong>Àjọ will never ask for your password, PIN or authenticator codes</strong> by
@@ -54,7 +56,10 @@ export function HelpScreen({ supportEmail }: Readonly<{ supportEmail: string }>)
           </span>
         </p>
 
-        <section aria-labelledby="answers" className="grid gap-3">
+        <section
+          aria-labelledby="answers"
+          className="grid gap-3 lg:col-start-2 lg:row-span-3 lg:row-start-1"
+        >
           <h2 id="answers" className="font-display text-[18px] leading-6 font-semibold">
             Quick answers
           </h2>
@@ -74,7 +79,7 @@ export function HelpScreen({ supportEmail }: Readonly<{ supportEmail: string }>)
           </div>
         </section>
 
-        <section aria-labelledby="legal" className="grid gap-3">
+        <section aria-labelledby="legal" className="grid gap-3 lg:col-start-1 lg:row-start-3">
           <h2 id="legal" className="font-display text-[18px] leading-6 font-semibold">
             The fine print
           </h2>
