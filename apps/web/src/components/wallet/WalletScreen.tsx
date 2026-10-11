@@ -20,6 +20,9 @@ import { readFx, type FxEquivalents } from "@/lib/fx";
 import { loadScreen, partData } from "@/lib/screen-client";
 import { recall, remember } from "@/lib/visit-cache";
 import { loadTransactions, type TransactionPage } from "@/lib/wallet-client";
+import { useWide } from "@/lib/use-wide";
+import { MonthPanel } from "@/components/desk/MonthPanel";
+import { PaymentDetails } from "@/components/desk/PaymentDetails";
 import { BalanceCard } from "./BalanceCard";
 import { TransactionList } from "./TransactionList";
 
@@ -47,6 +50,9 @@ function Wallets() {
   );
   const [attempt, setAttempt] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  // On a desk a payment can be picked from the list and read in the panel beside it.
+  const wide = useWide();
+  const [picked, setPicked] = useState<WalletTransaction>();
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -137,8 +143,11 @@ function Wallets() {
         </div>
       )}
       {state.phase === "ready" && (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start lg:gap-8">
-          <div className="grid gap-6 lg:sticky lg:top-24">
+        // On a desk, like a bank's dashboard: balance, actions and activity on the left; this
+        // month's summary and the details of the payment picked from the list on the right, kept in
+        // view while the list scrolls. A phone reads the balance, actions and activity, as before.
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
+          <div className="grid gap-6">
             {state.wallets.length === 0 ? (
               <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
                 No money here yet. When you add or receive money, it shows up here.
@@ -151,30 +160,40 @@ function Wallets() {
               </div>
             )}
             <MoneyActions />
+            <section aria-labelledby="activity" className="grid gap-2">
+              <h2 id="activity" className="font-display text-[18px] leading-6 font-semibold">
+                Recent activity
+              </h2>
+              <div className="rounded-[var(--radius-l)] bg-surface-raised px-4 shadow-lift">
+                <TransactionList
+                  items={state.items}
+                  onSelect={wide ? setPicked : undefined}
+                  selectedId={picked?.id}
+                />
+              </div>
+              {state.moreFailed && (
+                <p role="alert" className="text-danger">
+                  We couldn&apos;t load more.
+                </p>
+              )}
+              {state.next && (
+                <Button
+                  variant="quiet"
+                  loading={loadingMore}
+                  disabled={loadingMore}
+                  onClick={() => void showMore(state)}
+                >
+                  Show more
+                </Button>
+              )}
+            </section>
           </div>
-          <section aria-labelledby="activity" className="grid gap-2">
-            <h2 id="activity" className="font-display text-[18px] leading-6 font-semibold">
-              Recent activity
-            </h2>
-            <div className="rounded-[var(--radius-l)] bg-surface-raised px-4 shadow-lift">
-              <TransactionList items={state.items} />
+          {wide && (
+            <div className="grid gap-6 lg:sticky lg:top-28">
+              <MonthPanel currency={state.wallets[0]?.currency} />
+              <PaymentDetails item={picked} />
             </div>
-            {state.moreFailed && (
-              <p role="alert" className="text-danger">
-                We couldn&apos;t load more.
-              </p>
-            )}
-            {state.next && (
-              <Button
-                variant="quiet"
-                loading={loadingMore}
-                disabled={loadingMore}
-                onClick={() => void showMore(state)}
-              >
-                Show more
-              </Button>
-            )}
-          </section>
+          )}
         </div>
       )}
     </main>

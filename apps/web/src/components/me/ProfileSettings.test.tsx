@@ -105,7 +105,7 @@ describe("Me: tier, account rows and closing", () => {
       "href",
       "/friends/invite",
     );
-    expect(screen.getByRole("link", { name: /Notifications/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Notification settings/ })).toHaveAttribute(
       "href",
       "/me/notifications",
     );

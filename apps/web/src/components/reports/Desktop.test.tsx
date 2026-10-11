@@ -100,7 +100,7 @@ describe("the desktop sidebar", () => {
       "Save",
       "Circles",
       "Friends",
-      "Messages",
+      "Notifications",
       "Statements",
       "Insights",
       "Me",
@@ -115,10 +115,22 @@ describe("the desktop sidebar", () => {
   it("keeps Help inside the app, and lights Help (not Me) while you're there", () => {
     path = "/me/help";
     render(<DesktopNav />);
-    const help = screen.getByRole("link", { name: "Help and support" });
+    const help = screen.getByRole("link", { name: "Go to Help Center" });
     expect(help).toHaveAttribute("href", "/me/help");
     expect(help).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Me" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("groups the menu like a bank's, and ends with a help card", () => {
+    path = "/today";
+    render(<DesktopNav />);
+    for (const group of ["Menu", "Your money", "Account"])
+      expect(screen.getByText(group)).toBeInTheDocument();
+    expect(screen.getByText("Help Center")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute(
+      "href",
+      "/notifications",
+    );
   });
 
   it("stays away from sign-in and the landing page", () => {

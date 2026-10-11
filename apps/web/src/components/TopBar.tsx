@@ -17,10 +17,18 @@ const round =
  */
 export function TopBar({
   title,
+  deskTitle,
   eyebrow,
   unread,
   scrolled,
-}: Readonly<{ title: string; eyebrow?: ReactNode; unread?: number | null; scrolled?: boolean }>) {
+}: Readonly<{
+  title: string;
+  /** The title on a desk, where the header above already greets the person (Today: "Overview"). */
+  deskTitle?: string;
+  eyebrow?: ReactNode;
+  unread?: number | null;
+  scrolled?: boolean;
+}>) {
   // MeGate has already asked who this is before any tab screen draws, so this is only a read.
   const me = recall<Me>("me");
   const count = useUnread(unread);
@@ -29,9 +37,10 @@ export function TopBar({
       data-app-bar=""
       data-scrolled={scrolled || undefined}
       style={{ top: "var(--app-bar-top, 0px)" }}
-      className="sticky z-20 -mx-4 -mt-6 flex h-16 items-center gap-3 bg-surface/95 px-4 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)]"
+      // On a desk the header above holds your picture, help and the bell, so this is just the title.
+      className="sticky z-20 -mx-4 -mt-6 flex h-16 items-center gap-3 bg-surface/95 px-4 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] lg:static lg:mx-0 lg:mt-0 lg:h-auto lg:bg-transparent lg:px-0 lg:backdrop-blur-none lg:data-[scrolled]:shadow-none"
     >
-      <Link href="/me" aria-label="Me" className="shrink-0 rounded-full">
+      <Link href="/me" aria-label="Me" className="shrink-0 rounded-full lg:hidden">
         <PersonPhoto
           username={me?.username}
           version={me?.photoVersion}
@@ -41,17 +50,24 @@ export function TopBar({
       </Link>
       <div className="grid min-w-0 flex-1">
         {eyebrow && <div className="text-[12px] leading-4 text-ink-muted">{eyebrow}</div>}
-        <h1 className="truncate font-display text-[19px] leading-6 font-bold tracking-[-0.01em] text-ink">
-          {title}
+        <h1 className="truncate font-display text-[19px] leading-6 font-bold tracking-[-0.01em] text-ink lg:text-[28px] lg:leading-9">
+          {deskTitle ? (
+            <>
+              <span className="lg:hidden">{title}</span>
+              <span className="hidden lg:inline">{deskTitle}</span>
+            </>
+          ) : (
+            title
+          )}
         </h1>
       </div>
-      <Link href="/me/help" aria-label="Support" className={round}>
+      <Link href="/me/help" aria-label="Support" className={`${round} lg:hidden`}>
         <Headset aria-hidden className="size-5" />
       </Link>
       <Link
         href="/notifications"
-        aria-label={count > 0 ? `Messages, ${count} unread` : "Messages"}
-        className={round}
+        aria-label={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
+        className={`${round} lg:hidden`}
       >
         <Bell aria-hidden className="size-5" />
         {count > 0 && (

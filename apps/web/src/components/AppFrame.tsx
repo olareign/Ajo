@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { isAppRoute, isFullWidthRoute, isPublicPage } from "@/lib/app-routes";
 import { cn } from "@/lib/cn";
+import { useWide } from "@/lib/use-wide";
+import { DesktopHeader } from "./DesktopHeader";
 
 /**
  * The page's column. Phones get the full width. On a wide screen, pages inside the app sit to the
@@ -15,8 +17,10 @@ export function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
   const path = usePathname() ?? "";
   const app = isAppRoute(path);
   const full = isFullWidthRoute(path);
+  const wide = useWide();
   return (
     <div className={cn("min-h-dvh bg-surface", app && "lg:pl-[248px]")}>
+      {app && <DesktopHeader wide={wide} />}
       <div
         className={cn(
           "mx-auto min-h-dvh",

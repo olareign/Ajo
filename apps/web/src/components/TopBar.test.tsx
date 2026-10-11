@@ -25,7 +25,7 @@ describe("the top bar on tab screens", () => {
     expect(mine).toHaveAttribute("href", "/me");
     expect(mine.querySelector("img")).toHaveAttribute("src", "/api/photo/ada_ola?v=99");
     expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("href", "/me/help");
-    expect(screen.getByRole("link", { name: "Messages" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute(
       "href",
       "/notifications",
     );
@@ -45,7 +45,7 @@ describe("the top bar on tab screens", () => {
     const fetchMock = vi.fn(async () => Response.json({ unread: 12 }));
     vi.stubGlobal("fetch", fetchMock);
     render(<ScreenHeader tab title="Circles" />);
-    expect(await screen.findByRole("link", { name: "Messages, 12 unread" })).toHaveTextContent(
+    expect(await screen.findByRole("link", { name: "Notifications, 12 unread" })).toHaveTextContent(
       "9+",
     );
     expect(fetchMock).toHaveBeenCalledWith("/api/notifications?limit=1", expect.anything());
@@ -56,12 +56,12 @@ describe("the top bar on tab screens", () => {
     const fetchMock = vi.fn(async () => Response.json({ unread: 1 }));
     vi.stubGlobal("fetch", fetchMock);
     const first = render(<ScreenHeader tab title="Today" unread={3} />);
-    expect(screen.getByRole("link", { name: "Messages, 3 unread" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Notifications, 3 unread" })).toBeInTheDocument();
     first.unmount();
     remember("unread", 5);
     render(<ScreenHeader tab title="Today" unread={null} />);
     await waitFor(() =>
-      expect(screen.getByRole("link", { name: "Messages, 5 unread" })).toBeInTheDocument(),
+      expect(screen.getByRole("link", { name: "Notifications, 5 unread" })).toBeInTheDocument(),
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });

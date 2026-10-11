@@ -26,6 +26,7 @@ import type { GroupSummary } from "@/lib/groups-client";
 import { countryConfig } from "@/lib/kyc-config";
 import type { Plan } from "@/lib/savings-client";
 import { loadScreen, partData, type ScreenData } from "@/lib/screen-client";
+import { MonthPanel } from "./desk/MonthPanel";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Wallet } from "@/lib/wallet";
 import { readFx, type FxEquivalents } from "@/lib/fx";
@@ -98,10 +99,13 @@ function Today({ me }: Readonly<{ me: Me }>) {
       <ScreenHeader
         tab
         title={`Hello, ${me.displayName}`}
+        deskTitle="Overview"
         eyebrow={<TimeOfDay />}
         unread={data ? data.unread : null}
       />
-      {/* On a wide screen: money and what needs doing on the left, savings, circles and friends on the right. */}
+      {/* On a desk, like a bank's dashboard: your money, what needs doing, savings and circles on the
+          left; this month's summary with the latest payments, and friends, on the right. A phone
+          reads the same parts top to bottom, in the same order as before. */}
       <div className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="lg:min-w-0">
           <WalletSummary
@@ -148,10 +152,11 @@ function Today({ me }: Readonly<{ me: Me }>) {
               <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
             </Link>
           )}
-        </div>
-        <div className="lg:min-w-0">
           <TodaySavings plans={data?.plans} />
           <TodayCircles groups={data?.groups} />
+        </div>
+        <div className="lg:grid lg:min-w-0 lg:gap-6">
+          <MonthPanel currency={countryConfig(me.country)?.currency} recent />
           <TodayFriends state={data?.friends} />
           <InstallCard />
         </div>

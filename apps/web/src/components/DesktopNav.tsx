@@ -2,10 +2,10 @@
 
 import {
   BarChart3,
+  Bell,
   FileText,
-  Headset,
+  HelpCircle,
   House,
-  MessageSquare,
   Orbit,
   PiggyBank,
   User,
@@ -24,13 +24,14 @@ const GROUPS: readonly {
   items: readonly { href: string; label: string; Icon: LucideIcon }[];
 }[] = [
   {
+    label: "Menu",
     items: [
       { href: "/today", label: "Home", Icon: House },
       { href: "/wallet", label: "Wallet", Icon: Wallet },
       { href: "/save", label: "Save", Icon: PiggyBank },
       { href: "/circles", label: "Circles", Icon: Orbit },
       { href: "/friends", label: "Friends", Icon: Users },
-      { href: "/notifications", label: "Messages", Icon: MessageSquare },
+      { href: "/notifications", label: "Notifications", Icon: Bell },
     ],
   },
   {
@@ -40,7 +41,7 @@ const GROUPS: readonly {
       { href: "/insights", label: "Insights", Icon: BarChart3 },
     ],
   },
-  { items: [{ href: "/me", label: "Me", Icon: User }] },
+  { label: "Account", items: [{ href: "/me", label: "Me", Icon: User }] },
 ];
 
 const HELP = "/me/help";
@@ -85,14 +86,12 @@ export function DesktopNav() {
       </Link>
       <nav
         aria-label="Desktop"
-        className="grid flex-1 content-start gap-5 overflow-y-auto px-3 pb-6"
+        className="grid flex-1 content-start gap-6 overflow-y-auto px-4 pt-2 pb-6"
       >
         {GROUPS.map((group, i) => (
           <div key={group.label ?? i} className="grid gap-1">
             {group.label && (
-              <p className="px-3 pb-1 text-[11px] font-semibold tracking-[0.06em] text-ink-muted uppercase">
-                {group.label}
-              </p>
+              <p className="px-3 pb-1.5 text-[13px] font-semibold text-ink">{group.label}</p>
             )}
             {group.items.map(({ href, label, Icon }) => {
               const on = href === active;
@@ -102,10 +101,10 @@ export function DesktopNav() {
                   href={href}
                   aria-current={on ? "page" : undefined}
                   className={cn(
-                    "flex min-h-11 items-center gap-3 rounded-m px-3 text-[15px] font-semibold transition-colors",
+                    "flex min-h-11 items-center gap-3.5 rounded-m px-3 text-[15px] transition-colors",
                     on
-                      ? "bg-primary-tint text-primary"
-                      : "text-ink-muted hover:bg-surface-sunken hover:text-ink",
+                      ? "bg-primary-tint font-semibold text-primary"
+                      : "font-medium text-ink-muted hover:bg-surface-sunken hover:text-ink",
                   )}
                 >
                   <Icon aria-hidden className="size-5" strokeWidth={on ? 2.25 : 1.75} />
@@ -116,19 +115,26 @@ export function DesktopNav() {
           </div>
         ))}
       </nav>
-      <Link
-        href={HELP}
-        aria-current={active === HELP ? "page" : undefined}
-        className={cn(
-          "mx-3 mb-5 flex min-h-11 items-center gap-3 rounded-m px-3 text-[14px] font-semibold",
-          active === HELP
-            ? "bg-primary-tint text-primary"
-            : "text-ink-muted hover:bg-surface-sunken hover:text-ink",
-        )}
-      >
-        <Headset aria-hidden className="size-5" />
-        Help and support
-      </Link>
+      {/* The help card at the foot, like a bank's: a person when the answers aren't enough. */}
+      <div className="hero-card relative mx-4 mt-8 mb-6 grid justify-items-center gap-2 rounded-[22px] px-4 pt-9 pb-4 text-center shadow-lift">
+        <span
+          aria-hidden
+          className="absolute -top-6 grid size-12 place-items-center rounded-full border-4 border-surface-raised bg-surface-raised text-primary shadow-lift"
+        >
+          <HelpCircle className="size-6" />
+        </span>
+        <p className="text-[15px] font-semibold">Help Center</p>
+        <p className="text-[12px] leading-4 text-on-hero-muted">
+          Stuck on something? Find an answer or write to a person.
+        </p>
+        <Link
+          href={HELP}
+          aria-current={active === HELP ? "page" : undefined}
+          className="mt-2 flex min-h-10 w-full items-center justify-center rounded-m bg-surface-raised px-3 text-[13px] font-semibold text-ink hover:bg-surface-sunken"
+        >
+          Go to Help Center
+        </Link>
+      </div>
     </aside>
   );
 }

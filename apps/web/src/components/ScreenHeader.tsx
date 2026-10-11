@@ -21,6 +21,8 @@ type Props = Readonly<{
   tab?: boolean;
   /** Tab screens: the unread count, when the screen already has it (saves asking). */
   unread?: number | null;
+  /** Tab screens: a different title on a desk, where the header above already greets the person. */
+  deskTitle?: string;
 }>;
 
 /** Titles longer than this read as a question for the person and stay large below the bar. */
@@ -45,6 +47,7 @@ export function ScreenHeader({
   action,
   tab,
   unread,
+  deskTitle,
 }: Props) {
   const inner = Boolean(onBack || backHref);
   const [scrolled, setScrolled] = useState(false);
@@ -59,7 +62,13 @@ export function ScreenHeader({
   if (!inner && tab) {
     return (
       <header className="mb-5">
-        <TopBar title={title} eyebrow={eyebrow} unread={unread} scrolled={scrolled} />
+        <TopBar
+          title={title}
+          deskTitle={deskTitle}
+          eyebrow={eyebrow}
+          unread={unread}
+          scrolled={scrolled}
+        />
         {subtitle && <p className="mt-3 text-[15px] leading-6 text-ink-muted">{subtitle}</p>}
       </header>
     );
