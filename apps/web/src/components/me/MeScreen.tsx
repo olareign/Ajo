@@ -193,7 +193,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
               }
             />
             <Row href="/friends/invite" label="Invite friends" Icon={UserPlus} value="Your code" />
-            <Row href="/me/notifications" label="Notifications" Icon={BellRing} />
+            <Row href="/me/notifications" label="Notification settings" Icon={BellRing} />
           </div>
         </section>
 

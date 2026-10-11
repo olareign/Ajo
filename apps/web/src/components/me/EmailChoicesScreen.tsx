@@ -72,7 +72,7 @@ function Choices() {
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
       <ScreenHeader
         title="Notifications"
-        subtitle="Choose how Àjọ reaches you. Everything still shows in Messages."
+        subtitle="Choose how Àjọ reaches you. Everything still shows in Notifications."
         backHref="/me"
       />
       <div className="grid gap-5">

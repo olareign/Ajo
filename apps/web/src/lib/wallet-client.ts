@@ -1,3 +1,4 @@
+import { readInsights } from "./insights";
 import type { Wallet, WalletTransaction } from "./wallet";
 
 /** What came back, in the three ways a screen has to react to. */
@@ -34,3 +35,7 @@ export const loadTransactions = (before?: string) =>
       ? ({ items: body.items as WalletTransaction[], next: body.next } satisfies TransactionPage)
       : null,
   );
+
+/** The last `months` months of money in and out, per currency (Insights, the month panels). */
+export const loadInsights = (months: number) =>
+  load(`/api/wallet/insights?months=${months}`, (body) => readInsights(body));

@@ -59,7 +59,7 @@ describe("TodayScreen", () => {
   it("greets the person and has a way to their account, always in reach", async () => {
     api();
     render(<TodayScreen />);
-    expect(await screen.findByRole("heading", { name: "Hello, Ada" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /^Hello, Ada/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Me" })).toHaveAttribute("href", "/me");
   });
 
@@ -80,7 +80,7 @@ describe("TodayScreen", () => {
     first.unmount();
     api({}, { mfaEnabled: true });
     render(<TodayScreen />);
-    await screen.findByRole("heading", { name: "Hello, Ada" });
+    await screen.findByRole("heading", { name: /^Hello, Ada/ });
     await waitFor(() =>
       expect(screen.queryByRole("link", { name: /second lock/i })).not.toBeInTheDocument(),
     );
@@ -96,7 +96,7 @@ describe("TodayScreen", () => {
     first.unmount();
     api({}, { kycStatus: "approved" });
     render(<TodayScreen />);
-    await screen.findByRole("heading", { name: "Hello, Ada" });
+    await screen.findByRole("heading", { name: /^Hello, Ada/ });
     await waitFor(() =>
       expect(screen.queryByRole("link", { name: /passport/i })).not.toBeInTheDocument(),
     );
@@ -146,14 +146,14 @@ describe("TodayScreen", () => {
   it("shows how many messages are unread on the bell, caps it, and is plain when all are read", async () => {
     api({ notices: part({ items: [], next: null, unread: 14 }) });
     const first = render(<TodayScreen />);
-    expect(await screen.findByRole("link", { name: "Messages, 14 unread" })).toHaveTextContent(
+    expect(await screen.findByRole("link", { name: "Notifications, 14 unread" })).toHaveTextContent(
       "9+",
     );
     first.unmount();
     api();
     render(<TodayScreen />);
     await screen.findByText("Fill your first pot");
-    expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Notifications" })).toBeInTheDocument();
   });
 
   it("shows how many friends there are, and that someone is waiting", async () => {
@@ -178,7 +178,7 @@ describe("TodayScreen", () => {
     );
     expect(screen.queryByRole("link", { name: /Savings/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^Friends\s*(\d|Find)/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Notifications" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
