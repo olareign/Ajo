@@ -8,6 +8,8 @@ import { Amount } from "@/components/ui/Amount";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { usePayment } from "@/lib/use-payment";
 import { useMoneyFlow } from "./MoneyFlow";
+import { FormPage } from "@/components/desk/FormPage";
+import { AddMoneyAside } from "@/components/desk/asides";
 
 /**
  * Where the payment partner sends the person back to. It only watches: the payment is settled by
@@ -99,9 +101,9 @@ export function AddMoneyReturn() {
 
 function Shell({ title, children }: Readonly<{ title: string; children: React.ReactNode }>) {
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<AddMoneyAside />}>
       <ScreenHeader title={title} backHref="/wallet" />
       <div className="grid justify-items-center gap-6 pt-4 text-center">{children}</div>
-    </main>
+    </FormPage>
   );
 }

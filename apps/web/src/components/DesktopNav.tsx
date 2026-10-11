@@ -6,6 +6,7 @@ import {
   FileText,
   HelpCircle,
   House,
+  LogOut,
   Orbit,
   PiggyBank,
   User,
@@ -15,7 +16,10 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { postJson } from "@/components/auth/post-json";
+import { Spinner } from "@/components/ui/Spinner";
 import { isAppRoute } from "@/lib/app-routes";
 import { cn } from "@/lib/cn";
 
@@ -62,6 +66,8 @@ function activeHref(path: string): string | undefined {
  */
 export function DesktopNav() {
   const path = usePathname() ?? "";
+  const router = useRouter();
+  const [leaving, setLeaving] = useState(false);
   if (!isAppRoute(path)) return null;
   const active = activeHref(path);
   return (
@@ -112,6 +118,26 @@ export function DesktopNav() {
                 </Link>
               );
             })}
+            {group.label === "Account" && (
+              <button
+                type="button"
+                disabled={leaving}
+                onClick={async () => {
+                  setLeaving(true);
+                  await postJson("/api/auth/sign-out", {});
+                  // The server clears the cookie even if the API could not be reached.
+                  router.replace("/sign-in");
+                }}
+                className="flex min-h-11 items-center gap-3.5 rounded-m px-3 text-left text-[15px] font-medium text-ink-muted transition-colors hover:bg-danger-tint hover:text-danger disabled:opacity-60"
+              >
+                {leaving ? (
+                  <Spinner />
+                ) : (
+                  <LogOut aria-hidden className="size-5" strokeWidth={1.75} />
+                )}
+                {leaving ? "Signing out…" : "Sign out"}
+              </button>
+            )}
           </div>
         ))}
       </nav>

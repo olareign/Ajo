@@ -20,6 +20,7 @@ import {
 } from "@/lib/statement";
 import { accountLabel, currencyName, describeTransaction } from "@/lib/wallet";
 import { whenText } from "@/lib/when";
+import { PAGE } from "@/lib/page";
 
 export function StatementsScreen() {
   return <MeGate needs="onboarded">{(me) => <Statements me={me} />}</MeGate>;
@@ -102,50 +103,72 @@ function Statements({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-6xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       <ScreenHeader
         title="Statements"
         subtitle="Every payment in and out of your accounts, for the days you choose."
         backHref="/wallet"
       />
       <div className="grid gap-4">
-        <ChoiceChips label="Period" options={PRESETS} value={preset} onChange={choose} />
-        {preset === "custom" && (
-          <form
-            className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (draft.from && draft.to) {
-                setLoad({ phase: "loading" });
-                setRange(draft);
-              }
-            }}
-          >
-            <label className="grid gap-1.5 text-[14px] font-medium">
-              From
-              <input
-                type="date"
-                value={draft.from}
-                max={today}
-                onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))}
-                className="min-h-11 rounded-m border border-line-strong bg-surface px-3 text-[15px]"
-              />
-            </label>
-            <label className="grid gap-1.5 text-[14px] font-medium">
-              To
-              <input
-                type="date"
-                value={draft.to}
-                max={today}
-                onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))}
-                className="min-h-11 rounded-m border border-line-strong bg-surface px-3 text-[15px]"
-              />
-            </label>
-            <Button type="submit" className="col-span-2 sm:col-span-1">
-              Show
-            </Button>
-          </form>
-        )}
+        {/* One toolbar: the period (and its dates) on the left; what it holds and the download on
+            the right. A card on a desk; on a phone the same parts stack. */}
+        <div className="grid gap-4 lg:flex lg:flex-wrap lg:items-end lg:justify-between lg:gap-x-8 lg:rounded-[var(--radius-xl)] lg:bg-surface-raised lg:p-5 lg:shadow-lift">
+          <div className="grid gap-4 lg:flex lg:flex-wrap lg:items-end lg:gap-6">
+            <ChoiceChips label="Period" options={PRESETS} value={preset} onChange={choose} />
+            {preset === "custom" && (
+              <form
+                className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (draft.from && draft.to) {
+                    setLoad({ phase: "loading" });
+                    setRange(draft);
+                  }
+                }}
+              >
+                <label className="grid gap-1.5 text-[14px] font-medium">
+                  From
+                  <input
+                    type="date"
+                    value={draft.from}
+                    max={today}
+                    onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))}
+                    className="min-h-11 rounded-m border border-line-strong bg-surface px-3 text-[15px]"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[14px] font-medium">
+                  To
+                  <input
+                    type="date"
+                    value={draft.to}
+                    max={today}
+                    onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))}
+                    className="min-h-11 rounded-m border border-line-strong bg-surface px-3 text-[15px]"
+                  />
+                </label>
+                <Button type="submit" className="col-span-2 sm:col-span-1">
+                  Show
+                </Button>
+              </form>
+            )}
+          </div>
+          {load.phase === "ready" && (
+            <div className="flex flex-wrap items-center justify-between gap-3 lg:justify-end lg:gap-4">
+              <p className="text-[14px] text-ink-muted">
+                {load.statement.lines.length} {load.statement.lines.length === 1 ? "line" : "lines"}
+                , {load.statement.from} to {load.statement.to}
+              </p>
+              <Button
+                variant="quiet"
+                disabled={load.statement.lines.length === 0}
+                onClick={() => download(load.statement)}
+              >
+                <Download aria-hidden className="size-4" />
+                Download CSV
+              </Button>
+            </div>
+          )}
+        </div>
 
         {load.phase === "loading" && (
           <div role="status" className="grid gap-3">
@@ -175,7 +198,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                 No money has moved in your accounts yet.
               </p>
             ) : (
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,28rem),1fr))]">
                 {load.statement.balances.map((b) => (
                   <section
                     key={b.currency}
@@ -211,20 +234,6 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                 ))}
               </div>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[14px] text-ink-muted">
-                {load.statement.lines.length} {load.statement.lines.length === 1 ? "line" : "lines"}
-                , {load.statement.from} to {load.statement.to}
-              </p>
-              <Button
-                variant="quiet"
-                disabled={load.statement.lines.length === 0}
-                onClick={() => download(load.statement)}
-              >
-                <Download aria-hidden className="size-4" />
-                Download CSV
-              </Button>
-            </div>
             {load.statement.truncated && (
               <p
                 role="status"

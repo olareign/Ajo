@@ -9,6 +9,7 @@ import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { ContributionStatus, GroupDetail } from "@/lib/groups-client";
 import { cn } from "@/lib/cn";
 import { useCircles } from "./CirclesFlow";
+import { PAGE } from "@/lib/page";
 
 const CELL: Readonly<Record<ContributionStatus, { word: string; Icon: LucideIcon; tone: string }>> =
   {
@@ -55,7 +56,7 @@ export function CircleBoard({ id }: Readonly<{ id: string }>) {
   const key = (m: { username: string | null; displayName: string }) => m.username ?? m.displayName;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-7xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       <ScreenHeader
         title={g ? `${g.name}: board` : "Circle board"}
         subtitle="Who has paid each round, at a glance."

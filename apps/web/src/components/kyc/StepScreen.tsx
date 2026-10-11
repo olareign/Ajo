@@ -18,6 +18,8 @@ import { LocationStep } from "./steps/LocationStep";
 import { NationalStep } from "./steps/NationalStep";
 import { SelfieStep } from "./steps/SelfieStep";
 import type { Outcome, StepProps } from "./steps/types";
+import { FormPage } from "@/components/desk/FormPage";
+import { IdentityAside } from "@/components/desk/asides";
 
 const STEPS: Record<StepKey, ComponentType<StepProps>> = {
   id: IdStep,
@@ -86,7 +88,7 @@ export function StepScreen({ step: raw }: Readonly<{ step: string }>) {
 
   if (!preview && !state.connected) {
     return (
-      <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+      <FormPage aside={<IdentityAside />}>
         <ScreenHeader title={copy.title} subtitle={copy.blurb} backHref={back} />
         <div className="grid justify-items-center gap-5 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift">
           <Stamp label={copy.stamp} title={copy.title} status="not_started" size={120} />
@@ -102,14 +104,14 @@ export function StepScreen({ step: raw }: Readonly<{ step: string }>) {
             Preview this step
           </ButtonLink>
         </div>
-      </main>
+      </FormPage>
     );
   }
 
   if (stamped) {
     const next = nextStep(state);
     return (
-      <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+      <FormPage aside={<IdentityAside />}>
         {ribbon}
         <div className="grid justify-items-center gap-6 pt-10 text-center">
           <Stamp label={copy.stamp} title={copy.title} status="approved" fresh size={176} />
@@ -131,13 +133,13 @@ export function StepScreen({ step: raw }: Readonly<{ step: string }>) {
               : "See my passport"}
           </ButtonLink>
         </div>
-      </main>
+      </FormPage>
     );
   }
 
   const status = stepOf(state, step);
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<IdentityAside />}>
       {ribbon}
       <ScreenHeader title={copy.title} subtitle={copy.blurb} backHref={back} />
       {status.status === "rejected" && status.reason && !tried && (
@@ -161,6 +163,6 @@ export function StepScreen({ step: raw }: Readonly<{ step: string }>) {
           &ldquo;blurry&rdquo;, shows what a refusal looks like.
         </p>
       )}
-    </main>
+    </FormPage>
   );
 }

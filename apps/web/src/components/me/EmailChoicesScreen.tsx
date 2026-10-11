@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/cn";
 import { PushCard } from "./PushCard";
 import { loadEmailChoices, saveEmailChoice, type EmailChoices } from "@/lib/profile-client";
+import { PAGE } from "@/lib/page";
 
 export function EmailChoicesScreen() {
   return <MeGate needs="onboarded">{() => <Choices />}</MeGate>;
@@ -69,7 +70,7 @@ function Choices() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       <ScreenHeader
         title="Notifications"
         subtitle="Choose how Àjọ reaches you. Everything still shows in Notifications."

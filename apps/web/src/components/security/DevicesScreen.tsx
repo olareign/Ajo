@@ -16,6 +16,7 @@ import {
   type TrustedDevice,
 } from "@/lib/security-client";
 import { whenText } from "@/lib/when";
+import { PAGE } from "@/lib/page";
 
 export function DevicesScreen() {
   return <MeGate needs="onboarded">{() => <Devices />}</MeGate>;
@@ -73,7 +74,7 @@ function Devices() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       <ScreenHeader
         title="Devices"
         subtitle="Where you're signed in. Sign out anything you don't recognise."

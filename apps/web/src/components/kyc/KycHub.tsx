@@ -8,6 +8,8 @@ import { nextStep, type KycState, type PreviewKind } from "@/lib/kyc";
 import { countryConfig, STEP_COPY } from "@/lib/kyc-config";
 import { useKycFlow } from "./KycFlow";
 import { Passport } from "./Passport";
+import { FormPage } from "@/components/desk/FormPage";
+import { IdentityAside } from "@/components/desk/asides";
 
 const OUTCOMES: readonly { kind: PreviewKind; label: string }[] = [
   { kind: "fresh", label: "New" },
@@ -22,7 +24,7 @@ export function KycHub() {
   const locked = !preview && !state.connected;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<IdentityAside />}>
       {preview && (
         <PreviewRibbon exitHref="/verify">
           <div role="group" aria-label="See another outcome" className="flex flex-wrap gap-1.5">
@@ -54,7 +56,7 @@ export function KycHub() {
         />
         {(!locked || state.status !== "not_started") && <StatusBanner state={state} href={href} />}
       </div>
-    </main>
+    </FormPage>
   );
 }
 

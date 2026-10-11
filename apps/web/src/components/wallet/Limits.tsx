@@ -7,6 +7,7 @@ import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { cn } from "@/lib/cn";
 import { limitsFor, toMinor } from "@/lib/money-flow";
 import { useMoneyFlow } from "./MoneyFlow";
+import { PAGE } from "@/lib/page";
 
 /** What each step of verification lets a person move, as a ladder with their own rung marked. */
 export function Limits() {
@@ -17,7 +18,7 @@ export function Limits() {
   const tier = preview ? 1 : (me.kycTier ?? 0);
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/wallet/limits" />}
       <ScreenHeader
         title="Your limits"

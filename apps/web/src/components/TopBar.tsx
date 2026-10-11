@@ -1,8 +1,9 @@
 "use client";
 
-import { Bell, Headset } from "lucide-react";
+import { Headset } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { NotificationBell } from "@/components/NotificationBell";
 import type { Me } from "@/components/onboarding/MeGate";
 import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { useUnread } from "@/lib/unread";
@@ -64,21 +65,7 @@ export function TopBar({
       <Link href="/me/help" aria-label="Support" className={`${round} lg:hidden`}>
         <Headset aria-hidden className="size-5" />
       </Link>
-      <Link
-        href="/notifications"
-        aria-label={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
-        className={`${round} lg:hidden`}
-      >
-        <Bell aria-hidden className="size-5" />
-        {count > 0 && (
-          <span
-            aria-hidden
-            className="absolute -top-0.5 -right-0.5 grid min-w-[20px] place-items-center rounded-full border-2 border-surface bg-oro px-1 text-[11px] leading-4 font-bold text-on-oro"
-          >
-            {count > 9 ? "9+" : count}
-          </span>
-        )}
-      </Link>
+      <NotificationBell count={count} className={`${round} lg:hidden`} />
     </div>
   );
 }

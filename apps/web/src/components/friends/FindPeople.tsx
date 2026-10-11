@@ -11,6 +11,7 @@ import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { Person } from "@/lib/friends-client";
 import { useFriends, useFriendsLock } from "./FriendsFlow";
 import { PersonRow } from "./PersonRow";
+import { PAGE } from "@/lib/page";
 
 export const SEARCH_DELAY_MS = 350;
 const USERNAME_START = /^[a-z][a-z0-9_]{2,19}$/;
@@ -51,7 +52,7 @@ export function FindPeople() {
   if (lock) return <FlowLocked lock={lock} title="Find people" path="/friends/find" />;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader
         title="Find people"

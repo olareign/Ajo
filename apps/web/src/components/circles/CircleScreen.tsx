@@ -33,6 +33,7 @@ import { polling } from "@/lib/use-payment";
 import { FREQ_WORDS, ORDER_WORDS, TrustBadge, useCircles, useCirclesLock } from "./CirclesFlow";
 import { whenText } from "@/lib/when";
 import { InstallCard } from "@/components/install/InstallCard";
+import { PAGE } from "@/lib/page";
 
 const RING: Record<ContributionStatus, RingMember["status"]> = {
   scheduled: "pending",
@@ -176,7 +177,7 @@ export function CircleScreen({ id }: Readonly<{ id: string }>) {
   const recipientIndex = roundNo ? ordered.findIndex((m) => m.spot === roundNo) : undefined;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
         title={g.name}

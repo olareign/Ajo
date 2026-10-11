@@ -15,6 +15,7 @@ import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { Failure } from "@/lib/api-send";
 import type { Person, ReportReason } from "@/lib/friends-client";
 import { TierBadge, useFriends, useFriendsLock } from "./FriendsFlow";
+import { PAGE } from "@/lib/page";
 
 type Panel = "block" | "report" | "remove" | null;
 
@@ -108,7 +109,7 @@ export function PersonScreen({ username }: Readonly<{ username: string }>) {
   const setRelation = (relation: Person["relation"]) => setPerson({ ...shown, relation });
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader title={shown.displayName} backHref={href("/friends")} />
 

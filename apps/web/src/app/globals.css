@@ -408,6 +408,28 @@ body {
     twinkle 0.8s ease-in-out 1.95s 2;
 }
 
+/* The bell, when new notifications arrive while the page is open. */
+@keyframes bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15%,
+  45%,
+  75% {
+    transform: rotate(14deg);
+  }
+  30%,
+  60%,
+  90% {
+    transform: rotate(-14deg);
+  }
+}
+.bell-ring {
+  transform-origin: 50% 10%;
+  animation: bell-ring 1.2s ease-in-out both;
+}
+
 /* Reduced motion: no movement at all, everything is simply there. */
 @media (prefers-reduced-motion: reduce) {
   .ring-roll,
@@ -424,7 +446,8 @@ body {
   .logo-coin,
   .logo-rays,
   .stamp-thunk,
-  .stamp-wait {
+  .stamp-wait,
+  .bell-ring {
     animation: none !important;
   }
 }

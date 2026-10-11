@@ -16,6 +16,7 @@ import { dayText } from "@/lib/schedule";
 import { recall, remember } from "@/lib/visit-cache";
 import type { GroupSummary } from "@/lib/groups-client";
 import { FREQ_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
+import { PAGE } from "@/lib/page";
 
 export const STATUS_WORD: Record<GroupSummary["status"], string> = {
   open: "Filling up",
@@ -66,7 +67,7 @@ export function CirclesHome() {
     : [];
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
         tab
@@ -92,64 +93,69 @@ export function CirclesHome() {
       )}
 
       {Array.isArray(groups) && (
-        <div className="grid gap-6">
-          {groups.length === 0 && (
-            <section
-              aria-label="No circles yet"
-              className="grid justify-items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
-            >
-              <CircleRing
-                members={Array.from({ length: 6 }, () => ({
-                  name: "Open place",
-                  status: "pending" as const,
-                }))}
-                size={180}
-                title="An empty circle"
-              />
-              <p className="font-display text-[22px] leading-7 font-semibold">No circle yet</p>
-              <p className="text-[15px] leading-6 text-ink-muted">
-                A circle is a few people who each pay in every round, and take turns collecting the
-                whole pot. Start one with friends, or find one to join.
-              </p>
-            </section>
-          )}
+        // On a desk the circles fill the width as cards, with starting or finding one beside them.
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <div className="grid gap-6">
+            {groups.length === 0 && (
+              <section
+                aria-label="No circles yet"
+                className="grid justify-items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
+              >
+                <CircleRing
+                  members={Array.from({ length: 6 }, () => ({
+                    name: "Open place",
+                    status: "pending" as const,
+                  }))}
+                  size={180}
+                  title="An empty circle"
+                />
+                <p className="font-display text-[22px] leading-7 font-semibold">No circle yet</p>
+                <p className="text-[15px] leading-6 text-ink-muted">
+                  A circle is a few people who each pay in every round, and take turns collecting
+                  the whole pot. Start one with friends, or find one to join.
+                </p>
+              </section>
+            )}
 
-          {going.length > 0 && (
-            <section aria-labelledby="going" className="grid gap-3">
-              <h2 id="going" className="font-display text-[20px] leading-7 font-semibold">
-                Your circles
-              </h2>
-              <ul className="grid gap-3">
-                {going.map((g) => (
-                  <CircleCard
-                    key={g.id}
-                    group={g}
-                    href={href(`/circles/${g.id}`)}
-                    locale={locale}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-          {over.length > 0 && (
-            <section aria-labelledby="over" className="grid gap-3">
-              <h2 id="over" className="font-display text-[20px] leading-7 font-semibold">
-                Finished
-              </h2>
-              <ul className="grid gap-3">
-                {over.map((g) => (
-                  <CircleCard
-                    key={g.id}
-                    group={g}
-                    href={href(`/circles/${g.id}`)}
-                    locale={locale}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <div className="grid gap-3">
+            {going.length > 0 && (
+              <section aria-labelledby="going" className="grid gap-3">
+                <h2 id="going" className="font-display text-[20px] leading-7 font-semibold">
+                  Your circles
+                </h2>
+                <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                  {going.map((g) => (
+                    <CircleCard
+                      key={g.id}
+                      group={g}
+                      href={href(`/circles/${g.id}`)}
+                      locale={locale}
+                    />
+                  ))}
+                </ul>
+              </section>
+            )}
+            {over.length > 0 && (
+              <section aria-labelledby="over" className="grid gap-3">
+                <h2 id="over" className="font-display text-[20px] leading-7 font-semibold">
+                  Finished
+                </h2>
+                <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                  {over.map((g) => (
+                    <CircleCard
+                      key={g.id}
+                      group={g}
+                      href={href(`/circles/${g.id}`)}
+                      locale={locale}
+                    />
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
+          <div className="grid gap-3 lg:sticky lg:top-28 lg:rounded-[var(--radius-xl)] lg:bg-surface-raised lg:p-5 lg:shadow-lift">
+            <p className="hidden text-[15px] leading-6 text-ink-muted lg:block">
+              Save together: everyone pays in each round, and one person takes the whole pot.
+            </p>
             <ButtonLink href={href("/circles/new")} size="lg" block>
               <Plus aria-hidden className="size-5" />
               Start a circle

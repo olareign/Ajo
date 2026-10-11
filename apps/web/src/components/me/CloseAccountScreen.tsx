@@ -11,6 +11,8 @@ import { signedOut } from "@/components/security/MfaSetup";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { closeAccount } from "@/lib/profile-client";
+import { FormPage } from "@/components/desk/FormPage";
+import { CloseAside } from "@/components/desk/asides";
 
 export function CloseAccountScreen() {
   return <MeGate needs="onboarded">{(me) => <CloseAccount me={me} />}</MeGate>;
@@ -76,7 +78,7 @@ function CloseAccount({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <FormPage aside={<CloseAside />}>
       <ScreenHeader
         title="Close account"
         subtitle="This can't be undone. You won't be able to sign in again."
@@ -148,6 +150,6 @@ function CloseAccount({ me }: Readonly<{ me: Me }>) {
           {busy ? "Closing…" : "Close my account"}
         </Button>
       </form>
-    </main>
+    </FormPage>
   );
 }

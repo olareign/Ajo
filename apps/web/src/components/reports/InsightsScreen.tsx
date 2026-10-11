@@ -11,6 +11,7 @@ import { monthLabel, readInsights, type InsightMonth } from "@/lib/insights";
 import { countryConfig } from "@/lib/kyc-config";
 import { currencyName } from "@/lib/wallet";
 import { InOutChart, SavingsLine } from "./Charts";
+import { PAGE } from "@/lib/page";
 
 export function InsightsScreen() {
   return <MeGate needs="onboarded">{(me) => <Insights me={me} />}</MeGate>;
@@ -68,14 +69,15 @@ function Insights({ me }: Readonly<{ me: Me }>) {
   const now = months[months.length - 1];
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28 lg:max-w-6xl lg:pt-8 lg:pb-12">
+    <main className={PAGE}>
       <ScreenHeader
         title="Insights"
         subtitle="Where your money went, month by month."
         backHref="/wallet"
       />
       <div className="grid gap-5">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        {/* The same toolbar as Statements: a card on a desk. */}
+        <div className="flex flex-wrap items-end justify-between gap-4 lg:rounded-[var(--radius-xl)] lg:bg-surface-raised lg:p-5 lg:shadow-lift">
           <ChoiceChips
             label="Period"
             options={RANGES}

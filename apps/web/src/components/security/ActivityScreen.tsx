@@ -24,6 +24,7 @@ import {
   type SecurityEventKind,
 } from "@/lib/security-client";
 import { whenText } from "@/lib/when";
+import { PAGE } from "@/lib/page";
 
 export function ActivityScreen() {
   return <MeGate needs="onboarded">{() => <Activity />}</MeGate>;
@@ -101,7 +102,7 @@ function Activity() {
   }, [router, attempt]);
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pt-6 pb-28">
+    <main className={PAGE}>
       <ScreenHeader
         title="Security activity"
         subtitle="Sign-ins and changes to your account, newest first."
