@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 import { PAGE } from "@/lib/page";
 
 /**
- * A form page. A phone gets the form alone, as before. A desk keeps the form at a width that is easy
- * to fill in, on the left, and fills the rest with `aside`: a short note about this step, kept in
- * view while the form scrolls.
+ * A form page. A phone gets the form alone, as before. A tablet or a desk keeps the form at a width
+ * that is easy to fill in, on the left, and fills the rest with `aside`: a short note about this
+ * step, kept in view while the form scrolls.
  */
 export function FormPage({
   aside,
@@ -14,11 +14,24 @@ export function FormPage({
 }: Readonly<{ aside?: ReactNode; children: ReactNode }>) {
   return (
     <main className={PAGE}>
-      <div className="lg:grid lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] lg:items-start lg:gap-12 xl:grid-cols-[minmax(0,600px)_minmax(0,1fr)]">
-        <div className="min-w-0">{children}</div>
-        {aside && <aside className="hidden lg:sticky lg:top-28 lg:block">{aside}</aside>}
-      </div>
+      <FormColumns aside={aside}>{children}</FormColumns>
     </main>
+  );
+}
+
+/** The form and its note side by side, for pages that draw their own frame (a step-by-step flow). */
+export function FormColumns({
+  aside,
+  children,
+  className,
+}: Readonly<{ aside?: ReactNode; children: ReactNode; className?: string }>) {
+  return (
+    <div
+      className={`md:grid md:grid-cols-[minmax(0,1fr)_260px] md:items-start md:gap-8 xl:grid-cols-[minmax(0,600px)_minmax(0,1fr)] xl:gap-12 ${className ?? ""}`}
+    >
+      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      {aside && <aside className="hidden md:sticky md:top-28 md:block">{aside}</aside>}
+    </div>
   );
 }
 

@@ -163,296 +163,316 @@ export function PlanScreen({ id }: Readonly<{ id: string }>) {
         </p>
       )}
 
-      <section
-        aria-label="Your pot"
-        className="grid justify-items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
-      >
-        <Pot
-          ratio={ratioOf(plan)}
-          tone={toneOf(plan)}
-          size={168}
-          dropKey={drop === 0 ? undefined : drop}
-        />
-        <div className="grid gap-1">
-          <Amount {...plan.saved} locale={locale} size="xl" />
-          <p className="text-[14px] text-ink-muted">
-            of <Amount {...plan.target} locale={locale} size="s" tone="muted" /> · {plan.paidDebits}{" "}
-            of {plan.totalDebits} debits
-          </p>
-        </div>
-        <StatusWord status={plan.status} />
-      </section>
-
-      {plan.failedDebits > 0 && (
-        <p
-          role="alert"
-          className="mt-4 rounded-[var(--radius-l)] bg-danger-tint p-4 text-[15px] leading-6 text-danger"
-        >
-          {plan.failedDebits} {plan.failedDebits === 1 ? "debit was" : "debits were"} missed because
-          your wallet was short.{" "}
-          <Link href={href("/wallet/add")} className="font-semibold underline underline-offset-4">
-            Add money
-          </Link>{" "}
-          so the next ones go through.
-        </p>
-      )}
-
-      {plan.status === "completed" && plan.payout && (
-        <p
-          role="status"
-          className="mt-4 rounded-[var(--radius-l)] bg-leaf-tint p-4 text-[15px] leading-6 text-leaf"
-        >
-          Done. <Amount {...plan.payout} locale={locale} size="s" /> is in your wallet. Keep it
-          there, or withdraw it to your bank.
-        </p>
-      )}
-      {plan.status === "cancelled" && (
-        <p
-          role="status"
-          className="mt-4 rounded-[var(--radius-l)] bg-surface-sunken p-4 text-[15px] leading-6"
-        >
-          You ended this plan early.{" "}
-          {plan.payout && (
-            <>
-              <Amount {...plan.payout} locale={locale} size="s" /> went back to your wallet
-            </>
-          )}
-          {BigInt(plan.penalty.amount) > 0n && (
-            <>
-              , after a <Amount {...plan.penalty} locale={locale} size="s" /> charge
-            </>
-          )}
-          .
-        </p>
-      )}
-
-      {open && plan.nextDebit && (
-        <section
-          aria-label="Next debit"
-          className="mt-4 grid gap-2 rounded-[var(--radius-l)] bg-primary-tint p-4"
-        >
-          <p className="flex items-center gap-2 text-[13px] font-semibold text-tertiary">
-            <CalendarClock aria-hidden className="size-4" />
-            {plan.status === "paused" ? "PAUSED, NEXT WAS" : "NEXT DEBIT"}
-          </p>
-          <p className="text-[17px] leading-6">
-            <span className="font-semibold">{dayText(plan.nextDebit.dueOn)}</span> ·{" "}
-            <Amount {...plan.nextDebit.amount} locale={locale} size="s" />
-          </p>
-          {wallet !== undefined && plan.status === "active" && (
-            <p
-              className={
-                covers ? "text-[14px] text-ink-muted" : "text-[14px] font-medium text-danger"
-              }
-            >
-              {covers
-                ? `Your wallet has ${formatMoney({ amount: wallet.toString(), currency }, locale)}${sampleNote}, enough for it.`
-                : `Your wallet has ${formatMoney({ amount: wallet.toString(), currency }, locale)}${sampleNote}, not enough yet.`}{" "}
-              {!covers && (
-                <Link href={href("/wallet/add")} className="underline underline-offset-4">
-                  Add money
-                </Link>
-              )}
-            </p>
-          )}
-          {plan.topupFromBank && (
-            <p className="text-[13px] text-ink-muted">
-              We&apos;ll top up from your bank if your wallet is short.
-            </p>
-          )}
-        </section>
-      )}
-
-      <section aria-label="Debit days" className="mt-6 grid gap-3">
-        <h2 className="font-display text-[20px] leading-7 font-semibold">
-          {FREQUENCY_WORD[plan.frequency][0]!.toUpperCase() +
-            FREQUENCY_WORD[plan.frequency].slice(1)}
-        </h2>
-        <Beads debits={plan.schedule} />
-        <p className="text-[13px] text-ink-muted">
-          {dayText(plan.startDate)} to {dayText(plan.endDate)}
-        </p>
-      </section>
-
-      {error && (
-        <p role="alert" className="mt-4 text-center text-[15px] font-medium text-danger">
-          {error}
-        </p>
-      )}
-
-      {open && (
-        <section aria-label="What you can do" className="mt-6 grid gap-3">
-          {panel === null && (
-            <>
-              <Button
-                variant="money"
-                size="lg"
-                block
-                onClick={() => (setError(undefined), setPanel("topup"))}
-              >
-                <Coins aria-hidden className="size-5" />
-                Add to this pot now
-              </Button>
-              {plan.status === "active" ? (
-                <Button
-                  variant="quiet"
-                  block
-                  loading={busy}
-                  disabled={busy}
-                  onClick={() => void run(() => gateway.pause(plan.id))}
-                >
-                  <PauseCircle aria-hidden className="size-5" />
-                  Pause the plan
-                </Button>
-              ) : (
-                <Button
-                  variant="quiet"
-                  block
-                  loading={busy}
-                  disabled={busy}
-                  onClick={() => void run(() => gateway.resume(plan.id))}
-                >
-                  <PlayCircle aria-hidden className="size-5" />
-                  Start it again
-                </Button>
-              )}
-              {preview && plan.status === "active" && (
-                <Button
-                  variant="quiet"
-                  block
-                  loading={busy}
-                  disabled={busy}
-                  onClick={() => void run(() => gateway.takeNextDebit!(plan.id))}
-                >
-                  Preview: take the next debit
-                </Button>
-              )}
-              <Button variant="danger" block onClick={() => (setError(undefined), setPanel("end"))}>
-                End the plan early
-              </Button>
-            </>
-          )}
-
-          {panel === "topup" && (
-            <div className="grid gap-5 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift">
-              <AmountPad
-                value={amount}
-                onChange={setAmount}
-                currency={currency}
-                locale={locale}
-                label="Add to the pot"
-                quick={QUICK_AMOUNTS[country as "NG" | "GB"] ?? []}
-              />
-              <p className="text-center text-[13px] text-ink-muted">
-                Comes from your wallet
-                {wallet !== undefined && (
-                  <>
-                    {" "}
-                    ({formatMoney({ amount: wallet.toString(), currency }, locale)}
-                    {sampleNote})
-                  </>
-                )}
-                .
+      {/* A phone reads it top to bottom. From a tablet up: the pot, what's next and what you can do
+          on the left; the debit days and the history beside them. */}
+      <div className="md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-6 lg:gap-8 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="min-w-0">
+          <section
+            aria-label="Your pot"
+            className="grid justify-items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
+          >
+            <Pot
+              ratio={ratioOf(plan)}
+              tone={toneOf(plan)}
+              size={168}
+              dropKey={drop === 0 ? undefined : drop}
+            />
+            <div className="grid gap-1">
+              <Amount {...plan.saved} locale={locale} size="xl" />
+              <p className="text-[14px] text-ink-muted">
+                of <Amount {...plan.target} locale={locale} size="s" tone="muted" /> ·{" "}
+                {plan.paidDebits} of {plan.totalDebits} debits
               </p>
-              <div className="grid grid-cols-[auto_1fr] gap-3">
-                <Button variant="quiet" onClick={() => (setAmount(""), setPanel(null))}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="money"
-                  loading={busy}
-                  disabled={topMinor === "0" || busy}
-                  onClick={() => {
-                    const signature = `${plan.id}:${topMinor}`;
-                    if (topKey.current.signature !== signature)
-                      topKey.current = { signature, key: newAttemptKey() };
-                    void run(
-                      () => gateway.topUp(plan.id, topMinor, topKey.current.key),
-                      () => (setAmount(""), setPanel(null)),
-                    );
-                  }}
-                >
-                  {busy ? "Adding…" : "Add it"}
-                </Button>
-              </div>
             </div>
+            <StatusWord status={plan.status} />
+          </section>
+
+          {plan.failedDebits > 0 && (
+            <p
+              role="alert"
+              className="mt-4 rounded-[var(--radius-l)] bg-danger-tint p-4 text-[15px] leading-6 text-danger"
+            >
+              {plan.failedDebits} {plan.failedDebits === 1 ? "debit was" : "debits were"} missed
+              because your wallet was short.{" "}
+              <Link
+                href={href("/wallet/add")}
+                className="font-semibold underline underline-offset-4"
+              >
+                Add money
+              </Link>{" "}
+              so the next ones go through.
+            </p>
           )}
 
-          {panel === "end" && (
-            <div className="grid gap-5 rounded-[var(--radius-l)] border-[1.5px] border-danger/40 bg-danger-tint p-4">
-              <p className="text-[15px] leading-[22px]">
-                <Amount
-                  amount={(saved - penalty).toString()}
-                  currency={currency}
-                  locale={locale}
-                  size="s"
-                />{" "}
-                goes back to your wallet now
-                {penalty > 0n && (
-                  <>
-                    , after a{" "}
+          {plan.status === "completed" && plan.payout && (
+            <p
+              role="status"
+              className="mt-4 rounded-[var(--radius-l)] bg-leaf-tint p-4 text-[15px] leading-6 text-leaf"
+            >
+              Done. <Amount {...plan.payout} locale={locale} size="s" /> is in your wallet. Keep it
+              there, or withdraw it to your bank.
+            </p>
+          )}
+          {plan.status === "cancelled" && (
+            <p
+              role="status"
+              className="mt-4 rounded-[var(--radius-l)] bg-surface-sunken p-4 text-[15px] leading-6"
+            >
+              You ended this plan early.{" "}
+              {plan.payout && (
+                <>
+                  <Amount {...plan.payout} locale={locale} size="s" /> went back to your wallet
+                </>
+              )}
+              {BigInt(plan.penalty.amount) > 0n && (
+                <>
+                  , after a <Amount {...plan.penalty} locale={locale} size="s" /> charge
+                </>
+              )}
+              .
+            </p>
+          )}
+
+          {open && plan.nextDebit && (
+            <section
+              aria-label="Next debit"
+              className="mt-4 grid gap-2 rounded-[var(--radius-l)] bg-primary-tint p-4"
+            >
+              <p className="flex items-center gap-2 text-[13px] font-semibold text-tertiary">
+                <CalendarClock aria-hidden className="size-4" />
+                {plan.status === "paused" ? "PAUSED, NEXT WAS" : "NEXT DEBIT"}
+              </p>
+              <p className="text-[17px] leading-6">
+                <span className="font-semibold">{dayText(plan.nextDebit.dueOn)}</span> ·{" "}
+                <Amount {...plan.nextDebit.amount} locale={locale} size="s" />
+              </p>
+              {wallet !== undefined && plan.status === "active" && (
+                <p
+                  className={
+                    covers ? "text-[14px] text-ink-muted" : "text-[14px] font-medium text-danger"
+                  }
+                >
+                  {covers
+                    ? `Your wallet has ${formatMoney({ amount: wallet.toString(), currency }, locale)}${sampleNote}, enough for it.`
+                    : `Your wallet has ${formatMoney({ amount: wallet.toString(), currency }, locale)}${sampleNote}, not enough yet.`}{" "}
+                  {!covers && (
+                    <Link href={href("/wallet/add")} className="underline underline-offset-4">
+                      Add money
+                    </Link>
+                  )}
+                </p>
+              )}
+              {plan.topupFromBank && (
+                <p className="text-[13px] text-ink-muted">
+                  We&apos;ll top up from your bank if your wallet is short.
+                </p>
+              )}
+            </section>
+          )}
+
+          {error && (
+            <p role="alert" className="mt-4 text-center text-[15px] font-medium text-danger">
+              {error}
+            </p>
+          )}
+
+          {open && (
+            <section aria-label="What you can do" className="mt-6 grid gap-3">
+              {panel === null && (
+                <>
+                  <Button
+                    variant="money"
+                    size="lg"
+                    block
+                    onClick={() => (setError(undefined), setPanel("topup"))}
+                  >
+                    <Coins aria-hidden className="size-5" />
+                    Add to this pot now
+                  </Button>
+                  {plan.status === "active" ? (
+                    <Button
+                      variant="quiet"
+                      block
+                      loading={busy}
+                      disabled={busy}
+                      onClick={() => void run(() => gateway.pause(plan.id))}
+                    >
+                      <PauseCircle aria-hidden className="size-5" />
+                      Pause the plan
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="quiet"
+                      block
+                      loading={busy}
+                      disabled={busy}
+                      onClick={() => void run(() => gateway.resume(plan.id))}
+                    >
+                      <PlayCircle aria-hidden className="size-5" />
+                      Start it again
+                    </Button>
+                  )}
+                  {preview && plan.status === "active" && (
+                    <Button
+                      variant="quiet"
+                      block
+                      loading={busy}
+                      disabled={busy}
+                      onClick={() => void run(() => gateway.takeNextDebit!(plan.id))}
+                    >
+                      Preview: take the next debit
+                    </Button>
+                  )}
+                  <Button
+                    variant="danger"
+                    block
+                    onClick={() => (setError(undefined), setPanel("end"))}
+                  >
+                    End the plan early
+                  </Button>
+                </>
+              )}
+
+              {panel === "topup" && (
+                <div className="grid gap-5 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift">
+                  <AmountPad
+                    value={amount}
+                    onChange={setAmount}
+                    currency={currency}
+                    locale={locale}
+                    label="Add to the pot"
+                    quick={QUICK_AMOUNTS[country as "NG" | "GB"] ?? []}
+                  />
+                  <p className="text-center text-[13px] text-ink-muted">
+                    Comes from your wallet
+                    {wallet !== undefined && (
+                      <>
+                        {" "}
+                        ({formatMoney({ amount: wallet.toString(), currency }, locale)}
+                        {sampleNote})
+                      </>
+                    )}
+                    .
+                  </p>
+                  <div className="grid grid-cols-[auto_1fr] gap-3">
+                    <Button variant="quiet" onClick={() => (setAmount(""), setPanel(null))}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="money"
+                      loading={busy}
+                      disabled={topMinor === "0" || busy}
+                      onClick={() => {
+                        const signature = `${plan.id}:${topMinor}`;
+                        if (topKey.current.signature !== signature)
+                          topKey.current = { signature, key: newAttemptKey() };
+                        void run(
+                          () => gateway.topUp(plan.id, topMinor, topKey.current.key),
+                          () => (setAmount(""), setPanel(null)),
+                        );
+                      }}
+                    >
+                      {busy ? "Adding…" : "Add it"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {panel === "end" && (
+                <div className="grid gap-5 rounded-[var(--radius-l)] border-[1.5px] border-danger/40 bg-danger-tint p-4">
+                  <p className="text-[15px] leading-[22px]">
                     <Amount
-                      amount={penalty.toString()}
+                      amount={(saved - penalty).toString()}
                       currency={currency}
                       locale={locale}
                       size="s"
                     />{" "}
-                    charge for ending early
-                  </>
-                )}
-                . The {remaining} {remaining === 1 ? "debit" : "debits"} still to come will be
-                cancelled.
-              </p>
-              <PinPad label="Your PIN, to be sure" value={pin} onChange={setPin} />
-              <div className="grid grid-cols-[auto_1fr] gap-3">
-                <Button variant="quiet" onClick={() => (setPin(""), setPanel(null))}>
-                  Keep the plan
-                </Button>
-                <Button
-                  variant="danger"
-                  loading={busy}
-                  disabled={pin.length !== 6 || busy}
-                  onClick={() =>
-                    void run(
-                      () => gateway.endEarly(plan.id, pin),
-                      () => (setPin(""), setPanel(null)),
-                    ).then(() => setPin(""))
-                  }
-                >
-                  {busy ? "One moment…" : "End it"}
-                </Button>
-              </div>
-            </div>
+                    goes back to your wallet now
+                    {penalty > 0n && (
+                      <>
+                        , after a{" "}
+                        <Amount
+                          amount={penalty.toString()}
+                          currency={currency}
+                          locale={locale}
+                          size="s"
+                        />{" "}
+                        charge for ending early
+                      </>
+                    )}
+                    . The {remaining} {remaining === 1 ? "debit" : "debits"} still to come will be
+                    cancelled.
+                  </p>
+                  <PinPad label="Your PIN, to be sure" value={pin} onChange={setPin} />
+                  <div className="grid grid-cols-[auto_1fr] gap-3">
+                    <Button variant="quiet" onClick={() => (setPin(""), setPanel(null))}>
+                      Keep the plan
+                    </Button>
+                    <Button
+                      variant="danger"
+                      loading={busy}
+                      disabled={pin.length !== 6 || busy}
+                      onClick={() =>
+                        void run(
+                          () => gateway.endEarly(plan.id, pin),
+                          () => (setPin(""), setPanel(null)),
+                        ).then(() => setPin(""))
+                      }
+                    >
+                      {busy ? "One moment…" : "End it"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </section>
           )}
-        </section>
-      )}
+        </div>
+        <div className="min-w-0 md:[&>section:first-child]:mt-0">
+          <section
+            aria-label="Debit days"
+            className="mt-6 grid gap-3 md:rounded-[var(--radius-l)] md:bg-surface-raised md:p-5 md:shadow-lift"
+          >
+            <h2 className="font-display text-[20px] leading-7 font-semibold">
+              {FREQUENCY_WORD[plan.frequency][0]!.toUpperCase() +
+                FREQUENCY_WORD[plan.frequency].slice(1)}
+            </h2>
+            <Beads debits={plan.schedule} />
+            <p className="text-[13px] text-ink-muted">
+              {dayText(plan.startDate)} to {dayText(plan.endDate)}
+            </p>
+          </section>
 
-      {plan.history.length > 0 && (
-        <section aria-label="History" className="mt-8 grid gap-3">
-          <h2 className="font-display text-[20px] leading-7 font-semibold">History</h2>
-          <ul className="grid gap-2">
-            {plan.history.map((item, i) => (
-              <li
-                key={`${item.createdAt}-${i}`}
-                className="flex items-center justify-between gap-3 border-b border-dashed border-line pb-2 text-[15px]"
-              >
-                <span>
-                  {HISTORY_WORDS[item.type] ?? "Activity"}
-                  <span className="block text-[13px] text-ink-muted">
-                    {whenText(item.createdAt)}
-                  </span>
-                </span>
-                <span className="text-right">
-                  <span className="sr-only">
-                    {item.direction === "in" ? "Into the pot" : "Out of the pot"}
-                  </span>
-                  <Amount {...item.amount} locale={locale} size="s" />
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+          {plan.history.length > 0 && (
+            <section
+              aria-label="History"
+              className="mt-8 grid gap-3 md:mt-6 md:rounded-[var(--radius-l)] md:bg-surface-raised md:p-5 md:shadow-lift"
+            >
+              <h2 className="font-display text-[20px] leading-7 font-semibold">History</h2>
+              <ul className="grid gap-2">
+                {plan.history.map((item, i) => (
+                  <li
+                    key={`${item.createdAt}-${i}`}
+                    className="flex items-center justify-between gap-3 border-b border-dashed border-line pb-2 text-[15px]"
+                  >
+                    <span>
+                      {HISTORY_WORDS[item.type] ?? "Activity"}
+                      <span className="block text-[13px] text-ink-muted">
+                        {whenText(item.createdAt)}
+                      </span>
+                    </span>
+                    <span className="text-right">
+                      <span className="sr-only">
+                        {item.direction === "in" ? "Into the pot" : "Out of the pot"}
+                      </span>
+                      <Amount {...item.amount} locale={locale} size="s" />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
