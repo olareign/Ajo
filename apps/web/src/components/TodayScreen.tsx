@@ -23,12 +23,21 @@ import type { GroupSummary } from "@/lib/groups-client";
 import { countryConfig } from "@/lib/kyc-config";
 import type { Plan } from "@/lib/savings-client";
 import { loadScreen, partData, type ScreenData } from "@/lib/screen-client";
-import { MonthPanel } from "./desk/MonthPanel";
-import { CirclesPanel, SavingsPanel, Todo, UpNext } from "./desk/TodayDesk";
+import {
+  AccountCard,
+  ActivityChart,
+  Attention,
+  NextCard,
+  QuickActions as DeskActions,
+  RecentTransactions,
+  SavedCard,
+} from "./desk/Dashboard";
+import { CirclesPanel, SavingsPanel, UpNext, useUpcoming, type Due } from "./desk/TodayDesk";
 import { useWide } from "@/lib/use-wide";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Wallet } from "@/lib/wallet";
 import { readFx, type FxEquivalents } from "@/lib/fx";
+import { cn } from "@/lib/cn";
 import { PAGE } from "@/lib/page";
 
 export function TodayScreen() {
@@ -76,7 +85,11 @@ function Today({ me }: Readonly<{ me: Me }>) {
   const router = useRouter();
   // Everything Today shows comes in one request; within a visit the last copy shows at once.
   const [data, setData] = useState<TodayData | undefined>(() => recall<TodayData>("screen:today"));
-  const wide = useWide();
+  // From a tablet up, Today is a dashboard; a phone reads one column.
+  const wide = useWide("md");
+  // On a desk the header above already greets the person by the time of day.
+  const desk = useWide();
+  const upcoming = useUpcoming(data?.plans, data?.groups);
 
   useEffect(() => {
     let live = true;
@@ -96,16 +109,16 @@ function Today({ me }: Readonly<{ me: Me }>) {
   }, [router]);
 
   return (
-    <main className={PAGE}>
+    <main className={cn(PAGE, "md:max-w-none md:px-6")}>
       <ScreenHeader
         tab
         title={`Hello, ${me.displayName}`}
         deskTitle="Overview"
-        eyebrow={<TimeOfDay />}
+        eyebrow={desk ? undefined : <TimeOfDay />}
         unread={data ? data.unread : null}
       />
       {wide ? (
-        <TodayDesk me={me} data={data} />
+        <TodayDesk me={me} data={data} upcoming={upcoming} />
       ) : (
         // A phone reads it top to bottom: money, shortcuts, what needs doing, then the rest.
         <div>
@@ -154,7 +167,7 @@ function Today({ me }: Readonly<{ me: Me }>) {
             </Link>
           )}
           <div className="mt-4">
-            <UpNext plans={data?.plans} groups={data?.groups} />
+            <UpNext items={upcoming} />
           </div>
           <TodaySavings plans={data?.plans} />
           <TodayCircles groups={data?.groups} />
@@ -219,57 +232,46 @@ function TimeOfDay() {
 }
 
 /**
- * Today on a desk: the three things that matter, then the detail. Balance; what's due next;
- * this month. Then each pot and each circle, with friends. Only to-dos that need the person show,
- * as slim lines above. No tiles or install prompt: the sidebar and the browser already do that.
+ * Today on a tablet or a desk: a dashboard. The balance leads, with what is saved and what is due
+ * next beside it; four ways to start something; money in and out over time beside what needs the
+ * person; pots, circles and the calendar; then recent payments with the account's standing.
+ * Each card asks for its own data, so one slow part never holds up the rest.
  */
-function TodayDesk({ me, data }: Readonly<{ me: Me; data: TodayData | undefined }>) {
+function TodayDesk({
+  me,
+  data,
+  upcoming,
+}: Readonly<{ me: Me; data: TodayData | undefined; upcoming: readonly Due[] }>) {
   const currency = countryConfig(me.country)?.currency;
-  const needsId = me.kycStatus !== undefined && me.kycStatus !== "approved";
   return (
     <div className="grid gap-6">
-      {(needsId || me.mfaEnabled === false) && (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {needsId && (
-            <Todo
-              href="/verify"
-              Icon={BookUser}
-              tone="bg-primary-tint text-ink"
-              title="Get your passport stamped"
-            >
-              {me.kycStatus === "rejected"
-                ? "A stamp needs another try."
-                : me.kycStatus === "pending"
-                  ? "We're checking your details."
-                  : "Five short steps open saving, circles and friends."}
-            </Todo>
-          )}
-          {me.mfaEnabled === false && (
-            <Todo
-              href="/me/security"
-              Icon={ShieldAlert}
-              tone="bg-oro-tint text-oro-ink"
-              title="Add a second lock"
-            >
-              Needed before you can move money. It takes a minute.
-            </Todo>
-          )}
-        </div>
-      )}
-      {/* Three columns that each stack on their own, so a short card leaves no gap: your money
-          and your pots; what's next and your circles; this month and friends. On a narrower desk
-          the third sits under the first two, its two cards side by side. */}
-      <div className="grid items-start gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <div className="grid gap-6 [&>*]:mt-0">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="md:col-span-2 [&>section]:mt-0 [&>section]:h-full">
           <WalletSummary wallets={data?.wallets} currency={currency} fx={data?.fx} />
-          <SavingsPanel plans={data?.plans} />
         </div>
-        <div className="grid gap-6">
-          <UpNext plans={data?.plans} groups={data?.groups} />
-          <CirclesPanel groups={data?.groups} />
+        <SavedCard plans={data?.plans} currency={currency} />
+        <NextCard items={upcoming} />
+      </div>
+      <DeskActions />
+      {/* Two columns that each stack on their own, so a short card leaves no gap: the money story
+          (chart, pots and circles, payments) and what needs the person (attention, what's next,
+          the account). On a tablet the second comes first, two cards a row. */}
+      <div className="grid items-start gap-6 xl:grid-cols-3">
+        <div className="grid gap-6 xl:col-span-2">
+          <ActivityChart
+            currency={currency}
+            locale={countryConfig(me.country)?.locale ?? "en-NG"}
+          />
+          <div className="grid items-start gap-6 md:grid-cols-2">
+            <SavingsPanel plans={data?.plans} />
+            <CirclesPanel groups={data?.groups} />
+          </div>
+          <RecentTransactions />
         </div>
-        <div className="grid items-start gap-6 lg:col-span-2 lg:grid-cols-2 xl:col-span-1 xl:grid-cols-1 [&_a]:mt-0">
-          <MonthPanel currency={currency} recent balance={false} />
+        <div className="order-first grid items-start gap-6 md:grid-cols-2 xl:order-none xl:grid-cols-1 [&_a]:mt-0">
+          <Attention me={me} />
+          <UpNext items={upcoming} />
+          <AccountCard me={me} />
           <TodayFriends state={data?.friends} />
         </div>
       </div>

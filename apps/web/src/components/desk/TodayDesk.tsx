@@ -1,19 +1,19 @@
 "use client";
 
-import { CalendarClock, ChevronRight, HandCoins, Orbit, PiggyBank, Plus } from "lucide-react";
+import { CalendarClock, ChevronRight, Orbit, PiggyBank, Plus } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Amount } from "@/components/ui/Amount";
 import { ratioOf } from "@/components/savings/SavingsHome";
 import { loadGroup, type GroupDetail, type GroupSummary } from "@/lib/groups-client";
 import type { Plan } from "@/lib/savings-client";
 import { dayText } from "@/lib/schedule";
 
-const card =
+export const card =
   "grid content-start gap-5 rounded-[var(--radius-xl)] bg-surface-raised p-6 shadow-lift";
 
 /** A panel's heading: what it is, and one quiet link to where it lives. */
-function PanelHead({
+export function PanelHead({
   id,
   title,
   href,
@@ -53,10 +53,11 @@ function Empty({ text, href, action }: Readonly<{ text: string; href: string; ac
 
 const going = (groups: readonly GroupSummary[] | null | undefined) =>
   (groups ?? []).filter((g) => ["open", "picking", "running"].includes(g.status));
-const openPlans = (plans: readonly Plan[] | null | undefined) =>
+/** Plans still going: what Today counts and shows. */
+export const openPlans = (plans: readonly Plan[] | null | undefined) =>
   (plans ?? []).filter((p) => p.status === "active" || p.status === "paused");
 
-type Due = Readonly<{
+export type Due = Readonly<{
   key: string;
   date: string;
   title: string;
@@ -71,13 +72,10 @@ type Due = Readonly<{
  * a circle pays you. Dates come from the API (a plan's next debit; a running circle's rounds), so
  * nothing here is a guess. A running circle's rounds are asked for here (at most four).
  */
-export function UpNext({
-  plans,
-  groups,
-}: Readonly<{
-  plans: readonly Plan[] | null | undefined;
-  groups: readonly GroupSummary[] | null | undefined;
-}>) {
+export function useUpcoming(
+  plans: readonly Plan[] | null | undefined,
+  groups: readonly GroupSummary[] | null | undefined,
+): readonly Due[] {
   const running = going(groups)
     .filter((g) => g.status === "running")
     .slice(0, 4);
@@ -134,7 +132,11 @@ export function UpNext({
     }
   }
   items.sort((a, b) => a.date.localeCompare(b.date));
+  return items;
+}
 
+/** The upcoming list as a card: soonest first, at most five. */
+export function UpNext({ items }: Readonly<{ items: readonly Due[] }>) {
   return (
     <section aria-labelledby="up-next" className={card}>
       <div className="flex items-center gap-3">
@@ -304,31 +306,5 @@ export function CirclesPanel({
         </ul>
       )}
     </section>
-  );
-}
-
-/** A to-do that needs the person (identity, second lock): one slim line, only when it applies. */
-export function Todo({
-  href,
-  Icon = HandCoins,
-  tone,
-  title,
-  children,
-}: Readonly<{
-  href: string;
-  Icon?: typeof HandCoins;
-  tone: string;
-  title: string;
-  children: ReactNode;
-}>) {
-  return (
-    <Link href={href} className={`flex items-center gap-4 rounded-[var(--radius-l)] p-4 ${tone}`}>
-      <Icon aria-hidden className="size-6 shrink-0" />
-      <span className="grid min-w-0">
-        <span className="text-[15px] font-semibold">{title}</span>
-        <span className="text-[14px] leading-5 opacity-90">{children}</span>
-      </span>
-      <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
-    </Link>
   );
 }

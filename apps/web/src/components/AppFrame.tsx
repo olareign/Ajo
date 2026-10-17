@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { isAppRoute, isAuthPage, isFullWidthRoute, isPublicPage } from "@/lib/app-routes";
 import { cn } from "@/lib/cn";
+import { useCompactSidebar } from "@/lib/sidebar";
 import { useWide } from "@/lib/use-wide";
 import { DesktopHeader } from "./DesktopHeader";
 
@@ -18,14 +19,22 @@ export function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
   const app = isAppRoute(path);
   const full = isFullWidthRoute(path);
   const wide = useWide();
+  const compact = useCompactSidebar();
   return (
-    <div className={cn("min-h-dvh bg-surface", app && "lg:pl-[248px]")}>
+    <div
+      className={cn(
+        "min-h-dvh bg-surface transition-[padding] duration-200 motion-reduce:transition-none",
+        app && (compact ? "lg:pl-20" : "lg:pl-[248px]"),
+      )}
+    >
       {app && <DesktopHeader wide={wide} />}
       <div
         className={cn(
           "mx-auto min-h-dvh",
           isPublicPage(path) || isAuthPage(path) ? "max-w-none" : "max-w-md",
-          (app || full) && "lg:max-w-none",
+          // App pages may widen from a tablet up (Today does); each page keeps its own column.
+          app && "md:max-w-none",
+          full && "lg:max-w-none",
         )}
       >
         {children}

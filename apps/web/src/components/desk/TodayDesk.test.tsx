@@ -3,7 +3,15 @@ import type { GroupDetail, GroupSummary } from "@/lib/groups-client";
 import type { Plan } from "@/lib/savings-client";
 import { forgetAll } from "@/lib/visit-cache";
 import { MonthPanel } from "./MonthPanel";
-import { CirclesPanel, SavingsPanel, UpNext } from "./TodayDesk";
+import { CirclesPanel, SavingsPanel, UpNext, useUpcoming } from "./TodayDesk";
+
+/** Up next as Today uses it: the list worked out from plans and circles, then shown. */
+function Upcoming({
+  plans,
+  groups,
+}: Readonly<{ plans: readonly Plan[]; groups: readonly GroupSummary[] }>) {
+  return <UpNext items={useUpcoming(plans, groups)} />;
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -71,7 +79,7 @@ describe("up next", () => {
       "fetch",
       vi.fn(async () => Response.json(detail)),
     );
-    render(<UpNext plans={[plan()]} groups={[group()]} />);
+    render(<Upcoming plans={[plan()]} groups={[group()]} />);
     const list = await screen.findByRole("list");
     await screen.findByText("Round 2: the pot is yours · Sun");
     const rows = within(list)
@@ -85,7 +93,7 @@ describe("up next", () => {
   it("says plainly when nothing is due, and asks nothing for circles that aren't running", () => {
     const asked = vi.fn();
     vi.stubGlobal("fetch", asked);
-    render(<UpNext plans={[plan({ nextDebit: null })]} groups={[group({ status: "open" })]} />);
+    render(<Upcoming plans={[plan({ nextDebit: null })]} groups={[group({ status: "open" })]} />);
     expect(screen.getByText(/Nothing is due/)).toBeInTheDocument();
     expect(asked).not.toHaveBeenCalled();
   });
