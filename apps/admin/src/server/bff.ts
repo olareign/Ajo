@@ -55,6 +55,7 @@ const ROUTES: readonly Route[] = [
   { method: "POST", pattern: /^auth\/logout$/, api: () => "/admin/auth/logout" },
   { method: "GET", pattern: /^me$/, api: () => "/admin/me" },
   { method: "GET", pattern: /^overview$/, api: () => "/admin/overview" },
+  { method: "GET", pattern: /^dashboard$/, api: () => "/admin/dashboard" },
   {
     method: "GET",
     pattern: /^users\/search$/,

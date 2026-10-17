@@ -146,7 +146,7 @@ export function ConsoleShell({ children }: Readonly<{ children: ReactNode }>) {
             </button>
           </div>
         </aside>
-        <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main className="w-full min-w-0 px-4 py-6 md:px-8 md:py-8">{children}</main>
       </div>
     </AdminContext.Provider>
   );
