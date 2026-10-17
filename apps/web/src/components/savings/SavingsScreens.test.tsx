@@ -159,6 +159,11 @@ describe("the savings home", () => {
     const finished = screen.getByRole("heading", { name: "Finished" }).closest("section")!;
     expect(within(finished).getByText("Complete")).toBeInTheDocument();
     expect(within(finished).getByText("Paid out to your wallet")).toBeInTheDocument();
+    // The plans still going, at a glance; the finished one counts for nothing here.
+    const glance = screen.getByRole("region", { name: "Your plans at a glance" });
+    expect(glance).toHaveTextContent(/Next payment₦5,000Rent/);
+    expect(glance).toHaveTextContent("Payments made2 of 825% of the way");
+    expect(glance).toHaveTextContent("Saving towards₦24,000");
   });
 
   it("is locked until the passport is approved, with a way to preview", async () => {

@@ -12,9 +12,11 @@ import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { FlowLocked } from "@/components/wallet/FlowLocked";
 import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import { cn } from "@/lib/cn";
-import { dayText } from "@/lib/schedule";
+import { dayText, FREQUENCY_WORD } from "@/lib/schedule";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Plan } from "@/lib/savings-client";
+import { PlanAside } from "@/components/desk/asides";
+import { Facts, Split } from "@/components/desk/Split";
 import { Pot } from "./Pot";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
 import { PAGE } from "@/lib/page";
@@ -145,88 +147,129 @@ export function SavingsHome() {
       )}
 
       {Array.isArray(plans) && plans.length > 0 && (
-        // On a desk: what's in your pots on the left (kept in view), every plan as cards beside it.
-        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
+        // From a tablet up: what's in your pots and the figures that matter beside it, then every
+        // plan as a card; how plans work sits at the side.
+        <Split note={<PlanAside />}>
           {totals.size > 0 && (
-            <div className="grid gap-6 lg:sticky lg:top-28">
-              {[...totals].map(([currency, total]) => (
-                <section
-                  key={currency}
-                  aria-label="Saved so far"
-                  className="hero-card grid gap-4 overflow-hidden rounded-[var(--radius-xl)] p-5 shadow-lift"
-                >
-                  <div className="grid gap-1">
-                    <p className="text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted">
-                      IN YOUR POTS
-                    </p>
-                    <Amount
-                      amount={total.toString()}
-                      currency={currency}
-                      locale={locale}
-                      size="l"
-                      tone="hero"
-                    />
-                    <p className="text-[14px] text-on-hero-muted">
-                      across {open.length} {open.length === 1 ? "plan" : "plans"}
-                    </p>
-                  </div>
-                  <Link
-                    href={href("/save/new")}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-m bg-oro px-4 text-[15px] font-semibold text-on-oro transition-[filter] hover:brightness-95"
+            <div className="grid gap-6 2xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] 2xl:items-stretch">
+              <div className="grid gap-6">
+                {[...totals].map(([currency, total]) => (
+                  <section
+                    key={currency}
+                    aria-label="Saved so far"
+                    className="hero-card grid gap-4 overflow-hidden rounded-[var(--radius-xl)] p-5 shadow-lift"
                   >
-                    <Plus aria-hidden className="size-5" />
-                    New plan
-                  </Link>
-                </section>
-              ))}
+                    <div className="grid gap-1">
+                      <p className="text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted">
+                        IN YOUR POTS
+                      </p>
+                      <Amount
+                        amount={total.toString()}
+                        currency={currency}
+                        locale={locale}
+                        size="l"
+                        tone="hero"
+                      />
+                      <p className="text-[14px] text-on-hero-muted">
+                        across {open.length} {open.length === 1 ? "plan" : "plans"}
+                      </p>
+                    </div>
+                    <Link
+                      href={href("/save/new")}
+                      className="flex min-h-12 items-center justify-center gap-2 rounded-m bg-oro px-4 text-[15px] font-semibold text-on-oro transition-[filter] hover:brightness-95"
+                    >
+                      <Plus aria-hidden className="size-5" />
+                      New plan
+                    </Link>
+                  </section>
+                ))}
+              </div>
+              <PlanFacts open={open} locale={locale} />
             </div>
           )}
 
-          <div className={totals.size > 0 ? "grid gap-6" : "grid gap-6 lg:col-span-2"}>
-            {open.length > 0 && (
-              <section aria-labelledby="going" className="grid gap-3">
-                <h2 id="going" className="font-display text-[18px] leading-6 font-semibold">
-                  Going now
-                </h2>
-                <ul className="grid gap-3 lg:grid-cols-2">
-                  {open.map((plan) => (
-                    <PlanCard
-                      key={plan.id}
-                      plan={plan}
-                      locale={locale}
-                      href={href(`/save/${plan.id}`)}
-                    />
-                  ))}
-                </ul>
-              </section>
-            )}
-            {finished.length > 0 && (
-              <section aria-labelledby="done" className="grid gap-3">
-                <h2 id="done" className="font-display text-[18px] leading-6 font-semibold">
-                  Finished
-                </h2>
-                <ul className="grid gap-3 lg:grid-cols-2">
-                  {finished.map((plan) => (
-                    <PlanCard
-                      key={plan.id}
-                      plan={plan}
-                      locale={locale}
-                      href={href(`/save/${plan.id}`)}
-                    />
-                  ))}
-                </ul>
-              </section>
-            )}
-            {totals.size === 0 && (
-              <ButtonLink href={href("/save/new")} size="lg" block>
-                <Plus aria-hidden className="size-5" />
-                Start a plan
-              </ButtonLink>
-            )}
-          </div>
-        </div>
+          {open.length > 0 && (
+            <section aria-labelledby="going" className="grid gap-3">
+              <h2 id="going" className="font-display text-[18px] leading-6 font-semibold">
+                Going now
+              </h2>
+              <ul className="grid gap-3 xl:grid-cols-2">
+                {open.map((plan) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    locale={locale}
+                    href={href(`/save/${plan.id}`)}
+                  />
+                ))}
+              </ul>
+            </section>
+          )}
+          {finished.length > 0 && (
+            <section aria-labelledby="done" className="grid gap-3">
+              <h2 id="done" className="font-display text-[18px] leading-6 font-semibold">
+                Finished
+              </h2>
+              <ul className="grid gap-3 xl:grid-cols-2">
+                {finished.map((plan) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    locale={locale}
+                    href={href(`/save/${plan.id}`)}
+                  />
+                ))}
+              </ul>
+            </section>
+          )}
+          {totals.size === 0 && (
+            <ButtonLink href={href("/save/new")} size="lg" block>
+              <Plus aria-hidden className="size-5" />
+              Start a plan
+            </ButtonLink>
+          )}
+        </Split>
       )}
     </main>
+  );
+}
+
+/**
+ * The figures behind the pots, for plans still going, in the first pot's currency: the next
+ * payment, how many payments are made, and what the plans add up to once every payment is made.
+ */
+function PlanFacts({ open, locale }: Readonly<{ open: readonly Plan[]; locale: string }>) {
+  const currency = open[0]?.saved.currency;
+  const same = open.filter((p) => p.saved.currency === currency);
+  const next = same
+    .flatMap((p) => (p.nextDebit ? [{ plan: p, ...p.nextDebit }] : []))
+    .sort((a, b) => a.dueOn.localeCompare(b.dueOn))[0];
+  const paid = same.reduce((n, p) => n + p.paidDebits, 0);
+  const total = same.reduce((n, p) => n + p.totalDebits, 0);
+  const target = same.reduce((n, p) => n + BigInt(p.target.amount), 0n);
+  if (!currency) return null;
+  return (
+    <Facts
+      label="Your plans at a glance"
+      className="grid content-center"
+      facts={[
+        {
+          label: "Next payment",
+          value: next ? <Amount {...next.amount} locale={locale} size="m" /> : "None due",
+          note: next ? `${next.plan.name} · ${dayText(next.dueOn)}` : undefined,
+        },
+        {
+          label: "Payments made",
+          value: `${paid} of ${total}`,
+          note: total > 0 ? `${Math.round((paid / total) * 100)}% of the way` : undefined,
+        },
+        {
+          label: "Saving towards",
+          value: <Amount amount={target.toString()} currency={currency} locale={locale} size="m" />,
+          note: "Once every payment is made",
+        },
+      ]}
+    />
   );
 }
 
@@ -266,6 +309,13 @@ function PlanCard({ plan, locale, href }: Readonly<{ plan: Plan; locale: string;
             />
           </span>
           <span className="text-[13px] text-ink-muted">
+            {plan.status === "active" || plan.status === "paused" ? (
+              <>
+                <Amount {...plan.amount} locale={locale} size="s" tone="muted" />{" "}
+                {FREQUENCY_WORD[plan.frequency]} · {plan.paidDebits} of {plan.totalDebits} payments
+                <br />
+              </>
+            ) : null}
             {plan.nextDebit
               ? `Next: ${dayText(plan.nextDebit.dueOn)}`
               : plan.status === "completed"

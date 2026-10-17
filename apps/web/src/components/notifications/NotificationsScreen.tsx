@@ -11,6 +11,8 @@ import { loadNotices, readAllNotices, readNotice, type Notice } from "@/lib/savi
 import { recall, remember } from "@/lib/visit-cache";
 import { whenText } from "@/lib/when";
 import { PAGE } from "@/lib/page";
+import { AsideCard } from "@/components/desk/FormPage";
+import { Split } from "@/components/desk/Split";
 
 export function NotificationsScreen() {
   return <MeGate needs="onboarded">{() => <Messages />}</MeGate>;
@@ -145,127 +147,143 @@ function Messages() {
   return (
     <main className={PAGE}>
       <ScreenHeader title="Notifications" backHref="/today" />
-      {state.phase === "loading" && (
-        <p role="status" className="text-ink-muted">
-          Loading…
-        </p>
-      )}
-      {state.phase === "failed" && (
-        <div className="grid gap-4">
-          <p role="alert" className="text-ink-muted">
-            We couldn&apos;t load your messages. Check your connection and try again.
+      <Split
+        note={
+          <AsideCard
+            Icon={Bell}
+            title="Your notifications"
+            points={[
+              "Everything Àjọ tells you shows here, newest first.",
+              "Choose which ones also reach you by email, or as alerts on this device.",
+            ]}
+            link={{ href: "/me/notifications", label: "Notification settings" }}
+          />
+        }
+      >
+        {state.phase === "loading" && (
+          <p role="status" className="text-ink-muted">
+            Loading…
           </p>
-          <Button
-            onClick={() => {
-              setState({ phase: "loading" });
-              setAttempt((n) => n + 1);
-            }}
-          >
-            Try again
-          </Button>
-        </div>
-      )}
-      {state.phase === "ready" && state.items.length === 0 && (
-        <div className="grid justify-items-center gap-3 rounded-[var(--radius-xl)] bg-surface-raised p-8 text-center shadow-lift">
-          <span className="grid size-16 place-items-center rounded-full bg-primary-tint text-primary">
-            <Bell aria-hidden className="size-8" />
-          </span>
-          <p className="font-display text-[20px] font-semibold">Nothing yet</p>
-          <p className="text-[15px] text-ink-muted">
-            Reminders and results from your plans will show up here.
-          </p>
-        </div>
-      )}
-      {state.phase === "ready" && state.items.length > 0 && (
-        <div className="grid gap-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[14px] text-ink-muted" aria-live="polite">
-              {state.unread === 0 ? "All read" : `${state.unread} unread`}
+        )}
+        {state.phase === "failed" && (
+          <div className="grid gap-4">
+            <p role="alert" className="text-ink-muted">
+              We couldn&apos;t load your messages. Check your connection and try again.
             </p>
-            {state.unread > 0 && (
-              <button
-                type="button"
-                onClick={() => void readAll()}
-                className="rounded-s px-2 py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
-              >
-                Mark all as read
-              </button>
-            )}
+            <Button
+              onClick={() => {
+                setState({ phase: "loading" });
+                setAttempt((n) => n + 1);
+              }}
+            >
+              Try again
+            </Button>
           </div>
-          {byDay(state.items).map((group) => (
-            <section key={group.title} aria-label={group.title} className="grid gap-2">
-              <h2 className="text-[13px] font-semibold tracking-[0.04em] text-ink-muted uppercase">
-                {group.title}
-              </h2>
-              <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-                {group.items.map((item) => {
-                  const { Icon, tone } = look(item.kind);
-                  return (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => open(item)}
-                        data-unread={item.readAt ? undefined : ""}
-                        className={cn(
-                          "flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-surface-sunken",
-                          !item.readAt && "bg-primary-tint/40",
-                        )}
-                      >
-                        <span
+        )}
+        {state.phase === "ready" && state.items.length === 0 && (
+          <div className="grid justify-items-center gap-3 rounded-[var(--radius-xl)] bg-surface-raised p-8 text-center shadow-lift">
+            <span className="grid size-16 place-items-center rounded-full bg-primary-tint text-primary">
+              <Bell aria-hidden className="size-8" />
+            </span>
+            <p className="font-display text-[20px] font-semibold">Nothing yet</p>
+            <p className="text-[15px] text-ink-muted">
+              Reminders and results from your plans will show up here.
+            </p>
+          </div>
+        )}
+        {state.phase === "ready" && state.items.length > 0 && (
+          <div className="grid gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[14px] text-ink-muted" aria-live="polite">
+                {state.unread === 0 ? "All read" : `${state.unread} unread`}
+              </p>
+              {state.unread > 0 && (
+                <button
+                  type="button"
+                  onClick={() => void readAll()}
+                  className="rounded-s px-2 py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  Mark all as read
+                </button>
+              )}
+            </div>
+            {byDay(state.items).map((group) => (
+              <section key={group.title} aria-label={group.title} className="grid gap-2">
+                <h2 className="text-[13px] font-semibold tracking-[0.04em] text-ink-muted uppercase">
+                  {group.title}
+                </h2>
+                <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+                  {group.items.map((item) => {
+                    const { Icon, tone } = look(item.kind);
+                    return (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          onClick={() => open(item)}
+                          data-unread={item.readAt ? undefined : ""}
                           className={cn(
-                            "grid size-10 shrink-0 place-items-center rounded-full",
-                            item.readAt ? "bg-surface-sunken text-ink-muted" : tone,
+                            "flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-surface-sunken",
+                            !item.readAt && "bg-primary-tint/40",
                           )}
                         >
-                          <Icon aria-hidden className="size-5" />
-                        </span>
-                        <span className="grid min-w-0 grow gap-0.5">
-                          <span className="flex items-start justify-between gap-2">
-                            <span
-                              className={cn(
-                                "text-[15px] leading-6",
-                                item.readAt ? "font-medium" : "font-semibold",
-                              )}
-                            >
-                              {item.title}
+                          <span
+                            className={cn(
+                              "grid size-10 shrink-0 place-items-center rounded-full",
+                              item.readAt ? "bg-surface-sunken text-ink-muted" : tone,
+                            )}
+                          >
+                            <Icon aria-hidden className="size-5" />
+                          </span>
+                          <span className="grid min-w-0 grow gap-0.5">
+                            <span className="flex items-start justify-between gap-2">
+                              <span
+                                className={cn(
+                                  "text-[15px] leading-6",
+                                  item.readAt ? "font-medium" : "font-semibold",
+                                )}
+                              >
+                                {item.title}
+                              </span>
+                              <span className="flex shrink-0 items-center gap-2 pt-1 text-[12px] text-ink-muted">
+                                {whenText(item.createdAt)}
+                                {!item.readAt && (
+                                  <span
+                                    className="size-2 shrink-0 rounded-full bg-oro"
+                                    role="img"
+                                    aria-label="Unread"
+                                  />
+                                )}
+                              </span>
                             </span>
-                            <span className="flex shrink-0 items-center gap-2 pt-1 text-[12px] text-ink-muted">
-                              {whenText(item.createdAt)}
-                              {!item.readAt && (
-                                <span
-                                  className="size-2 shrink-0 rounded-full bg-oro"
-                                  role="img"
-                                  aria-label="Unread"
-                                />
-                              )}
+                            <span className="text-[14px] leading-5 text-ink-muted">
+                              {item.body}
                             </span>
                           </span>
-                          <span className="text-[14px] leading-5 text-ink-muted">{item.body}</span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
-          {state.moreFailed && (
-            <p role="alert" className="text-center text-[15px] text-danger">
-              We couldn&apos;t load more.
-            </p>
-          )}
-          {state.next && (
-            <Button
-              variant="quiet"
-              loading={loadingMore}
-              disabled={loadingMore}
-              onClick={() => void more()}
-            >
-              {loadingMore ? "Loading…" : "Show more"}
-            </Button>
-          )}
-        </div>
-      )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+            {state.moreFailed && (
+              <p role="alert" className="text-center text-[15px] text-danger">
+                We couldn&apos;t load more.
+              </p>
+            )}
+            {state.next && (
+              <Button
+                variant="quiet"
+                loading={loadingMore}
+                disabled={loadingMore}
+                onClick={() => void more()}
+              >
+                {loadingMore ? "Loading…" : "Show more"}
+              </Button>
+            )}
+          </div>
+        )}
+      </Split>
     </main>
   );
 }

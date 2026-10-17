@@ -25,7 +25,8 @@ export function Limits() {
         subtitle="The more you verify, the more you can move. Limits keep everyone's money safer."
         backHref="/wallet"
       />
-      <ol className="grid gap-4">
+      {/* The rungs of the ladder side by side where there is room, so each level reads at a glance. */}
+      <ol className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
         {ladder.map((rung) => {
           const here = rung.tier === tier;
           const reached = rung.tier <= tier;

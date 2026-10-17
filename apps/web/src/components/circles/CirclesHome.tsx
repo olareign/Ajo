@@ -17,6 +17,8 @@ import { recall, remember } from "@/lib/visit-cache";
 import type { GroupSummary } from "@/lib/groups-client";
 import { FREQ_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
 import { PAGE } from "@/lib/page";
+import { CircleAside } from "@/components/desk/asides";
+import { Facts, Split } from "@/components/desk/Split";
 
 export const STATUS_WORD: Record<GroupSummary["status"], string> = {
   open: "Filling up",
@@ -93,81 +95,119 @@ export function CirclesHome() {
       )}
 
       {Array.isArray(groups) && (
-        // On a desk the circles fill the width as cards, with starting or finding one beside them.
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-          <div className="grid gap-6">
-            {groups.length === 0 && (
-              <section
-                aria-label="No circles yet"
-                className="grid justify-items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
-              >
-                <CircleRing
-                  members={Array.from({ length: 6 }, () => ({
-                    name: "Open place",
-                    status: "pending" as const,
-                  }))}
-                  size={180}
-                  title="An empty circle"
-                />
-                <p className="font-display text-[22px] leading-7 font-semibold">No circle yet</p>
-                <p className="text-[15px] leading-6 text-ink-muted">
-                  A circle is a few people who each pay in every round, and take turns collecting
-                  the whole pot. Start one with friends, or find one to join.
-                </p>
-              </section>
-            )}
+        // From a tablet up: the circles you're in at a glance, then each as a card; starting or
+        // finding one sits at the side with how circles work.
+        <Split
+          aside={
+            <div className="grid gap-3 md:rounded-[var(--radius-xl)] md:bg-surface-raised md:p-5 md:shadow-lift">
+              <ButtonLink href={href("/circles/new")} size="lg" block>
+                <Plus aria-hidden className="size-5" />
+                Start a circle
+              </ButtonLink>
+              <ButtonLink href={href("/circles/discover")} size="lg" block variant="quiet">
+                <Compass aria-hidden className="size-5" />
+                Find a circle to join
+              </ButtonLink>
+            </div>
+          }
+          note={<CircleAside />}
+        >
+          {groups.length === 0 && (
+            <section
+              aria-label="No circles yet"
+              className="grid justify-items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
+            >
+              <CircleRing
+                members={Array.from({ length: 6 }, () => ({
+                  name: "Open place",
+                  status: "pending" as const,
+                }))}
+                size={180}
+                title="An empty circle"
+              />
+              <p className="font-display text-[22px] leading-7 font-semibold">No circle yet</p>
+              <p className="text-[15px] leading-6 text-ink-muted">
+                A circle is a few people who each pay in every round, and take turns collecting the
+                whole pot. Start one with friends, or find one to join.
+              </p>
+            </section>
+          )}
 
-            {going.length > 0 && (
-              <section aria-labelledby="going" className="grid gap-3">
-                <h2 id="going" className="font-display text-[20px] leading-7 font-semibold">
-                  Your circles
-                </h2>
-                <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-                  {going.map((g) => (
-                    <CircleCard
-                      key={g.id}
-                      group={g}
-                      href={href(`/circles/${g.id}`)}
-                      locale={locale}
-                    />
-                  ))}
-                </ul>
-              </section>
-            )}
-            {over.length > 0 && (
-              <section aria-labelledby="over" className="grid gap-3">
-                <h2 id="over" className="font-display text-[20px] leading-7 font-semibold">
-                  Finished
-                </h2>
-                <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-                  {over.map((g) => (
-                    <CircleCard
-                      key={g.id}
-                      group={g}
-                      href={href(`/circles/${g.id}`)}
-                      locale={locale}
-                    />
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-          <div className="grid gap-3 lg:sticky lg:top-28 lg:rounded-[var(--radius-xl)] lg:bg-surface-raised lg:p-5 lg:shadow-lift">
-            <p className="hidden text-[15px] leading-6 text-ink-muted lg:block">
-              Save together: everyone pays in each round, and one person takes the whole pot.
-            </p>
-            <ButtonLink href={href("/circles/new")} size="lg" block>
-              <Plus aria-hidden className="size-5" />
-              Start a circle
-            </ButtonLink>
-            <ButtonLink href={href("/circles/discover")} size="lg" block variant="quiet">
-              <Compass aria-hidden className="size-5" />
-              Find a circle to join
-            </ButtonLink>
-          </div>
-        </div>
+          {going.length > 0 && <CircleFacts going={going} locale={locale} />}
+
+          {going.length > 0 && (
+            <section aria-labelledby="going" className="grid gap-3">
+              <h2 id="going" className="font-display text-[20px] leading-7 font-semibold">
+                Your circles
+              </h2>
+              <ul className="grid gap-3 xl:grid-cols-2">
+                {going.map((g) => (
+                  <CircleCard
+                    key={g.id}
+                    group={g}
+                    href={href(`/circles/${g.id}`)}
+                    locale={locale}
+                  />
+                ))}
+              </ul>
+            </section>
+          )}
+          {over.length > 0 && (
+            <section aria-labelledby="over" className="grid gap-3">
+              <h2 id="over" className="font-display text-[20px] leading-7 font-semibold">
+                Finished
+              </h2>
+              <ul className="grid gap-3 xl:grid-cols-2">
+                {over.map((g) => (
+                  <CircleCard
+                    key={g.id}
+                    group={g}
+                    href={href(`/circles/${g.id}`)}
+                    locale={locale}
+                  />
+                ))}
+              </ul>
+            </section>
+          )}
+        </Split>
       )}
     </main>
+  );
+}
+
+/** The circles still going, in the first one's currency: how many, what you pay in, your pots. */
+function CircleFacts({
+  going,
+  locale,
+}: Readonly<{ going: readonly GroupSummary[]; locale: string }>) {
+  const currency = going[0]!.currency;
+  const same = going.filter((g) => g.currency === currency);
+  const sum = (key: "contribution" | "pot") =>
+    same.reduce((n, g) => n + BigInt(g[key]), 0n).toString();
+  const running = going.filter((g) => g.status === "running").length;
+  return (
+    <Facts
+      label="Your circles at a glance"
+      facts={[
+        {
+          label: "Circles you're in",
+          value: going.length,
+          note: `${running} running, ${going.length - running} getting ready`,
+        },
+        {
+          label: "You pay in",
+          value: (
+            <Amount amount={sum("contribution")} currency={currency} locale={locale} size="m" />
+          ),
+          note: same.length === 1 ? FREQ_WORDS[same[0]!.frequency] : "each round, all circles",
+        },
+        {
+          label: "Your pots",
+          value: <Amount amount={sum("pot")} currency={currency} locale={locale} size="m" />,
+          note: "One turn in each circle, before any fee",
+        },
+      ]}
+    />
   );
 }
 

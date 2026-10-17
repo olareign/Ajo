@@ -100,10 +100,11 @@ export function FriendsHome() {
       )}
 
       {data && data !== "failed" && (
-        // On a desk: your circle, the ways to grow it and requests on the left (kept in view);
-        // people you may know and your friends beside them. A phone keeps the same order.
-        <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
-          <div className="grid gap-6 lg:sticky lg:top-28">
+        // From a tablet up: your circle, the ways to grow it and requests on the left (kept in
+        // view); people you may know and your friends beside them, as cards. A phone keeps the
+        // same order.
+        <div className="grid gap-6 md:grid-cols-[280px_minmax(0,1fr)] md:items-start lg:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="grid gap-6 md:sticky md:top-28">
             <section
               aria-label="Your circle"
               className="flex items-center gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift"
@@ -168,7 +169,7 @@ export function FriendsHome() {
           </div>
           <div className="grid gap-6">
             {data.suggestions.length === 0 && data.friends.length === 0 && (
-              <p className="hidden rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted lg:block">
+              <p className="hidden rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted md:block">
                 People you add show up here. Find someone you trust, or send your invite link.
               </p>
             )}
@@ -202,12 +203,13 @@ export function FriendsHome() {
                 <h2 id="your-friends" className="font-display text-[18px] leading-6 font-semibold">
                   Your friends
                 </h2>
-                <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
+                {/* One list on a phone; cards side by side where there is room. */}
+                <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift md:grid md:grid-cols-1 md:gap-3 md:divide-y-0 md:overflow-visible md:bg-transparent md:shadow-none lg:grid-cols-2 2xl:grid-cols-3">
                   {data.friends.map((f) => (
                     <li key={f.username}>
                       <Link
                         href={href(`/friends/${f.username}`)}
-                        className="flex items-center gap-3 p-3 hover:bg-surface-sunken"
+                        className="flex items-center gap-3 p-3 hover:bg-surface-sunken md:h-full md:rounded-[var(--radius-l)] md:bg-surface-raised md:p-4 md:shadow-lift"
                       >
                         <PersonPhoto
                           username={f.username}

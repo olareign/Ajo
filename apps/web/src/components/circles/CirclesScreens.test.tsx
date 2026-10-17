@@ -157,6 +157,12 @@ describe("the circles home", () => {
     expect(screen.getByText(/your turn is 3 of 4/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Finished" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Under way/ })).toHaveAttribute("href", "/circles/b");
+    // The two still going, at a glance: what you pay in each round and the pots that come back.
+    const glance = screen.getByRole("region", { name: "Your circles at a glance" });
+    expect(glance).toHaveTextContent("Circles you're in2");
+    expect(glance).toHaveTextContent("1 running, 1 getting ready");
+    expect(glance).toHaveTextContent("You pay in₦20,000");
+    expect(glance).toHaveTextContent("Your pots₦80,000");
   });
 
   it("is locked until the passport is approved, says when it cannot load, and signs out the signed out", async () => {
