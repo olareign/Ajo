@@ -95,7 +95,7 @@ describe("the desktop sidebar", () => {
         .getAllByRole("link")
         .map((l) => l.textContent),
     ).toEqual([
-      "Home",
+      "Overview",
       "Wallet",
       "Save",
       "Circles",
@@ -131,6 +131,28 @@ describe("the desktop sidebar", () => {
       "href",
       "/notifications",
     );
+  });
+
+  it("folds to icons, keeps every name for screen readers, and remembers the choice", async () => {
+    path = "/today";
+    const user = userEvent.setup();
+    const { unmount } = render(<DesktopNav />);
+    const fold = screen.getByRole("button", { name: "Collapse the menu" });
+    expect(fold).toHaveAttribute("aria-expanded", "true");
+    await user.click(fold);
+    const unfold = screen.getByRole("button", { name: "Expand the menu" });
+    expect(unfold).toHaveAttribute("aria-expanded", "false");
+    const nav = screen.getByRole("navigation", { name: "Desktop" });
+    expect(within(nav).getByRole("link", { name: "Overview" })).toHaveTextContent("");
+    expect(within(nav).getByRole("link", { name: "Statements" })).toHaveAttribute(
+      "title",
+      "Statements",
+    );
+    expect(screen.getByRole("link", { name: "Help Center" })).toHaveAttribute("href", "/me/help");
+    unmount();
+    render(<DesktopNav />);
+    await user.click(screen.getByRole("button", { name: "Expand the menu" }));
+    expect(screen.getByRole("button", { name: "Collapse the menu" })).toBeInTheDocument();
   });
 
   it("stays away from sign-in and the landing page", () => {
@@ -198,6 +220,30 @@ describe("statements", () => {
     await user.click(screen.getByRole("button", { name: /Download CSV/ }));
     await waitFor(() => expect(csv).toContain("Date,Time,Description"));
     expect(csv.trim().split("\r\n")).toHaveLength(3);
+  });
+
+  it("narrows the lines by type, account and words, says how many are left, and clears", async () => {
+    api({ "/api/wallet/statement": () => statement });
+    const user = userEvent.setup();
+    render(<StatementsScreen />);
+    const list = await screen.findByRole("list", { name: "Statement lines" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+    const filters = screen.getByRole("search", { name: "Filter lines" });
+
+    await user.selectOptions(within(filters).getByLabelText("Type"), "out");
+    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+    expect(list).toHaveTextContent("Withdrawal");
+    expect(within(filters).getByRole("status")).toHaveTextContent("Showing 1 of 2 lines");
+
+    await user.type(within(filters).getByLabelText("Search"), "ajf");
+    expect(await screen.findByText("No lines match these filters.")).toBeInTheDocument();
+
+    await user.click(within(filters).getByRole("button", { name: "Clear filters" }));
+    expect(within(filters).getByLabelText("Type")).toHaveValue("");
+    expect(within(filters).getByLabelText("Search")).toHaveValue("");
+    expect(
+      within(screen.getByRole("list", { name: "Statement lines" })).getAllByRole("listitem"),
+    ).toHaveLength(2);
   });
 
   it("changes the range from the chips, and says so when there's nothing", async () => {

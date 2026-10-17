@@ -7,6 +7,12 @@ import type { WalletTransaction } from "@/lib/wallet";
 import { MonthPanel } from "./MonthPanel";
 import { PaymentDetails } from "./PaymentDetails";
 
+const replace = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace, push: vi.fn() }),
+  usePathname: () => "/today",
+}));
+
 /** A screen this wide or not: stands in for the browser's media query. */
 function screenIsWide(wide: boolean) {
   vi.stubGlobal(
@@ -52,15 +58,44 @@ const month = {
 };
 
 describe("the desk header", () => {
-  it("welcomes the person once their details arrive, with help, notifications and their picture", () => {
+  it("greets the person by the time of day and their first name, with today's date", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 17, 9, 30));
+    try {
+      screenIsWide(true);
+      fetches({ "/api/notifications": { unread: 3 } });
+      render(<DesktopHeader wide />);
+      expect(screen.getByText("Good morning")).toBeInTheDocument();
+      act(() => remember("me", { displayName: "Ada Ola", username: "ada" }));
+      expect(screen.getByText("Good morning, Ada")).toBeInTheDocument();
+      expect(screen.getByText("Saturday 17 October")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("href", "/me/help");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens the account menu, moves through it with the arrows, and closes on Escape", async () => {
     screenIsWide(true);
-    fetches({ "/api/notifications": { unread: 3 } });
+    fetches({ "/api/notifications": { unread: 0 } });
+    remember("me", { displayName: "Ada Ola", username: "ada" });
+    const user = userEvent.setup();
     render(<DesktopHeader wide />);
-    expect(screen.getByText("Welcome back!")).toBeInTheDocument();
-    act(() => remember("me", { displayName: "Ada Ola", username: "ada" }));
-    expect(screen.getByText("Hello Ada, welcome back!")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("href", "/me/help");
-    expect(screen.getByRole("link", { name: "Me" })).toHaveAttribute("href", "/me");
+    const button = screen.getByRole("button", { name: "Your account" });
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("@ada")).toBeInTheDocument();
+    const profile = screen.getByRole("link", { name: "Your profile" });
+    expect(profile).toHaveAttribute("href", "/me");
+    expect(profile).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("link", { name: "Devices and sign-ins" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "Your profile" })).toBeNull();
+    expect(button).toHaveFocus();
   });
 
   it("shows the unread count, and never asks for it on a phone", async () => {
