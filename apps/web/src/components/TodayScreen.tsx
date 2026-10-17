@@ -3,13 +3,10 @@
 import {
   BookUser,
   ChevronRight,
-  Gauge,
-  Headset,
   Landmark,
   Orbit,
   PiggyBank,
   ShieldAlert,
-  UserPlus,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -27,6 +24,8 @@ import { countryConfig } from "@/lib/kyc-config";
 import type { Plan } from "@/lib/savings-client";
 import { loadScreen, partData, type ScreenData } from "@/lib/screen-client";
 import { MonthPanel } from "./desk/MonthPanel";
+import { CirclesPanel, SavingsPanel, Todo, UpNext } from "./desk/TodayDesk";
+import { useWide } from "@/lib/use-wide";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Wallet } from "@/lib/wallet";
 import { readFx, type FxEquivalents } from "@/lib/fx";
@@ -77,6 +76,7 @@ function Today({ me }: Readonly<{ me: Me }>) {
   const router = useRouter();
   // Everything Today shows comes in one request; within a visit the last copy shows at once.
   const [data, setData] = useState<TodayData | undefined>(() => recall<TodayData>("screen:today"));
+  const wide = useWide();
 
   useEffect(() => {
     let live = true;
@@ -104,12 +104,11 @@ function Today({ me }: Readonly<{ me: Me }>) {
         eyebrow={<TimeOfDay />}
         unread={data ? data.unread : null}
       />
-      {/* On a desk, like a bank's dashboard, in three groups that fill the width: your money and what
-          needs doing; this month's summary with the latest payments; savings, circles and friends.
-          On a narrower desk the third group sits two by two under the first two. A phone reads the
-          same parts top to bottom, in the same order as before. */}
-      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 xl:grid-cols-3">
-        <div className="lg:min-w-0">
+      {wide ? (
+        <TodayDesk me={me} data={data} />
+      ) : (
+        // A phone reads it top to bottom: money, shortcuts, what needs doing, then the rest.
+        <div>
           <WalletSummary
             wallets={data?.wallets}
             currency={countryConfig(me.country)?.currency}
@@ -154,38 +153,34 @@ function Today({ me }: Readonly<{ me: Me }>) {
               <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
             </Link>
           )}
-        </div>
-        <div className="lg:min-w-0 lg:[&>*]:mt-4">
-          <MonthPanel currency={countryConfig(me.country)?.currency} recent />
-        </div>
-        <div className="lg:col-span-2 lg:grid lg:min-w-0 lg:grid-cols-2 lg:gap-x-6 xl:col-span-1 xl:grid-cols-1">
+          <div className="mt-4">
+            <UpNext plans={data?.plans} groups={data?.groups} />
+          </div>
           <TodaySavings plans={data?.plans} />
           <TodayCircles groups={data?.groups} />
           <TodayFriends state={data?.friends} />
           <InstallCard />
         </div>
-      </div>
+      )}
     </main>
   );
 }
 
+// Four shortcuts, the ones people use most after their balance. Invite, limits and identity live
+// on Me; help is the headset in the top bar; identity also shows as a to-do until it's done.
 const TILES = [
   { href: "/save", label: "Save", Icon: PiggyBank, tone: "bg-leaf-tint text-leaf" },
   { href: "/circles", label: "Circles", Icon: Orbit, tone: "bg-tertiary-tint text-tertiary" },
   { href: "/friends", label: "Friends", Icon: Users, tone: "bg-primary-tint text-primary" },
-  { href: "/friends/invite", label: "Invite", Icon: UserPlus, tone: "bg-oro-tint text-oro-ink" },
   {
     href: "/wallet/mandate",
     label: "Auto-debit",
     Icon: Landmark,
     tone: "bg-oro-tint text-oro-ink",
   },
-  { href: "/wallet/limits", label: "Limits", Icon: Gauge, tone: "bg-primary-tint text-primary" },
-  { href: "/verify", label: "Identity", Icon: BookUser, tone: "bg-tertiary-tint text-tertiary" },
-  { href: "/me/help", label: "Help", Icon: Headset, tone: "bg-leaf-tint text-leaf" },
 ] as const;
 
-/** Where people go most after their balance, one tap each, in two rows of four. */
+/** Where people go most after their balance, one tap each, in one row. */
 function QuickActions() {
   return (
     <nav
@@ -221,4 +216,63 @@ const noSubscription = () => () => undefined;
 function TimeOfDay() {
   const word = useSyncExternalStore(noSubscription, greeting, () => "");
   return <p className="h-5 text-[13px] leading-5 text-ink-muted">{word}</p>;
+}
+
+/**
+ * Today on a desk: the three things that matter, then the detail. Balance; what's due next;
+ * this month. Then each pot and each circle, with friends. Only to-dos that need the person show,
+ * as slim lines above. No tiles or install prompt: the sidebar and the browser already do that.
+ */
+function TodayDesk({ me, data }: Readonly<{ me: Me; data: TodayData | undefined }>) {
+  const currency = countryConfig(me.country)?.currency;
+  const needsId = me.kycStatus !== undefined && me.kycStatus !== "approved";
+  return (
+    <div className="grid gap-6">
+      {(needsId || me.mfaEnabled === false) && (
+        <div className="grid gap-3 xl:grid-cols-2">
+          {needsId && (
+            <Todo
+              href="/verify"
+              Icon={BookUser}
+              tone="bg-primary-tint text-ink"
+              title="Get your passport stamped"
+            >
+              {me.kycStatus === "rejected"
+                ? "A stamp needs another try."
+                : me.kycStatus === "pending"
+                  ? "We're checking your details."
+                  : "Five short steps open saving, circles and friends."}
+            </Todo>
+          )}
+          {me.mfaEnabled === false && (
+            <Todo
+              href="/me/security"
+              Icon={ShieldAlert}
+              tone="bg-oro-tint text-oro-ink"
+              title="Add a second lock"
+            >
+              Needed before you can move money. It takes a minute.
+            </Todo>
+          )}
+        </div>
+      )}
+      {/* Three columns that each stack on their own, so a short card leaves no gap: your money
+          and your pots; what's next and your circles; this month and friends. On a narrower desk
+          the third sits under the first two, its two cards side by side. */}
+      <div className="grid items-start gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 [&>*]:mt-0">
+          <WalletSummary wallets={data?.wallets} currency={currency} fx={data?.fx} />
+          <SavingsPanel plans={data?.plans} />
+        </div>
+        <div className="grid gap-6">
+          <UpNext plans={data?.plans} groups={data?.groups} />
+          <CirclesPanel groups={data?.groups} />
+        </div>
+        <div className="grid items-start gap-6 lg:col-span-2 lg:grid-cols-2 xl:col-span-1 xl:grid-cols-1 [&_a]:mt-0">
+          <MonthPanel currency={currency} recent balance={false} />
+          <TodayFriends state={data?.friends} />
+        </div>
+      </div>
+    </div>
+  );
 }

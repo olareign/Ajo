@@ -11,6 +11,10 @@
 :root {
   --surface: #ffffff;
   --surface-raised: #ffffff;
+  /* Chart marks: the app's validated pair (colour-blind safe, 3:1 on these surfaces). */
+  --chart-in: #0a8a48;
+  --chart-out: #4a5bc4;
+  --chart-grid: #e3ebe6;
   --surface-sunken: #f3f5f7;
   --line: #e2e6ea;
   --line-strong: #7c8794;
@@ -45,6 +49,9 @@
 :root[data-theme="dark"] {
   --surface: #0a1410;
   --surface-raised: #101c16;
+  --chart-in: #34ad6b;
+  --chart-out: #6f7fe8;
+  --chart-grid: #1f2d26;
   --surface-sunken: #070f0b;
   --line: #22342a;
   --line-strong: #6f8b7b;
@@ -80,6 +87,9 @@
   :root:not([data-theme="light"]) {
     --surface: #0a1410;
     --surface-raised: #101c16;
+    --chart-in: #34ad6b;
+    --chart-out: #6f7fe8;
+    --chart-grid: #1f2d26;
     --surface-sunken: #070f0b;
     --line: #22342a;
     --line-strong: #6f8b7b;
@@ -118,6 +128,9 @@
 
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
+  --color-chart-in: var(--chart-in);
+  --color-chart-out: var(--chart-out);
+  --color-chart-grid: var(--chart-grid);
   --color-surface-sunken: var(--surface-sunken);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);

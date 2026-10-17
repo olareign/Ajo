@@ -174,3 +174,11 @@ can't answer.
 change). It is a notice, not a consent choice, because everything Àjọ stores is needed for it to
 work; if anything optional is ever added (analytics), it needs a real choice first. It never covers
 a phone's bottom buttons: top of the screen outside the app, above the tab bar inside it.
+
+## Calm screens (Oct 17)
+
+- **Sign-in and its neighbours:** on a phone, the form with the button by the thumb. From a tablet up, the form alone in a 400px column with lots of space: the logo and theme at the top, one quiet line at the foot, nothing else. No showcase panels, badges or quotes next to a form.
+- **Home on a desk:** three columns that stack on their own (no gaps under short cards): balance and your pots; Up next (saving payments, circle payments, the day the pot is yours, from the API's own dates) and your circles; This month (money in and out, latest wallet payments) and friends. Only to-dos that need the person show above. No tiles or install prompt on a desk.
+- **Home on a phone:** balance, four shortcuts (Save, Circles, Friends, Auto-debit), to-dos, Up next, then the summaries.
+- **No sideways scrolling, ever.** The page clips sideways at `html` (`overflow-x: clip`, `hidden` on body for Safari before 16). A wide table scrolls inside its own card, never the page. Check with the headless audit at 375 and 768 before shipping.
+- **Admin dashboard:** stats row (people, money held, money in, circles running), money in and out by day, "Waiting on the team", new people, where people are, circles and plans, latest payments (no names). Charts use `--chart-in` / `--chart-out` with a legend and a screen-reader table.

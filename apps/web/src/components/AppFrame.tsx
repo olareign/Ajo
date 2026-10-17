@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { isAppRoute, isFullWidthRoute, isPublicPage } from "@/lib/app-routes";
+import { isAppRoute, isAuthPage, isFullWidthRoute, isPublicPage } from "@/lib/app-routes";
 import { cn } from "@/lib/cn";
 import { useWide } from "@/lib/use-wide";
 import { DesktopHeader } from "./DesktopHeader";
@@ -24,7 +24,7 @@ export function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
       <div
         className={cn(
           "mx-auto min-h-dvh",
-          isPublicPage(path) ? "max-w-none" : "max-w-md",
+          isPublicPage(path) || isAuthPage(path) ? "max-w-none" : "max-w-md",
           (app || full) && "lg:max-w-none",
         )}
       >
