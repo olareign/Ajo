@@ -26,6 +26,37 @@ export type Statement = Readonly<{
   truncated: boolean;
 }>;
 
+/** What a statement can be narrowed to on screen. Empty values mean "any". */
+export type LineFilter = Readonly<{
+  direction: "" | "in" | "out";
+  account: "" | Account;
+  text: string;
+}>;
+
+export const NO_FILTER: LineFilter = { direction: "", account: "", text: "" };
+
+export const isFiltered = (f: LineFilter) => Boolean(f.direction || f.account || f.text.trim());
+
+/**
+ * The lines that match: by money in or out, by account, and by words in what the person reads
+ * (the description, the account's name, the reference). Case and extra spaces don't matter.
+ */
+export function filterLines(
+  lines: readonly StatementLine[],
+  filter: LineFilter,
+): readonly StatementLine[] {
+  const words = filter.text.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return lines.filter((l) => {
+    if (filter.direction && l.direction !== filter.direction) return false;
+    if (filter.account && l.account !== filter.account) return false;
+    if (words.length === 0) return true;
+    const said = [describeTransaction(l.type), accountLabel(l.account), l.reference ?? ""]
+      .join(" ")
+      .toLowerCase();
+    return words.every((w) => said.includes(w));
+  });
+}
+
 /** A day as YYYY-MM-DD in a time zone. */
 export const dayIn = (date: Date, timeZone: string) =>
   new Intl.DateTimeFormat("en-CA", {
