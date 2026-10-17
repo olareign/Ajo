@@ -97,7 +97,7 @@ export function ScreenHeader({
         data-app-bar=""
         data-scrolled={scrolled || undefined}
         style={{ top: "var(--app-bar-top, 0px)" }}
-        className="sticky z-20 -mx-4 -mt-6 grid h-14 grid-cols-[48px_1fr_48px] items-center bg-surface/95 px-1 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] lg:static lg:mx-0 lg:mt-0 lg:h-auto lg:grid-cols-[44px_minmax(0,1fr)_auto] lg:gap-3 lg:bg-transparent lg:px-0 lg:backdrop-blur-none lg:data-[scrolled]:shadow-none"
+        className="sticky z-20 -mx-4 -mt-6 grid h-14 grid-cols-[48px_1fr_48px] items-center bg-surface/95 px-1 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] md:static md:mx-0 md:mt-0 md:h-auto md:grid-cols-[44px_minmax(0,1fr)_auto] md:gap-3 md:bg-transparent md:px-0 md:backdrop-blur-none md:data-[scrolled]:shadow-none"
       >
         {onBack ? (
           <button type="button" onClick={onBack} aria-label="Back" className={backClass}>
@@ -109,7 +109,7 @@ export function ScreenHeader({
           </Link>
         )}
         {inBar ? (
-          <h1 className="truncate text-center font-display text-[17px] leading-6 font-semibold text-ink lg:overflow-visible lg:whitespace-normal lg:text-left lg:font-display lg:text-[28px] lg:leading-[34px] lg:font-bold lg:tracking-[-0.015em]">
+          <h1 className="truncate text-center font-display text-[17px] leading-6 font-semibold text-ink md:overflow-visible md:whitespace-normal md:text-left md:font-display md:text-[28px] md:leading-[34px] md:font-bold md:tracking-[-0.015em]">
             {title}
           </h1>
         ) : (

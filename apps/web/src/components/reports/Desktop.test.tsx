@@ -143,7 +143,12 @@ describe("the desktop sidebar", () => {
     const unfold = screen.getByRole("button", { name: "Expand the menu" });
     expect(unfold).toHaveAttribute("aria-expanded", "false");
     const nav = screen.getByRole("navigation", { name: "Desktop" });
-    expect(within(nav).getByRole("link", { name: "Overview" })).toHaveTextContent("");
+    // Folded is drawn by CSS from this mark; every link keeps its name and a tooltip.
+    expect(screen.getByRole("complementary")).toHaveAttribute("data-compact");
+    expect(within(nav).getByRole("link", { name: "Overview" })).toHaveAttribute(
+      "title",
+      "Overview",
+    );
     expect(within(nav).getByRole("link", { name: "Statements" })).toHaveAttribute(
       "title",
       "Statements",

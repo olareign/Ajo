@@ -22,9 +22,10 @@ export function AppFrame({ children }: Readonly<{ children: ReactNode }>) {
   const compact = useCompactSidebar();
   return (
     <div
+      data-compact={compact || undefined}
       className={cn(
         "min-h-dvh bg-surface transition-[padding] duration-200 motion-reduce:transition-none",
-        app && (compact ? "lg:pl-20" : "lg:pl-[248px]"),
+        app && "md:pl-[248px] md:rail:pl-20",
       )}
     >
       {app && <DesktopHeader wide={wide} />}

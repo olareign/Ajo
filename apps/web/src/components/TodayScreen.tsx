@@ -37,7 +37,6 @@ import { useWide } from "@/lib/use-wide";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Wallet } from "@/lib/wallet";
 import { readFx, type FxEquivalents } from "@/lib/fx";
-import { cn } from "@/lib/cn";
 import { PAGE } from "@/lib/page";
 
 export function TodayScreen() {
@@ -86,9 +85,7 @@ function Today({ me }: Readonly<{ me: Me }>) {
   // Everything Today shows comes in one request; within a visit the last copy shows at once.
   const [data, setData] = useState<TodayData | undefined>(() => recall<TodayData>("screen:today"));
   // From a tablet up, Today is a dashboard; a phone reads one column.
-  const wide = useWide("md");
-  // On a desk the header above already greets the person by the time of day.
-  const desk = useWide();
+  const wide = useWide();
   const upcoming = useUpcoming(data?.plans, data?.groups);
 
   useEffect(() => {
@@ -109,12 +106,12 @@ function Today({ me }: Readonly<{ me: Me }>) {
   }, [router]);
 
   return (
-    <main className={cn(PAGE, "md:max-w-none md:px-6")}>
+    <main className={PAGE}>
       <ScreenHeader
         tab
         title={`Hello, ${me.displayName}`}
         deskTitle="Overview"
-        eyebrow={desk ? undefined : <TimeOfDay />}
+        eyebrow={wide ? undefined : <TimeOfDay />}
         unread={data ? data.unread : null}
       />
       {wide ? (
@@ -268,11 +265,16 @@ function TodayDesk({
           </div>
           <RecentTransactions />
         </div>
+        {/* Two stacks side by side on a tablet (no gaps under short cards); one column on a desk. */}
         <div className="order-first grid items-start gap-6 md:grid-cols-2 xl:order-none xl:grid-cols-1 [&_a]:mt-0">
-          <Attention me={me} />
-          <UpNext items={upcoming} />
-          <AccountCard me={me} />
-          <TodayFriends state={data?.friends} />
+          <div className="grid gap-6">
+            <Attention me={me} />
+            <AccountCard me={me} />
+          </div>
+          <div className="grid gap-6">
+            <UpNext items={upcoming} />
+            <TodayFriends state={data?.friends} />
+          </div>
         </div>
       </div>
     </div>

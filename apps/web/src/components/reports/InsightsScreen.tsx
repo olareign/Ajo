@@ -77,7 +77,7 @@ function Insights({ me }: Readonly<{ me: Me }>) {
       />
       <div className="grid gap-5">
         {/* The same toolbar as Statements: a card on a desk. */}
-        <div className="flex flex-wrap items-end justify-between gap-4 lg:rounded-[var(--radius-xl)] lg:bg-surface-raised lg:p-5 lg:shadow-lift">
+        <div className="flex flex-wrap items-end justify-between gap-4 md:rounded-[var(--radius-xl)] md:bg-surface-raised md:p-5 md:shadow-lift">
           <ChoiceChips
             label="Period"
             options={RANGES}
@@ -98,7 +98,7 @@ function Insights({ me }: Readonly<{ me: Me }>) {
         </div>
 
         {load.phase === "loading" && (
-          <div role="status" className="grid gap-4 lg:grid-cols-3">
+          <div role="status" className="grid gap-4 md:grid-cols-3">
             <span className="sr-only">Loading…</span>
             {[0, 1, 2].map((i) => (
               <div

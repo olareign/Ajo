@@ -88,8 +88,8 @@ export function DesktopHeader({ wide }: Readonly<{ wide: boolean }>) {
   const count = useUnread(undefined, wide);
   const first = me?.displayName?.split(/\s+/)[0];
   return (
-    <header className="sticky top-0 z-20 hidden border-b border-line bg-surface/90 backdrop-blur-md lg:block">
-      <div className="flex h-[84px] w-full items-center gap-3 px-8">
+    <header className="sticky top-0 z-20 hidden border-b border-line bg-surface/90 backdrop-blur-md md:block">
+      <div className="flex h-[84px] w-full items-center gap-3 px-6 lg:px-8">
         <div className="grid min-w-0 flex-1 gap-0.5">
           <p className="truncate font-display text-[22px] leading-8 font-bold tracking-[-0.015em] text-ink">
             <Greeting />

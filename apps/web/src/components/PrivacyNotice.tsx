@@ -62,7 +62,7 @@ export function PrivacyNotice() {
         // On a phone outside the app, the main buttons sit at the bottom (welcome, sign-in), so
         // the notice goes to the top; inside the app it sits just above the bottom bar.
         isAppRoute(path)
-          ? "bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] lg:bottom-6 lg:left-[272px]"
+          ? "bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] md:bottom-6 md:left-[104px] lg:left-[272px]"
           : "top-[max(0.75rem,env(safe-area-inset-top))] sm:top-auto sm:bottom-6",
       )}
     >

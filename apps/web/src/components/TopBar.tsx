@@ -7,6 +7,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import type { Me } from "@/components/onboarding/MeGate";
 import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { useUnread } from "@/lib/unread";
+import { useWide } from "@/lib/use-wide";
 import { recall } from "@/lib/visit-cache";
 
 const round =
@@ -32,16 +33,17 @@ export function TopBar({
 }>) {
   // MeGate has already asked who this is before any tab screen draws, so this is only a read.
   const me = recall<Me>("me");
-  const count = useUnread(unread);
+  // From a tablet up this bell is hidden and the header's asks instead, so only one does.
+  const count = useUnread(unread, !useWide());
   return (
     <div
       data-app-bar=""
       data-scrolled={scrolled || undefined}
       style={{ top: "var(--app-bar-top, 0px)" }}
       // On a desk the header above holds your picture, help and the bell, so this is just the title.
-      className="sticky z-20 -mx-4 -mt-6 flex h-16 items-center gap-3 bg-surface/95 px-4 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] lg:static lg:mx-0 lg:mt-0 lg:h-auto lg:bg-transparent lg:px-0 lg:backdrop-blur-none lg:data-[scrolled]:shadow-none"
+      className="sticky z-20 -mx-4 -mt-6 flex h-16 items-center gap-3 bg-surface/95 px-4 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] md:static md:mx-0 md:mt-0 md:h-auto md:bg-transparent md:px-0 md:backdrop-blur-none md:data-[scrolled]:shadow-none"
     >
-      <Link href="/me" aria-label="Me" className="shrink-0 rounded-full lg:hidden">
+      <Link href="/me" aria-label="Me" className="shrink-0 rounded-full md:hidden">
         <PersonPhoto
           username={me?.username}
           version={me?.photoVersion}
@@ -51,21 +53,21 @@ export function TopBar({
       </Link>
       <div className="grid min-w-0 flex-1">
         {eyebrow && <div className="text-[12px] leading-4 text-ink-muted">{eyebrow}</div>}
-        <h1 className="truncate font-display text-[19px] leading-6 font-bold tracking-[-0.01em] text-ink lg:text-[28px] lg:leading-9">
+        <h1 className="truncate font-display text-[19px] leading-6 font-bold tracking-[-0.01em] text-ink md:text-[28px] md:leading-9">
           {deskTitle ? (
             <>
-              <span className="lg:hidden">{title}</span>
-              <span className="hidden lg:inline">{deskTitle}</span>
+              <span className="md:hidden">{title}</span>
+              <span className="hidden md:inline">{deskTitle}</span>
             </>
           ) : (
             title
           )}
         </h1>
       </div>
-      <Link href="/me/help" aria-label="Support" className={`${round} lg:hidden`}>
+      <Link href="/me/help" aria-label="Support" className={`${round} md:hidden`}>
         <Headset aria-hidden className="size-5" />
       </Link>
-      <NotificationBell count={count} className={`${round} lg:hidden`} />
+      <NotificationBell count={count} className={`${round} md:hidden`} />
     </div>
   );
 }

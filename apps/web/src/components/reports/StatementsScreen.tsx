@@ -120,8 +120,8 @@ function Statements({ me }: Readonly<{ me: Me }>) {
       <div className="grid gap-4">
         {/* One toolbar: the period (and its dates) on the left; what it holds and the download on
             the right. A card on a desk; on a phone the same parts stack. */}
-        <div className="grid gap-4 lg:flex lg:flex-wrap lg:items-end lg:justify-between lg:gap-x-8 lg:rounded-[var(--radius-xl)] lg:bg-surface-raised lg:p-5 lg:shadow-lift">
-          <div className="grid gap-4 lg:flex lg:flex-wrap lg:items-end lg:gap-6">
+        <div className="grid gap-4 md:flex md:flex-wrap md:items-end md:justify-between md:gap-x-8 md:rounded-[var(--radius-xl)] md:bg-surface-raised md:p-5 md:shadow-lift">
+          <div className="grid gap-4 md:flex md:flex-wrap md:items-end md:gap-6">
             <ChoiceChips label="Period" options={PRESETS} value={preset} onChange={choose} />
             {preset === "custom" && (
               <form
@@ -161,7 +161,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
             )}
           </div>
           {load.phase === "ready" && (
-            <div className="flex flex-wrap items-center justify-between gap-3 lg:justify-end lg:gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 md:justify-end md:gap-4">
               <p className="text-[14px] text-ink-muted">
                 {load.statement.lines.length} {load.statement.lines.length === 1 ? "line" : "lines"}
                 , {load.statement.from} to {load.statement.to}
@@ -269,7 +269,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
             )}
             {shown.length > 0 && (
               <div className="overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-                <table className="hidden w-full border-collapse text-left text-[14px] lg:table">
+                <table className="hidden w-full border-collapse text-left text-[14px] md:table">
                   <caption className="sr-only">Statement lines</caption>
                   <thead>
                     <tr className="text-[12px] tracking-[0.04em] text-ink-muted uppercase">
@@ -321,7 +321,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                     ))}
                   </tbody>
                 </table>
-                <ul className="divide-y divide-line lg:hidden" aria-label="Statement lines">
+                <ul className="divide-y divide-line md:hidden" aria-label="Statement lines">
                   {shown.map((l) => (
                     <li key={l.id} className="flex items-center gap-3 px-4 py-3">
                       <span
