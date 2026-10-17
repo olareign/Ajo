@@ -32,6 +32,9 @@ const AUTH_PAGES = [
   "/verify-email",
 ] as const;
 
+/** Sign-in and its neighbours lay themselves out at every width (a phone column, a calm centre column above). */
+export const isAuthPage = (path: string): boolean => matches(path, AUTH_PAGES);
+
 /** Pages that use the whole width of a wide screen themselves: the landing page, public pages and sign-in. */
 export const isFullWidthRoute = (path: string): boolean =>
   path === "/" || isPublicPage(path) || matches(path, AUTH_PAGES);

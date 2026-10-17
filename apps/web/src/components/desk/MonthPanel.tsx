@@ -20,7 +20,13 @@ type Month = InsightMonth | "none" | "failed" | undefined;
 export function MonthPanel({
   currency,
   recent = false,
-}: Readonly<{ currency: string | undefined; recent?: boolean }>) {
+  balance = true,
+}: Readonly<{
+  currency: string | undefined;
+  recent?: boolean;
+  /** False where the balance already shows beside it (Today): then money in and out lead. */
+  balance?: boolean;
+}>) {
   const wide = useWide();
   const [month, setMonth] = useState<Month>();
   const [items, setItems] = useState<readonly WalletTransaction[] | "failed">();
@@ -35,7 +41,14 @@ export function MonthPanel({
     });
     if (recent) {
       void loadTransactions().then((result) => {
-        if (live) setItems(result.status === "ok" ? result.data.items.slice(0, 4) : "failed");
+        // Only what moved in or out of the wallet itself: a deposit locked or a saving taken is
+        // one payment, not the two halves of an internal move.
+        if (live)
+          setItems(
+            result.status === "ok"
+              ? result.data.items.filter((i) => i.account === "available").slice(0, 4)
+              : "failed",
+          );
       });
     }
     return () => {
@@ -80,7 +93,29 @@ export function MonthPanel({
       {month === "none" && (
         <p className="text-[14px] text-ink-muted">Nothing has moved this month yet.</p>
       )}
-      {month && typeof month === "object" && (
+      {month && typeof month === "object" && !balance && (
+        <dl className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1 rounded-[var(--radius-l)] bg-leaf-tint p-4">
+            <dt className="flex items-center gap-1.5 text-[13px] font-semibold text-leaf">
+              <ArrowUp aria-hidden className="size-4" />
+              Money in
+            </dt>
+            <dd>
+              <Amount amount={month.moneyIn} currency={currency} size="m" />
+            </dd>
+          </div>
+          <div className="grid gap-1 rounded-[var(--radius-l)] bg-surface-sunken p-4">
+            <dt className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted">
+              <ArrowDown aria-hidden className="size-4" />
+              Money out
+            </dt>
+            <dd>
+              <Amount amount={month.moneyOut} currency={currency} size="m" />
+            </dd>
+          </div>
+        </dl>
+      )}
+      {month && typeof month === "object" && balance && (
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
           <div className="grid gap-0.5">
             <span className="text-[13px] text-ink-muted">In your wallet</span>

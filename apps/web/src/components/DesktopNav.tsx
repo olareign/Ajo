@@ -71,8 +71,8 @@ export function DesktopNav() {
   if (!isAppRoute(path)) return null;
   const active = activeHref(path);
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-surface-raised lg:flex">
-      <Link href="/today" className="flex items-center gap-2 px-6 pt-6 pb-5" aria-label="Àjọ home">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col overflow-y-auto border-r border-line bg-surface-raised lg:flex">
+      <Link href="/today" className="flex items-center gap-2 px-6 pt-5 pb-3" aria-label="Àjọ home">
         <Image
           src="/brand/ajo-logo.webp"
           alt=""
@@ -90,10 +90,7 @@ export function DesktopNav() {
           className="theme-dark-only"
         />
       </Link>
-      <nav
-        aria-label="Desktop"
-        className="grid flex-1 content-start gap-6 overflow-y-auto px-4 pt-2 pb-6"
-      >
+      <nav aria-label="Desktop" className="grid content-start gap-4 px-4 pt-2 pb-4">
         {GROUPS.map((group, i) => (
           <div key={group.label ?? i} className="grid gap-1">
             {group.label && (
@@ -107,7 +104,7 @@ export function DesktopNav() {
                   href={href}
                   aria-current={on ? "page" : undefined}
                   className={cn(
-                    "flex min-h-11 items-center gap-3.5 rounded-m px-3 text-[15px] transition-colors",
+                    "flex min-h-10 items-center gap-3.5 rounded-m px-3 text-[15px] transition-colors",
                     on
                       ? "bg-primary-tint font-semibold text-primary"
                       : "font-medium text-ink-muted hover:bg-surface-sunken hover:text-ink",
@@ -128,7 +125,7 @@ export function DesktopNav() {
                   // The server clears the cookie even if the API could not be reached.
                   router.replace("/sign-in");
                 }}
-                className="flex min-h-11 items-center gap-3.5 rounded-m px-3 text-left text-[15px] font-medium text-ink-muted transition-colors hover:bg-danger-tint hover:text-danger disabled:opacity-60"
+                className="flex min-h-10 items-center gap-3.5 rounded-m px-3 text-left text-[15px] font-medium text-ink-muted transition-colors hover:bg-danger-tint hover:text-danger disabled:opacity-60"
               >
                 {leaving ? (
                   <Spinner />
@@ -141,8 +138,10 @@ export function DesktopNav() {
           </div>
         ))}
       </nav>
-      {/* The help card at the foot, like a bank's: a person when the answers aren't enough. */}
-      <div className="hero-card relative mx-4 mt-8 mb-6 grid justify-items-center gap-2 rounded-[22px] px-4 pt-9 pb-4 text-center shadow-lift">
+      {/* The help card at the foot, like a bank's: a person when the answers aren't enough. On a
+          short screen the whole sidebar scrolls, so nothing above it is ever hidden. */}
+      <div aria-hidden className="min-h-8 shrink-0" />
+      <div className="hero-card relative mx-4 mt-auto mb-5 grid shrink-0 justify-items-center gap-2 rounded-[22px] px-4 pt-8 pb-4 text-center shadow-lift">
         <span
           aria-hidden
           className="absolute -top-6 grid size-12 place-items-center rounded-full border-4 border-surface-raised bg-surface-raised text-primary shadow-lift"
