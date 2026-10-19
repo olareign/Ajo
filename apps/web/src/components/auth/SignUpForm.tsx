@@ -115,8 +115,8 @@ export function SignUpForm({ turnstileSiteKey, invite }: Props) {
           )}
         </div>
       )}
-      {/* Pinned to the bottom on mobile; comfortably spaced on desktop. */}
-      <div className="mt-auto pt-8 lg:mt-6 lg:pt-2">
+      {/* Pinned to the bottom of the screen on a phone, where the thumb is. */}
+      <div className="mt-auto pt-8">
         <Button
           type="submit"
           size="lg"

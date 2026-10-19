@@ -53,7 +53,7 @@ describe("Responsive UI & Layout Suite", () => {
     expect(screen.getAllByRole("link", { name: "Privacy" })[0]).toHaveAttribute("href", "/privacy");
   });
 
-  it("renders AuthScreen with mobile backwards-compatibility and desktop showcase panel", () => {
+  it("keeps the sign-in screens to the form alone, with nothing else to look at", () => {
     render(
       <AuthScreen footer={<p>Don&apos;t have an account?</p>}>
         <h2>Sign In Form Header</h2>
@@ -63,11 +63,11 @@ describe("Responsive UI & Layout Suite", () => {
     const main = screen.getByRole("main");
     expect(main).toContainElement(screen.getByRole("heading", { name: "Sign In Form Header" }));
     expect(main).toContainElement(screen.getByText("Don't have an account?"));
-
-    // Verify desktop showcase elements are present in the DOM
-    expect(screen.getByText("Institutional Trust")).toBeInTheDocument();
-    expect(screen.getByText("Sample Circle of Eight")).toBeInTheDocument();
-    expect(screen.queryByText(/Circle Saver/i)).toBeNull(); // no made-up customer quotes
+    // No showcase panel, testimonial or badges competing with the form.
+    expect(screen.queryByText("Institutional Trust")).toBeNull();
+    expect(screen.queryByText(/Circle Saver/i)).toBeNull();
+    expect(screen.getByRole("link", { name: "Àjọ home" })).toHaveAttribute("href", "/");
+    expect(screen.getByText(/never ask for your PIN or codes/)).toBeInTheDocument();
   });
 
   it("renders the redesigned Landing page with background SVGs and responsive hierarchy", () => {

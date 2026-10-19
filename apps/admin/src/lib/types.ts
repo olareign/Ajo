@@ -150,3 +150,35 @@ export type SupportContact = Readonly<{
   updatedAt: string | null;
   updatedBy: string | null;
 }>;
+
+/** The first screen: totals and 30-day trends (GET admin/dashboard). Money in minor units. */
+export type Dashboard = Readonly<{
+  days: number;
+  people: Readonly<{
+    total: number;
+    active: number;
+    suspended: number;
+    joinedInPeriod: number;
+    byCountry: readonly Readonly<{ country: string; count: number }>[];
+    signups: readonly Readonly<{ day: string; count: number }>[];
+  }>;
+  work: Readonly<{
+    pendingKyc: number;
+    openCases: number;
+    failedPayments: number;
+    stuckPayments: number;
+  }>;
+  money: readonly Readonly<{ currency: string; held: string; moneyIn: string; moneyOut: string }>[];
+  flow: readonly Readonly<{ day: string; currency: string; moneyIn: string; moneyOut: string }>[];
+  circles: Readonly<{ open: number; picking: number; running: number; completed: number }>;
+  plans: Readonly<{ active: number; paused: number; completed: number }>;
+  recent: readonly Readonly<{
+    id: string;
+    userId: string;
+    kind: "funding" | "withdrawal";
+    status: string;
+    amount: string;
+    currency: string;
+    createdAt: string;
+  }>[];
+}>;

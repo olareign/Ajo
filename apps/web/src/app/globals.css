@@ -182,6 +182,21 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* The page never moves sideways on a phone. Decorations (glows, the rolling ring) may reach past
+   the edge; they are clipped at the page itself, not only by their own wrappers, because iPhone
+   Safari can still pan past an inner overflow-x: hidden. `clip` keeps sticky bars working (it makes
+   no scroll box); Safari before 16 lacks it, and gets `hidden` on body instead. */
+@supports (overflow: clip) {
+  html {
+    overflow-x: clip;
+  }
+}
+@supports not (overflow: clip) {
+  body {
+    overflow-x: hidden;
+  }
+}
+
 body {
   background: var(--surface);
   color: var(--ink);
