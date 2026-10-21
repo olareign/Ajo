@@ -148,15 +148,14 @@ describe("the circles home", () => {
       }),
     });
     open(<CirclesHome />);
-    const going = await screen
-      .findByRole("list", { name: "" }, { timeout: 3000 })
-      .catch(() => null);
-    expect(going).toBeNull();
     expect(await screen.findByRole("heading", { name: "Your circles" })).toBeInTheDocument();
     expect(screen.getByText(/2 of 4 joined/)).toBeInTheDocument();
     expect(screen.getByText(/your turn is 3 of 4/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Finished" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Under way/ })).toHaveAttribute("href", "/circles/b");
+    // The finished one sits on its own tab.
+    await userEvent.click(screen.getByRole("button", { name: /Finished/ }));
+    expect(screen.getByRole("heading", { name: "Finished" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /All done/ })).toHaveAttribute("href", "/circles/c");
     // The two still going, at a glance: what you pay in each round and the pots that come back.
     const glance = screen.getByRole("region", { name: "Your circles at a glance" });
     expect(glance).toHaveTextContent("Circles you're in2");

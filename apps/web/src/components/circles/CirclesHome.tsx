@@ -17,8 +17,9 @@ import { recall, remember } from "@/lib/visit-cache";
 import type { GroupSummary } from "@/lib/groups-client";
 import { FREQ_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
 import { PAGE } from "@/lib/page";
-import { CircleAside } from "@/components/desk/asides";
-import { Facts, Split } from "@/components/desk/Split";
+import { FilterTabs, SummaryBand } from "@/components/desk/Band";
+import { Pager } from "@/components/ui/Pager";
+import { usePaged } from "@/lib/paging";
 
 export const STATUS_WORD: Record<GroupSummary["status"], string> = {
   open: "Filling up",
@@ -76,6 +77,18 @@ export function CirclesHome() {
         title="Circles"
         subtitle="Save together, one turn at a time."
         backHref={preview ? href("/today") : undefined}
+        pageAction={
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ButtonLink href={href("/circles/discover")} size="lg" variant="quiet" block>
+              <Compass aria-hidden className="size-5" />
+              Find a circle to join
+            </ButtonLink>
+            <ButtonLink href={href("/circles/new")} size="lg" block>
+              <Plus aria-hidden className="size-5" />
+              Start a circle
+            </ButtonLink>
+          </div>
+        }
       />
 
       {groups === undefined && (
@@ -94,89 +107,86 @@ export function CirclesHome() {
         </div>
       )}
 
-      {Array.isArray(groups) && (
-        // From a tablet up: the circles you're in at a glance, then each as a card; starting or
-        // finding one sits at the side with how circles work.
-        <Split
-          aside={
-            <div className="grid gap-3 md:rounded-[var(--radius-xl)] md:bg-surface-raised md:p-5 md:shadow-lift">
-              <ButtonLink href={href("/circles/new")} size="lg" block>
-                <Plus aria-hidden className="size-5" />
-                Start a circle
-              </ButtonLink>
-              <ButtonLink href={href("/circles/discover")} size="lg" block variant="quiet">
-                <Compass aria-hidden className="size-5" />
-                Find a circle to join
-              </ButtonLink>
-            </div>
-          }
-          note={<CircleAside />}
+      {Array.isArray(groups) && groups.length === 0 && (
+        <section
+          aria-label="No circles yet"
+          className="grid justify-items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift md:p-10"
         >
-          {groups.length === 0 && (
-            <section
-              aria-label="No circles yet"
-              className="grid justify-items-center gap-4 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
-            >
-              <CircleRing
-                members={Array.from({ length: 6 }, () => ({
-                  name: "Open place",
-                  status: "pending" as const,
-                }))}
-                size={180}
-                title="An empty circle"
-              />
-              <p className="font-display text-[22px] leading-7 font-semibold">No circle yet</p>
-              <p className="text-[15px] leading-6 text-ink-muted">
-                A circle is a few people who each pay in every round, and take turns collecting the
-                whole pot. Start one with friends, or find one to join.
-              </p>
-            </section>
-          )}
+          <CircleRing
+            members={Array.from({ length: 6 }, () => ({
+              name: "Open place",
+              status: "pending" as const,
+            }))}
+            size={180}
+            title="An empty circle"
+          />
+          <p className="font-display text-[22px] leading-7 font-semibold">No circle yet</p>
+          <p className="max-w-prose text-[15px] leading-6 text-ink-muted">
+            A circle is a few people who each pay in every round, and take turns collecting the
+            whole pot. Start one with friends, or find one to join.
+          </p>
+        </section>
+      )}
 
-          {going.length > 0 && <CircleFacts going={going} locale={locale} />}
-
-          {going.length > 0 && (
-            <section aria-labelledby="going" className="grid gap-3">
-              <h2 id="going" className="font-display text-[20px] leading-7 font-semibold">
-                Your circles
-              </h2>
-              <ul className="grid gap-3 xl:grid-cols-2">
-                {going.map((g) => (
-                  <CircleCard
-                    key={g.id}
-                    group={g}
-                    href={href(`/circles/${g.id}`)}
-                    locale={locale}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-          {over.length > 0 && (
-            <section aria-labelledby="over" className="grid gap-3">
-              <h2 id="over" className="font-display text-[20px] leading-7 font-semibold">
-                Finished
-              </h2>
-              <ul className="grid gap-3 xl:grid-cols-2">
-                {over.map((g) => (
-                  <CircleCard
-                    key={g.id}
-                    group={g}
-                    href={href(`/circles/${g.id}`)}
-                    locale={locale}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-        </Split>
+      {Array.isArray(groups) && groups.length > 0 && (
+        <CircleList going={going} over={over} locale={locale} href={href} />
       )}
     </main>
   );
 }
 
+/** The summary band, then the circles in two tabs (the ones you're in, finished) a page at a time. */
+function CircleList({
+  going,
+  over,
+  locale,
+  href,
+}: Readonly<{
+  going: readonly GroupSummary[];
+  over: readonly GroupSummary[];
+  locale: string;
+  href: (path: string) => string;
+}>) {
+  const [tab, setTab] = useState<"going" | "over">(going.length > 0 ? "going" : "over");
+  const shown = tab === "going" ? going : over;
+  const paged = usePaged(shown);
+  return (
+    <div className="grid gap-6">
+      {going.length > 0 && <CircleBand going={going} locale={locale} />}
+      {going.length > 0 && over.length > 0 && (
+        <FilterTabs
+          label="Which circles"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "going", label: "Your circles", count: going.length },
+            { id: "over", label: "Finished", count: over.length },
+          ]}
+        />
+      )}
+      <section
+        aria-labelledby="circles-title"
+        className="overflow-hidden rounded-[var(--radius-xl)] bg-surface-raised shadow-lift"
+      >
+        <h2
+          id="circles-title"
+          className="px-5 pt-5 pb-1 font-display text-[20px] leading-7 font-bold md:px-6"
+        >
+          {tab === "going" ? "Your circles" : "Finished"}
+        </h2>
+        <ul className="grid gap-3 p-4 md:p-6 xl:grid-cols-2">
+          {paged.slice.map((g) => (
+            <CircleCard key={g.id} group={g} href={href(`/circles/${g.id}`)} locale={locale} />
+          ))}
+        </ul>
+        <Pager paged={paged} noun={["circle", "circles"]} className="border-t border-line" />
+      </section>
+    </div>
+  );
+}
+
 /** The circles still going, in the first one's currency: how many, what you pay in, your pots. */
-function CircleFacts({
+function CircleBand({
   going,
   locale,
 }: Readonly<{ going: readonly GroupSummary[]; locale: string }>) {
@@ -186,9 +196,9 @@ function CircleFacts({
     same.reduce((n, g) => n + BigInt(g[key]), 0n).toString();
   const running = going.filter((g) => g.status === "running").length;
   return (
-    <Facts
+    <SummaryBand
       label="Your circles at a glance"
-      facts={[
+      figures={[
         {
           label: "Circles you're in",
           value: going.length,
@@ -197,13 +207,21 @@ function CircleFacts({
         {
           label: "You pay in",
           value: (
-            <Amount amount={sum("contribution")} currency={currency} locale={locale} size="m" />
+            <Amount
+              amount={sum("contribution")}
+              currency={currency}
+              locale={locale}
+              size="m"
+              tone="hero"
+            />
           ),
           note: same.length === 1 ? FREQ_WORDS[same[0]!.frequency] : "each round, all circles",
         },
         {
           label: "Your pots",
-          value: <Amount amount={sum("pot")} currency={currency} locale={locale} size="m" />,
+          value: (
+            <Amount amount={sum("pot")} currency={currency} locale={locale} size="m" tone="hero" />
+          ),
           note: "One turn in each circle, before any fee",
         },
       ]}
