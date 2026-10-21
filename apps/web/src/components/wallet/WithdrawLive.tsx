@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldAlert } from "lucide-react";
+import { Building2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -322,7 +322,7 @@ export function WithdrawLive() {
 
       {step === "bank" && (
         <form
-          className="grid gap-5"
+          className="grid md:max-w-xl gap-5"
           onSubmit={(event) => {
             event.preventDefault();
             setError(undefined);
@@ -362,7 +362,7 @@ export function WithdrawLive() {
       )}
 
       {(step === "bank-code" || step === "code") && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <CodeBoxes label="Authenticator code" value={code} length={6} />
           {errorLine}
           <Button
@@ -380,65 +380,101 @@ export function WithdrawLive() {
 
       {step === "amount" && (
         <div className="grid gap-6">
-          <p className="text-center text-[14px] text-ink-muted">
-            Available{" "}
-            <Amount
-              amount={loaded.balance.toString()}
-              currency={currency}
-              locale={locale}
-              size="s"
-            />
-          </p>
-          <AmountPad
-            value={amount}
-            onChange={setAmount}
-            currency={currency}
-            locale={locale}
-            label="Amount to withdraw"
-          />
-          {tooMuch && (
-            <p role="alert" className="text-center text-[15px] font-medium text-danger">
-              That&apos;s more than you have available.
-            </p>
-          )}
-          {!tooMuch && errorLine}
-          <Button
-            size="lg"
-            block
-            disabled={minor === "0" || tooMuch}
-            onClick={() => {
-              setError(undefined);
-              setStep("review");
-            }}
-          >
-            Continue
-          </Button>
-          {whole !== "0" && (
-            <button
-              type="button"
-              onClick={() => setAmount(whole)}
-              className="justify-self-center rounded-s px-2 py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
+          <div className="grid gap-6 md:grid-cols-2 md:items-start">
+            <section
+              aria-labelledby="how-much"
+              className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift md:p-7"
             >
-              Withdraw everything
-            </button>
-          )}
-          {account && (
-            <button
-              type="button"
+              <h2 id="how-much" className="font-display text-[20px] leading-7 font-bold">
+                How much?
+              </h2>
+              <p className="text-[14px] text-ink-muted md:text-[15px]">
+                Available{" "}
+                <Amount
+                  amount={loaded.balance.toString()}
+                  currency={currency}
+                  locale={locale}
+                  size="s"
+                />
+              </p>
+              <AmountPad
+                value={amount}
+                onChange={setAmount}
+                currency={currency}
+                locale={locale}
+                label="Amount to withdraw"
+              />
+              {tooMuch && (
+                <p role="alert" className="text-[15px] font-medium text-danger">
+                  That&apos;s more than you have available.
+                </p>
+              )}
+              {whole !== "0" && (
+                <button
+                  type="button"
+                  onClick={() => setAmount(whole)}
+                  className="justify-self-start rounded-s py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  Withdraw everything
+                </button>
+              )}
+            </section>
+            <section
+              aria-labelledby="withdraw-to"
+              className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift md:p-7"
+            >
+              <h2 id="withdraw-to" className="font-display text-[20px] leading-7 font-bold">
+                To
+              </h2>
+              {account && (
+                <div className="flex items-center gap-4">
+                  <span className="grid size-12 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
+                    <Building2 aria-hidden className="size-6" />
+                  </span>
+                  <div className="grid min-w-0 flex-1">
+                    <span className="font-semibold">{account.bankName}</span>
+                    <span className="text-[14px] text-ink-muted">
+                      {account.accountName} · ending {account.last4}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {account && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(undefined);
+                    setStep("bank");
+                  }}
+                  className="justify-self-start rounded-s py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  Change the bank account
+                </button>
+              )}
+            </section>
+          </div>
+          {!tooMuch && errorLine}
+          <div className="grid gap-3 md:flex md:items-center md:gap-6">
+            <Button
+              size="lg"
+              className="w-full md:w-auto md:min-w-72"
+              disabled={minor === "0" || tooMuch}
               onClick={() => {
                 setError(undefined);
-                setStep("bank");
+                setStep("review");
               }}
-              className="justify-self-center rounded-s px-2 py-2 text-[15px] font-semibold text-ink-muted underline-offset-4 hover:underline"
             >
-              Change the bank account
-            </button>
-          )}
+              Continue
+            </Button>
+            <p className="text-[13px] leading-5 text-ink-muted">
+              Next you&apos;ll confirm with your PIN and a code from your authenticator app.
+            </p>
+          </div>
         </div>
       )}
 
       {step === "review" && account && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <Receipt
             title="You're withdrawing"
             rows={[
@@ -458,7 +494,7 @@ export function WithdrawLive() {
       )}
 
       {step === "pin" && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <PinPad label="Transaction PIN" value={pin} onChange={setPin} />
           {errorLine}
           <Button
@@ -476,7 +512,7 @@ export function WithdrawLive() {
       )}
 
       {step === "sent" && account && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <WithdrawTicket
             bank={account.bankName}
             minor={minor}

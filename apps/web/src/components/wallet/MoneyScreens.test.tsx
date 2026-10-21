@@ -87,18 +87,18 @@ describe("money screens that cannot open yet", () => {
 });
 
 describe("adding money", () => {
-  it("walks from method to amount to a receipt, and lands the coin", async () => {
+  it("takes the amount and the way to pay on one screen, then a receipt, and lands the coin", async () => {
     const user = userEvent.setup();
     open(<AddMoney />);
     expect(await screen.findByText(/Preview: nothing here is saved or sent/)).toBeInTheDocument();
     const next = screen.getByRole("button", { name: "Continue" });
     expect(next).toBeDisabled();
     await user.click(screen.getByRole("radio", { name: /Debit card/ }));
-    await user.click(next);
+    expect(next).toBeDisabled();
 
     await user.click(screen.getByRole("radio", { name: "₦10,000" }));
     expect(screen.getByText("₦10,000", { selector: "[data-size=xl]" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Continue to pay ₦10,000" }));
 
     const receipt = screen.getByRole("region", { name: "You're adding" });
     expect(within(receipt).getByText("Debit card")).toBeInTheDocument();
@@ -118,16 +118,26 @@ describe("adding money", () => {
     const user = userEvent.setup();
     open(<AddMoney />);
     await user.click(await screen.findByRole("radio", { name: /USSD/ }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
     const pad = screen.getByRole("group", { name: /number pad/ });
     await user.click(within(pad).getByRole("button", { name: "0" }));
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
     await user.click(within(pad).getByRole("button", { name: "7" }));
     await user.click(within(pad).getByRole("button", { name: "5" }));
     expect(screen.getByText("₦75", { selector: "[data-size=xl]" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue to pay ₦75" })).toBeEnabled();
   });
 
-  it("shows an account to send to, in place of an amount, for a bank transfer", async () => {
+  it("takes a typed amount where there is a keyboard, with the digits grouped", async () => {
+    const user = userEvent.setup();
+    open(<AddMoney />);
+    await user.click(await screen.findByRole("radio", { name: /Debit card/ }));
+    const field = screen.getByRole("textbox", { name: "Amount to add" });
+    await user.type(field, "0120000x");
+    expect(field).toHaveValue("120,000");
+    expect(screen.getByRole("button", { name: "Continue to pay ₦120,000" })).toBeEnabled();
+  });
+
+  it("shows an account to send to, with no amount needed, for a bank transfer", async () => {
     const user = userEvent.setup();
     open(<AddMoney />);
     await user.click(await screen.findByRole("radio", { name: /Bank transfer/ }));
@@ -138,15 +148,13 @@ describe("adding money", () => {
     expect(screen.queryByRole("group", { name: /number pad/ })).not.toBeInTheDocument();
   });
 
-  it("offers UK people a card, the one way the UK partner takes money in, and goes on to the amount", async () => {
+  it("offers UK people a card, the one way the UK partner takes money in, already chosen", async () => {
     api({ ...me, country: "GB" });
-    const user = userEvent.setup();
     open(<AddMoney />);
     const card = await screen.findByRole("radio", { name: /Debit or credit card/ });
-    expect(screen.getAllByRole("radio")).toHaveLength(1);
+    expect(screen.getAllByRole("radio", { name: /card/ })).toHaveLength(1);
+    expect(card).toHaveAttribute("aria-checked", "true");
     expect(screen.queryByRole("radio", { name: /Bank transfer/ })).not.toBeInTheDocument();
-    await user.click(card);
-    await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("group", { name: /number pad/ })).toBeInTheDocument();
     expect(screen.queryByText("04-00-04")).not.toBeInTheDocument();
   });
@@ -155,9 +163,11 @@ describe("adding money", () => {
     const user = userEvent.setup();
     open(<AddMoney />);
     await user.click(await screen.findByRole("radio", { name: /Debit card/ }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("radio", { name: "₦5,000" }));
+    await user.click(screen.getByRole("button", { name: "Continue to pay ₦5,000" }));
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("heading", { name: "Add money" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "₦5,000" })).toHaveAttribute("aria-checked", "true");
   });
 });
 
@@ -194,9 +204,8 @@ describe("adding money for real", () => {
   });
   async function toReview(user: ReturnType<typeof userEvent.setup>, method = /Debit card/) {
     await user.click(await screen.findByRole("radio", { name: method }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("radio", { name: "₦5,000" }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
   }
   afterEach(() => leaveFor.mockClear());
 
@@ -239,7 +248,7 @@ describe("adding money for real", () => {
     await screen.findByRole("alert");
     await user.click(screen.getByRole("button", { name: "Back" }));
     await user.click(screen.getByRole("radio", { name: "₦10,000" }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Continue to pay ₦10,000" }));
     await user.click(screen.getByRole("button", { name: "Add money" }));
     await waitFor(() => expect(fund).toHaveBeenCalledTimes(2));
     const keys = fund.mock.calls.map(
@@ -248,13 +257,15 @@ describe("adding money for real", () => {
     expect(keys[0]).not.toBe(keys[1]);
   });
 
-  it("goes straight to the amount for a bank transfer, with no pretend account", async () => {
+  it("asks for an amount for a bank transfer, and shows no pretend account", async () => {
     live([pending()]);
     const user = userEvent.setup();
     open(<AddMoney />);
     await user.click(await screen.findByRole("radio", { name: /Bank transfer/ }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByRole("group", { name: /number pad/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: "₦5,000" }));
+    await user.click(screen.getByRole("button", { name: "Continue to pay ₦5,000" }));
+    expect(screen.getByRole("region", { name: "You're adding" })).toBeInTheDocument();
     expect(screen.queryByText("7812345678")).not.toBeInTheDocument();
   });
 

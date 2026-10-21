@@ -26,7 +26,7 @@ export function Limits() {
         backHref="/wallet"
       />
       {/* The rungs of the ladder side by side where there is room, so each level reads at a glance. */}
-      <ol className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
+      <ol className="grid gap-4 xl:grid-cols-3 xl:items-stretch">
         {ladder.map((rung) => {
           const here = rung.tier === tier;
           const reached = rung.tier <= tier;

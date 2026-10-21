@@ -12,7 +12,8 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { OptionCards } from "@/components/ui/OptionCards";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { Receipt } from "@/components/ui/Receipt";
-import { FUND_METHODS, QUICK_AMOUNTS, SAMPLE, toMinor } from "@/lib/money-flow";
+import { formatMoney } from "@/lib/money-format";
+import { FUND_METHODS, limitsFor, QUICK_AMOUNTS, SAMPLE, toMinor } from "@/lib/money-flow";
 import { leaveFor } from "@/lib/navigate";
 import { newAttemptKey, startFunding } from "@/lib/payments-client";
 import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
@@ -20,7 +21,7 @@ import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
 import { FormPage } from "@/components/desk/FormPage";
 
-type Step = "method" | "details" | "amount" | "review" | "done";
+type Step = "form" | "details" | "review" | "done";
 
 const ARRIVES: Record<string, string> = {
   card: "Straight away",
@@ -36,8 +37,11 @@ export function AddMoney() {
   // One key for as long as the person is making the same payment: tapping twice, or trying again
   // after the connection dropped, is answered with the first result instead of charging twice.
   const attempt = useRef({ signature: "", key: "" });
-  const [step, setStep] = useState<Step>("method");
-  const [method, setMethod] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>("form");
+  // The UK has one way in (a card), so it is chosen already.
+  const [method, setMethod] = useState<string | null>(() =>
+    FUND_METHODS[flow.country].length === 1 ? FUND_METHODS[flow.country][0]!.value : null,
+  );
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -61,10 +65,16 @@ export function AddMoney() {
   const inbound = SAMPLE.inbound[country];
   const minor = toMinor(amount);
 
+  const rung = limitsFor(country).find((r) => r.tier === (preview ? 1 : (flow.me.kycTier ?? 0)));
+  // The limits are real only once payments are connected; before that they would be guesses.
+  const showLimit = (preview || flow.rails.connected.fund) && rung && rung.perTransaction > 0;
+  const amountOk = minor !== "0";
+  // A pretend bank transfer shows a sample account instead of taking an amount.
+  const sampleAccount = method === "transfer" && preview;
+  const ready = Boolean(method) && (amountOk || sampleAccount);
+
   function back() {
-    setStep(
-      step === "review" ? "amount" : step === "amount" || step === "details" ? "method" : step,
-    );
+    setStep("form");
   }
 
   async function add() {
@@ -142,42 +152,91 @@ export function AddMoney() {
       {preview && <PreviewRibbon exitHref="/wallet/add" />}
       <ScreenHeader
         title={
-          step === "method"
+          step === "form"
             ? "Add money"
             : step === "details"
               ? "Send it from your bank"
-              : step === "amount"
-                ? "How much?"
-                : "Look it over"
+              : "Look it over"
         }
-        subtitle={step === "method" ? "Pick how you'd like to pay." : undefined}
-        onBack={step === "method" ? undefined : back}
-        backHref={step === "method" ? "/wallet" : undefined}
+        subtitle={step === "form" ? "Money goes into your Àjọ wallet." : undefined}
+        onBack={step === "form" ? undefined : back}
+        backHref={step === "form" ? "/wallet" : undefined}
       />
 
-      {step === "method" && (
+      {step === "form" && (
         <div className="grid gap-6">
-          <OptionCards
-            label="How to add money"
-            options={methods}
-            value={method}
-            onChange={setMethod}
-          />
-          <Button
-            size="lg"
-            block
-            disabled={!method}
-            // A live bank transfer is set up on the partner's page, so only a preview shows the
-            // sample account here.
-            onClick={() => setStep(method === "transfer" && preview ? "details" : "amount")}
-          >
-            Continue
-          </Button>
+          <div className="grid gap-6 md:grid-cols-2 md:items-start">
+            <section
+              aria-labelledby="how-much"
+              className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift md:p-7"
+            >
+              <h2 id="how-much" className="font-display text-[20px] leading-7 font-bold">
+                How much?
+              </h2>
+              <AmountPad
+                value={amount}
+                onChange={setAmount}
+                currency={currency}
+                locale={locale}
+                label="Amount to add"
+                quick={QUICK_AMOUNTS[country]}
+              />
+              {showLimit && (
+                <p className="text-[14px] leading-5 text-ink-muted">
+                  You can add up to{" "}
+                  <Amount
+                    amount={toMinor(String(rung.perTransaction))}
+                    currency={currency}
+                    locale={locale}
+                    size="s"
+                  />{" "}
+                  each time at your level.{" "}
+                  <Link
+                    href={flow.href("/wallet/limits")}
+                    className="font-semibold text-primary underline-offset-4 hover:underline"
+                  >
+                    See your limits
+                  </Link>
+                </p>
+              )}
+            </section>
+            <section
+              aria-labelledby="pay-with"
+              className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift md:p-7"
+            >
+              <h2 id="pay-with" className="font-display text-[20px] leading-7 font-bold">
+                Pay with
+              </h2>
+              <OptionCards
+                label="How to add money"
+                options={methods}
+                value={method}
+                onChange={setMethod}
+              />
+            </section>
+          </div>
+          <div className="grid gap-3 md:flex md:items-center md:gap-6">
+            <Button
+              size="lg"
+              className="w-full md:w-auto md:min-w-72"
+              disabled={!ready}
+              // A live bank transfer is set up on the partner's page, so only a preview shows the
+              // sample account here.
+              onClick={() => setStep(sampleAccount ? "details" : "review")}
+            >
+              {amountOk && !sampleAccount
+                ? `Continue to pay ${formatMoney({ amount: minor, currency }, locale)}`
+                : "Continue"}
+            </Button>
+            <p className="text-[13px] leading-5 text-ink-muted">
+              If a payment doesn&apos;t go through, you aren&apos;t charged.
+            </p>
+          </div>
         </div>
       )}
 
       {step === "details" && (
-        <div className="grid gap-5">
+        <div className="grid md:max-w-xl gap-5">
           <div className="relative grid gap-3 rounded-[var(--radius-l)] bg-primary-tint p-5">
             <span
               aria-hidden
@@ -225,29 +284,8 @@ export function AddMoney() {
         </div>
       )}
 
-      {step === "amount" && (
-        <div className="grid gap-6">
-          <AmountPad
-            value={amount}
-            onChange={setAmount}
-            currency={currency}
-            locale={locale}
-            label="Amount to add"
-            quick={QUICK_AMOUNTS[country]}
-          />
-          <Button
-            size="lg"
-            block
-            disabled={toMinor(amount) === "0"}
-            onClick={() => setStep("review")}
-          >
-            Continue
-          </Button>
-        </div>
-      )}
-
       {step === "review" && chosen && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <Receipt
             title="You're adding"
             rows={[
