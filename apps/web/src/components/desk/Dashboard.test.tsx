@@ -5,13 +5,14 @@ import type { Plan } from "@/lib/savings-client";
 import { forgetAll } from "@/lib/visit-cache";
 import type { WalletTransaction } from "@/lib/wallet";
 import {
-  AccountCard,
+  AccountStrip,
   ActivityChart,
   Attention,
-  NextCard,
+  BalanceHero,
+  filterHistory,
+  historyCsv,
   QuickActions,
-  RecentTransactions,
-  SavedCard,
+  TransactionHistory,
 } from "./Dashboard";
 
 afterEach(() => {
@@ -77,56 +78,75 @@ const tx = (over: Partial<WalletTransaction>): WalletTransaction => ({
   ...over,
 });
 
-describe("the summary cards", () => {
-  it("adds up what is saved in plans still going, in the wallet's currency", () => {
+const wallet = {
+  currency: "NGN",
+  available: naira("27750000"),
+  locked: naira("15000000"),
+  savings: naira("0"),
+};
+const due = {
+  key: "plan-p1",
+  date: "2026-10-26",
+  title: "Rent for March",
+  detail: "Saving payment",
+  href: "/save/p1",
+  amount: naira("2500000"),
+  kind: "out" as const,
+};
+
+describe("the balance card", () => {
+  it("shows what is available, what is in pots, the next payment and both money moves", () => {
     render(
-      <SavedCard
+      <BalanceHero
+        wallets={[wallet] as never}
         currency="NGN"
+        fx={null}
         plans={[
           plan(),
           plan({ id: "p2", saved: naira("2500000") }),
-          plan({ id: "p3", status: "completed", saved: naira("9900000") }),
+          plan({ id: "p3", status: "completed" }),
         ]}
+        upcoming={[due]}
       />,
     );
-    const card = screen.getByRole("link", { name: /Saved in pots/ });
-    expect(card).toHaveAttribute("href", "/save");
-    expect(card).toHaveTextContent("₦100,000");
-    expect(card).toHaveTextContent("2 active plans");
+    const card = screen.getByRole("region", { name: "Your balance" });
+    expect(within(card).getByText("₦277,500")).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: /In pots.*₦100,000/ })).toHaveAttribute(
+      "href",
+      "/save",
+    );
+    expect(
+      within(card).getByRole("link", { name: /Next payment.*You pay.*₦25,000/ }),
+    ).toHaveAttribute("href", "/save/p1");
+    const moves = within(card).getByRole("navigation", { name: "Move money" });
+    expect(
+      within(moves).getByRole("link", { name: /Add money.*From your bank or card/ }),
+    ).toHaveAttribute("href", "/wallet/add");
+    expect(
+      within(moves).getByRole("link", { name: /Withdraw.*To your bank account/ }),
+    ).toHaveAttribute("href", "/wallet/withdraw");
   });
 
-  it("hides its figure when the balance is hidden", () => {
-    localStorage.setItem("ajo-hide-balance", "1");
-    render(<SavedCard currency="NGN" plans={[plan()]} />);
-    expect(screen.getByText("Balance hidden")).toBeInTheDocument();
+  it("says nothing is due when nothing is, and hides every figure behind the eye", async () => {
+    const user = userEvent.setup();
+    render(
+      <BalanceHero
+        wallets={[wallet] as never}
+        currency="NGN"
+        fx={null}
+        plans={[plan()]}
+        upcoming={[]}
+      />,
+    );
+    expect(screen.getByText("Nothing due")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hide balance" }));
+    expect(screen.queryByText("₦277,500")).toBeNull();
     expect(screen.queryByText("₦75,000")).toBeNull();
+    expect(screen.getAllByText("Balance hidden").length).toBeGreaterThanOrEqual(2);
   });
+});
 
-  it("shows the next payment, or says nothing is due", () => {
-    const { unmount } = render(
-      <NextCard
-        items={[
-          {
-            key: "plan-p1",
-            date: "2026-10-26",
-            title: "Rent for March",
-            detail: "Saving payment",
-            href: "/save/p1",
-            amount: naira("2500000"),
-            kind: "out",
-          },
-        ]}
-      />,
-    );
-    const card = screen.getByRole("link", { name: /Next payment/ });
-    expect(card).toHaveAttribute("href", "/save/p1");
-    expect(card).toHaveTextContent("You pay");
-    expect(card).toHaveTextContent("₦25,000");
-    unmount();
-    render(<NextCard items={[]} />);
-    expect(screen.getByText("Nothing is due")).toBeInTheDocument();
-  });
-
+describe("quick actions", () => {
   it("offers four quick actions that each lead somewhere real", () => {
     render(<QuickActions />);
     const links = within(screen.getByRole("navigation", { name: "Quick actions" })).getAllByRole(
@@ -149,6 +169,9 @@ describe("money in and out", () => {
     const user = userEvent.setup();
     render(<ActivityChart currency="NGN" locale="en-NG" />);
     expect(await screen.findByText("₦10,000", { selector: "dd *" })).toBeInTheDocument();
+    // What was kept (in less out) and the busiest month sit beside the two totals.
+    expect(screen.getByText("Kept").closest("div")).toHaveTextContent("₦6,000");
+    expect(screen.getByText("Busiest month").closest("div")).toHaveTextContent("Sept 2026");
     expect(asked).toHaveBeenCalledWith(
       expect.stringContaining("/api/wallet/insights?months=6"),
       expect.anything(),
@@ -225,8 +248,8 @@ describe("needs your attention", () => {
 });
 
 describe("account and security", () => {
-  it("shows the identity level, the second lock and devices", () => {
-    render(<AccountCard me={me({ mfaEnabled: false })} />);
+  it("shows the identity level, the second lock and devices in one line, and leads to Settings", () => {
+    render(<AccountStrip me={me({ mfaEnabled: false })} />);
     expect(screen.getByRole("link", { name: /Authenticator app.*Off/ })).toHaveAttribute(
       "href",
       "/me/security",
@@ -235,49 +258,106 @@ describe("account and security", () => {
       "href",
       "/me/devices",
     );
-    expect(screen.getByRole("link", { name: /Identity level/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Identity level.*Passport stamped/ })).toHaveAttribute(
       "href",
       "/wallet/limits",
     );
+    expect(screen.getByRole("link", { name: "Manage" })).toHaveAttribute("href", "/settings");
   });
 });
 
-describe("recent transactions", () => {
-  it("shows wallet payments only, as a table and a list, with a way to see them all", async () => {
-    fetches({
-      "/api/wallet/transactions": {
-        items: [
-          tx({}),
-          tx({ id: "e2", type: "withdrawal", direction: "out", amount: naira("500000") }),
-          tx({ id: "e3", type: "lock_deposit", account: "locked" }),
-        ],
-        next: null,
-      },
-    });
-    render(<RecentTransactions />);
-    const table = await screen.findByRole("table", { name: "Your latest wallet payments" });
-    const rows = within(table).getAllByRole("row");
-    expect(rows).toHaveLength(3);
-    expect(rows[1]).toHaveTextContent(/Money added.*8d0f6a0e.*Money in.*₦15,500/);
-    expect(rows[2]).toHaveTextContent(/Withdrawal.*Money out.*-₦5,000/);
-    expect(
-      within(screen.getByRole("list", { name: "Your latest wallet payments" })).getAllByRole(
-        "listitem",
-      ),
-    ).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "All transactions" })).toHaveAttribute(
-      "href",
-      "/wallet/statements",
+describe("transaction history", () => {
+  const NOW = new Date("2026-10-21T12:00:00Z");
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const list = [
+    tx({
+      id: "a",
+      createdAt: "2026-10-17T07:05:00Z",
+      type: "withdrawal",
+      direction: "out",
+      amount: naira("3500000"),
+    }),
+    tx({ id: "b", createdAt: "2026-10-15T07:05:00Z", transactionId: "a5a60111-x" }),
+    tx({ id: "c", createdAt: "2026-10-17T07:05:00Z", type: "lock_deposit", account: "locked" }),
+    tx({ id: "d", createdAt: "2026-08-01T07:05:00Z", transactionId: "old-one" }),
+  ];
+
+  it("narrows by words, type, account and how far back", () => {
+    const at = NOW.getTime();
+    const ids = (f: Parameters<typeof filterHistory>[1]) =>
+      filterHistory(list, f, at).map((t) => t.id);
+    const any = { text: "", direction: "", account: "", range: "all" } as const;
+    expect(ids(any)).toEqual(["a", "b", "c", "d"]);
+    expect(ids({ ...any, range: "30d" })).toEqual(["a", "b", "c"]);
+    expect(ids({ ...any, direction: "out" })).toEqual(["a"]);
+    expect(ids({ ...any, account: "locked" })).toEqual(["c"]);
+    expect(ids({ ...any, text: "A5A6" })).toEqual(["b"]);
+    expect(ids({ ...any, text: "withdrawal" })).toEqual(["a"]);
+  });
+
+  it("writes exactly what is shown as a spreadsheet, money out negative", () => {
+    const csv = historyCsv([list[0]!, list[1]!]).trim().split("\r\n");
+    expect(csv[0]).toBe("Date,Time,Description,Reference,Account,Type,Amount,Currency");
+    expect(csv[1]).toContain("Withdrawal");
+    expect(csv[1]).toContain("-35000.00,NGN");
+    expect(csv[2]).toContain("Money added");
+    expect(csv[2]).toContain("15500.00,NGN");
+  });
+
+  it("shows the last 30 days as a table, filters with chips that undo themselves, and clears", async () => {
+    fetches({ "/api/wallet/transactions": { items: list, next: null } });
+    const user = userEvent.setup({ advanceTimers: () => undefined });
+    render(<TransactionHistory />);
+    const table = await screen.findByRole("table", { name: "Transaction history" });
+    expect(within(table).getAllByRole("row")).toHaveLength(4);
+    expect(screen.getByText("Showing 1–3 of 3 payments")).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Type"), "out");
+    expect(within(table).getAllByRole("row")).toHaveLength(2);
+    expect(table).toHaveTextContent("Withdrawal");
+    await user.click(screen.getByRole("button", { name: "Remove filter: Money out" }));
+    expect(within(table).getAllByRole("row")).toHaveLength(4);
+
+    await user.type(screen.getByLabelText("Search"), "nothing like this");
+    expect(await screen.findByText("No payments match these filters.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByText("Showing 1–4 of 4 payments")).toBeInTheDocument();
+  });
+
+  it("fetches older payments when Next is pressed on the last page loaded", async () => {
+    const many = Array.from({ length: 10 }, (_, i) =>
+      tx({ id: `n${i}`, createdAt: `2026-10-${String(20 - i).padStart(2, "0")}T07:00:00Z` }),
     );
+    const older = [
+      tx({ id: "older", createdAt: "2026-10-05T07:00:00Z", type: "withdrawal", direction: "out" }),
+    ];
+    const asked = vi.fn(async (url: string) =>
+      Response.json(
+        url.includes("before=c1") ? { items: older, next: null } : { items: many, next: "c1" },
+      ),
+    );
+    vi.stubGlobal("fetch", asked);
+    const user = userEvent.setup({ advanceTimers: () => undefined });
+    render(<TransactionHistory />);
+    expect(await screen.findByText("Showing 1–10 of 10+ payments")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    expect(await screen.findByText("Showing 11–11 of 11 payments")).toBeInTheDocument();
+    expect(screen.getByRole("table")).toHaveTextContent("Withdrawal");
+    expect(asked).toHaveBeenCalledWith(expect.stringContaining("before=c1"), expect.anything());
   });
 
   it("has an empty state and an error state", async () => {
     fetches({ "/api/wallet/transactions": { items: [], next: null } });
-    const { unmount } = render(<RecentTransactions />);
+    const { unmount } = render(<TransactionHistory />);
     expect(await screen.findByText(/No payments yet/)).toBeInTheDocument();
     unmount();
     fetches({});
-    render(<RecentTransactions />);
+    render(<TransactionHistory />);
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("couldn't load"));
   });
 });

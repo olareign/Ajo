@@ -24,15 +24,14 @@ import { countryConfig } from "@/lib/kyc-config";
 import type { Plan } from "@/lib/savings-client";
 import { loadScreen, partData, type ScreenData } from "@/lib/screen-client";
 import {
-  AccountCard,
+  AccountStrip,
   ActivityChart,
   Attention,
-  NextCard,
+  BalanceHero,
   QuickActions as DeskActions,
-  RecentTransactions,
-  SavedCard,
+  TransactionHistory,
 } from "./desk/Dashboard";
-import { CirclesPanel, SavingsPanel, UpNext, useUpcoming, type Due } from "./desk/TodayDesk";
+import { UpNext, useUpcoming, type Due } from "./desk/TodayDesk";
 import { useWide } from "@/lib/use-wide";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Wallet } from "@/lib/wallet";
@@ -229,9 +228,9 @@ function TimeOfDay() {
 }
 
 /**
- * Today on a tablet or a desk: a dashboard. The balance leads, with what is saved and what is due
- * next beside it; four ways to start something; money in and out over time beside what needs the
- * person; pots, circles and the calendar; then recent payments with the account's standing.
+ * Today on a tablet or a desk: the balance (with what is in pots, the next payment and the two
+ * money moves) beside what needs the person; four ways to start something; money in and out over
+ * time; then every payment, to search and narrow; and the account's standing in one line.
  * Each card asks for its own data, so one slow part never holds up the rest.
  */
 function TodayDesk({
@@ -242,41 +241,20 @@ function TodayDesk({
   const currency = countryConfig(me.country)?.currency;
   return (
     <div className="grid gap-6">
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <div className="md:col-span-2 [&>section]:mt-0 [&>section]:h-full">
-          <WalletSummary wallets={data?.wallets} currency={currency} fx={data?.fx} />
-        </div>
-        <SavedCard plans={data?.plans} currency={currency} />
-        <NextCard items={upcoming} />
+      <div className="grid items-stretch gap-6 lg:grid-cols-2">
+        <BalanceHero
+          wallets={data?.wallets}
+          currency={currency}
+          fx={data?.fx}
+          plans={data?.plans}
+          upcoming={upcoming}
+        />
+        <Attention me={me} />
       </div>
       <DeskActions />
-      {/* Two columns that each stack on their own, so a short card leaves no gap: the money story
-          (chart, pots and circles, payments) and what needs the person (attention, what's next,
-          the account). On a tablet the second comes first, two cards a row. */}
-      <div className="grid items-start gap-6 xl:grid-cols-3">
-        <div className="grid gap-6 xl:col-span-2">
-          <ActivityChart
-            currency={currency}
-            locale={countryConfig(me.country)?.locale ?? "en-NG"}
-          />
-          <div className="grid items-start gap-6 md:grid-cols-2">
-            <SavingsPanel plans={data?.plans} />
-            <CirclesPanel groups={data?.groups} />
-          </div>
-          <RecentTransactions />
-        </div>
-        {/* Two stacks side by side on a tablet (no gaps under short cards); one column on a desk. */}
-        <div className="order-first grid items-start gap-6 md:grid-cols-2 xl:order-none xl:grid-cols-1 [&_a]:mt-0">
-          <div className="grid gap-6">
-            <Attention me={me} />
-            <AccountCard me={me} />
-          </div>
-          <div className="grid gap-6">
-            <UpNext items={upcoming} />
-            <TodayFriends state={data?.friends} />
-          </div>
-        </div>
-      </div>
+      <ActivityChart currency={currency} locale={countryConfig(me.country)?.locale ?? "en-NG"} />
+      <TransactionHistory />
+      <AccountStrip me={me} />
     </div>
   );
 }

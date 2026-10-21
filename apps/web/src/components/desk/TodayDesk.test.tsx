@@ -3,7 +3,7 @@ import type { GroupDetail, GroupSummary } from "@/lib/groups-client";
 import type { Plan } from "@/lib/savings-client";
 import { forgetAll } from "@/lib/visit-cache";
 import { MonthPanel } from "./MonthPanel";
-import { CirclesPanel, SavingsPanel, UpNext, useUpcoming } from "./TodayDesk";
+import { UpNext, useUpcoming } from "./TodayDesk";
 
 /** Up next as Today uses it: the list worked out from plans and circles, then shown. */
 function Upcoming({
@@ -96,34 +96,6 @@ describe("up next", () => {
     render(<Upcoming plans={[plan({ nextDebit: null })]} groups={[group({ status: "open" })]} />);
     expect(screen.getByText(/Nothing is due/)).toBeInTheDocument();
     expect(asked).not.toHaveBeenCalled();
-  });
-});
-
-describe("pots and circles on a desk", () => {
-  it("shows each pot with how full it is", () => {
-    render(<SavingsPanel plans={[plan()]} />);
-    expect(screen.getByText("3 of 12 payments")).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Rent for March: 25% saved" })).toHaveAttribute(
-      "aria-valuenow",
-      "25",
-    );
-  });
-
-  it("offers one way to begin when there are no pots or circles", () => {
-    render(<SavingsPanel plans={[]} />);
-    expect(screen.getByRole("link", { name: /Start a plan/ })).toHaveAttribute("href", "/save/new");
-    render(<CirclesPanel groups={[]} />);
-    expect(screen.getByRole("link", { name: /Start a circle/ })).toHaveAttribute(
-      "href",
-      "/circles/new",
-    );
-  });
-
-  it("shows each circle's state, how full it is, your turn and its pot", () => {
-    render(<CirclesPanel groups={[group(), group({ id: "g2", status: "completed" })]} />);
-    expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.getByText(/Running · 3 of 3 people · your turn: 2/)).toBeInTheDocument();
-    expect(screen.getByText("₦150,000")).toBeInTheDocument();
   });
 });
 
