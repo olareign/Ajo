@@ -22,8 +22,10 @@ import { Beads } from "./Beads";
 import { Pot } from "./Pot";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
 import { FormPage } from "@/components/desk/FormPage";
+import { StepActions, StepCard, StepFlow, type FlowStep } from "@/components/desk/StepFlow";
+import { formatMoney } from "@/lib/money-format";
 
-type Step = "name" | "amount" | "rhythm" | "review";
+type Step = "name" | "money" | "start" | "review";
 
 const IDEAS = ["Rent", "School fees", "New phone", "A trip", "Rainy day"];
 const FREQUENCIES: readonly { value: Frequency; label: string }[] = [
@@ -132,254 +134,343 @@ export function NewPlan() {
     router.push(`${href(`/save/${result.data.id}`)}${preview ? "&" : "?"}new=1`);
   }
 
-  const back: Partial<Record<Step, Step>> = { amount: "name", rhythm: "amount", review: "rhythm" };
-  const title: Record<Step, string> = {
-    name: "What are you saving for?",
-    amount: "How much each time?",
-    rhythm: "How often, and how many times?",
-    review: "Look it over",
+  const back: Partial<Record<Step, Step>> = { money: "name", start: "money", review: "start" };
+  const STEPS: readonly FlowStep[] = [
+    { id: "name", title: "What for", answer: name.trim() || undefined },
+    {
+      id: "money",
+      title: "How much, how often",
+      answer:
+        BigInt(minor) > 0n
+          ? `${formatMoney({ amount: minor, currency }, locale)} ${frequency} · ${count} times`
+          : undefined,
+    },
+    {
+      id: "start",
+      title: "Start day",
+      answer: step === "name" || step === "money" ? undefined : dayText(startDate),
+    },
+    { id: "review", title: "Check and start" },
+  ];
+  const goTo = (id: string) => {
+    setError(undefined);
+    setStep(id as Step);
   };
 
   return (
-    <FormPage>
+    <FormPage wide>
       {preview && <PreviewRibbon exitHref="/save" />}
       <ScreenHeader
-        title={title[step]}
+        title="New saving plan"
+        subtitle="Pick what you're saving for, how much and how often. We take it on the day."
         onBack={back[step] ? () => (setError(undefined), setStep(back[step]!)) : undefined}
         backHref={back[step] ? undefined : href("/save")}
       />
 
-      {step !== "name" && (
-        <div className="mb-6 flex items-center gap-4 rounded-[var(--radius-l)] bg-oro-tint p-4 text-oro-ink">
-          <Pot ratio={step === "amount" ? 0.25 : 1} tone="active" size={56} label="Your pot" />
-          <p className="grid gap-0.5 text-[14px] leading-5">
-            <span className="font-semibold">{name.trim() || "Your plan"}</span>
-            {BigInt(minor) > 0n && step !== "amount" ? (
-              <span>
-                The pot will hold{" "}
-                <Amount amount={total} currency={currency} locale={locale} size="s" tone="oro" />
-              </span>
-            ) : (
-              <span>Let&apos;s size the pot.</span>
-            )}
-          </p>
-        </div>
-      )}
-
-      {step === "name" && (
-        <div className="grid gap-6">
-          <TextField
-            label="Name your plan"
-            value={name}
-            onChange={setName}
-            maxLength={60}
-            autoComplete="off"
-            hint="Anything you'll recognise."
-          />
-          <ChoiceChips
-            label="Ideas"
-            options={IDEAS.map((i) => ({ value: i, label: i }))}
-            value={IDEAS.includes(name) ? name : null}
-            onChange={setName}
-          />
-          <Button
-            size="lg"
-            block
-            disabled={name.trim().length === 0}
-            onClick={() => setStep("amount")}
-          >
-            Continue
-          </Button>
-        </div>
-      )}
-
-      {step === "amount" && (
-        <div className="grid gap-6">
-          <AmountPad
-            value={amount}
-            onChange={setAmount}
-            currency={currency}
-            locale={locale}
-            label="Each time"
-            quick={QUICK_AMOUNTS[country as "NG" | "GB"] ?? []}
-          />
-          <Button size="lg" block disabled={minor === "0"} onClick={() => setStep("rhythm")}>
-            Continue
-          </Button>
-        </div>
-      )}
-
-      {step === "rhythm" && (
-        <div className="grid gap-6">
-          <ChoiceChips
-            label="How often"
-            options={FREQUENCIES}
-            value={frequency}
-            onChange={(value) => {
-              const next = value as Frequency;
-              setFrequency(next);
-              setCount((c) => Math.min(Math.max(c, 2), MAX_DEBITS[next]));
-            }}
-          />
-          <div className="grid gap-3">
-            <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">
-              How many times
-            </p>
-            <div className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-sunken p-3">
-              <Button
-                variant="quiet"
-                aria-label="Fewer times"
-                disabled={count <= 2}
-                onClick={() => setCount((c) => Math.max(2, c - 1))}
-              >
-                −
-              </Button>
-              <p
-                className="text-center font-display text-[28px] leading-8 font-bold"
-                aria-live="polite"
-              >
-                {count} <span className="text-[15px] font-medium text-ink-muted">times</span>
+      <StepFlow
+        label="Steps to start a plan"
+        steps={STEPS}
+        current={step}
+        onJump={goTo}
+        summary={
+          BigInt(minor) > 0n ? (
+            <>
+              <p className="text-[13px] font-semibold tracking-[0.02em] text-on-hero-muted">
+                At the end, back to your wallet
               </p>
-              <Button
-                variant="quiet"
-                aria-label="More times"
-                disabled={count >= MAX_DEBITS[frequency]}
-                onClick={() => setCount((c) => Math.min(MAX_DEBITS[frequency], c + 1))}
-              >
-                +
-              </Button>
-            </div>
-            <ChoiceChips
-              label="Usual lengths"
-              hideLabel
-              options={COUNTS[frequency].map((n) => ({ value: String(n), label: String(n) }))}
-              value={String(count)}
-              onChange={(v) => setCount(Number(v))}
-            />
-          </div>
-          <div className="grid gap-3">
-            <ChoiceChips
-              label="First debit"
-              options={START_CHOICES.map((c) => ({ value: c.value, label: c.label }))}
-              value={startChoice}
-              onChange={(v) => setStartChoice(v as StartChoice)}
-            />
-            {startChoice === "pick" && (
-              <label className="grid gap-2">
-                <span className="text-[13px] font-semibold text-ink-muted">Choose the day</span>
-                <input
-                  type="date"
-                  value={pickedDay}
-                  min={today}
-                  max={addDays(today, 90)}
-                  onChange={(e) => setPickedDay(e.target.value)}
-                  className="min-h-14 w-full rounded-m border-[1.5px] border-transparent bg-surface-sunken px-4 text-base text-ink focus:border-primary focus:outline-none"
-                />
-              </label>
-            )}
-          </div>
-          <p className="text-[14px] text-ink-muted">
-            That&apos;s <Amount amount={minor} currency={currency} locale={locale} size="s" />{" "}
-            {FREQUENCY_WORD[frequency]}, {count} times, from {dayText(startDate)}.
-          </p>
-          {error && (
-            <p role="alert" className="text-center text-[15px] font-medium text-danger">
-              {error}
-            </p>
-          )}
-          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void toReview()}>
-            {busy ? "One moment…" : "Continue"}
-          </Button>
-        </div>
-      )}
-
-      {step === "review" && overview && (
-        <div className="grid gap-6">
-          <Receipt
-            title="Your plan"
-            rows={[
-              { label: "Saving for", value: name.trim() },
-              {
-                label: "Each time",
-                value: <Amount amount={minor} currency={currency} locale={locale} size="s" />,
-              },
-              { label: "How often", value: FREQUENCY_WORD[frequency] },
-              { label: "Times", value: String(count) },
-              { label: "First debit", value: longDayText(overview.dates[0]!) },
-              { label: "Last debit", value: longDayText(overview.endDate) },
-            ]}
-            total={{
-              label: "The pot will hold",
-              value: <Amount {...overview.total} locale={locale} size="m" />,
-            }}
-            stamp={preview ? "Preview" : undefined}
-          />
-          <section aria-label="Your debit days" className="grid gap-3">
-            <p className="text-[13px] font-semibold text-ink-muted">Each bead is a debit day</p>
-            <Beads
-              debits={overview.dates.map((dueOn, i) => ({
-                seq: i + 1,
-                dueOn,
-                status: "scheduled" as const,
-              }))}
-            />
-          </section>
-          <p className="text-[15px] leading-6">
-            Each time, <Amount amount={minor} currency={currency} locale={locale} size="s" /> is
-            taken from your wallet at 8am. Keep enough in it on those days.
-          </p>
-          {bankReady ? (
-            <label className="flex items-start gap-3 text-[15px] leading-6">
-              <input
-                type="checkbox"
-                checked={fromBank}
-                onChange={(e) => setFromBank(e.target.checked)}
-                className="mt-1 size-5 shrink-0 accent-[var(--primary)]"
-              />
-              <span>
-                Top up from my bank if my wallet is short
-                <span className="block text-[13px] leading-5 text-ink-muted">
-                  Uses your auto-debit. It can&apos;t be cancelled while this plan is going.
-                </span>
-              </span>
-            </label>
+              <p className="font-display text-[28px] leading-9 font-bold">
+                <Amount amount={total} currency={currency} locale={locale} size="l" tone="hero" />
+              </p>
+              <p className="text-[13px] text-on-hero-muted">
+                {count} {frequency} payments of {formatMoney({ amount: minor, currency }, locale)}
+              </p>
+            </>
           ) : (
-            <p className="text-[14px] leading-5 text-ink-muted">
-              Want us to top up from your bank when your wallet is short?{" "}
-              <Link
-                href="/wallet/mandate"
-                className="font-semibold text-primary underline underline-offset-4"
+            <>
+              <p className="text-[13px] font-semibold tracking-[0.02em] text-on-hero-muted">
+                {name.trim() || "Your plan"}
+              </p>
+              <p className="flex items-center gap-3 text-[15px]">
+                <Pot ratio={0} tone="active" size={48} label="Your pot" />
+                Let&apos;s size the pot.
+              </p>
+            </>
+          )
+        }
+      >
+        {step === "name" && (
+          <StepCard title="What are you saving for?">
+            <div className="grid gap-6 md:max-w-xl">
+              <TextField
+                label="Name your plan"
+                value={name}
+                onChange={setName}
+                maxLength={60}
+                autoComplete="off"
+                hint="Anything you'll recognise."
+              />
+              <ChoiceChips
+                label="Ideas"
+                options={IDEAS.map((i) => ({ value: i, label: i }))}
+                value={IDEAS.includes(name) ? name : null}
+                onChange={setName}
+              />
+            </div>
+            <StepActions>
+              <Button
+                size="lg"
+                className="w-full md:w-auto md:min-w-56"
+                disabled={name.trim().length === 0}
+                onClick={() => setStep("money")}
               >
-                Set up auto-debit
-              </Link>
-              .
-            </p>
-          )}
-          {error && (
-            <p role="alert" className="text-center text-[15px] font-medium text-danger">
-              {error}
-              {needsKyc && (
-                <>
-                  {" "}
-                  <Link href="/verify" className="underline underline-offset-4">
-                    Go to my passport
-                  </Link>
-                </>
+                Continue
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
+
+        {step === "money" && (
+          <StepCard title="How much, and how often?">
+            <div className="grid gap-8 md:grid-cols-2 md:items-start">
+              <AmountPad
+                value={amount}
+                onChange={setAmount}
+                currency={currency}
+                locale={locale}
+                label="Each time"
+                quick={QUICK_AMOUNTS[country as "NG" | "GB"] ?? []}
+              />
+              <div className="grid gap-6">
+                <ChoiceChips
+                  label="How often"
+                  options={FREQUENCIES}
+                  value={frequency}
+                  onChange={(value) => {
+                    const next = value as Frequency;
+                    setFrequency(next);
+                    setCount((c) => Math.min(Math.max(c, 2), MAX_DEBITS[next]));
+                  }}
+                />
+                <div className="grid gap-3">
+                  <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">
+                    How many times
+                  </p>
+                  <div className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-sunken p-3">
+                    <Button
+                      variant="quiet"
+                      aria-label="Fewer times"
+                      disabled={count <= 2}
+                      onClick={() => setCount((c) => Math.max(2, c - 1))}
+                    >
+                      −
+                    </Button>
+                    <p
+                      className="text-center font-display text-[28px] leading-8 font-bold"
+                      aria-live="polite"
+                    >
+                      {count} <span className="text-[15px] font-medium text-ink-muted">times</span>
+                    </p>
+                    <Button
+                      variant="quiet"
+                      aria-label="More times"
+                      disabled={count >= MAX_DEBITS[frequency]}
+                      onClick={() => setCount((c) => Math.min(MAX_DEBITS[frequency], c + 1))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <ChoiceChips
+                    label="Usual lengths"
+                    hideLabel
+                    options={COUNTS[frequency].map((n) => ({ value: String(n), label: String(n) }))}
+                    value={String(count)}
+                    onChange={(v) => setCount(Number(v))}
+                  />
+                </div>
+              </div>
+            </div>
+            <StepActions>
+              <Button
+                size="lg"
+                className="w-full md:w-auto md:min-w-56"
+                disabled={minor === "0"}
+                onClick={() => setStep("start")}
+              >
+                Continue
+              </Button>
+              <Button
+                size="lg"
+                variant="quiet"
+                className="hidden md:inline-flex"
+                aria-label="Back to what for"
+                onClick={() => setStep("name")}
+              >
+                Back
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
+
+        {step === "start" && (
+          <StepCard title="When should the first payment be?">
+            <div className="grid gap-4 md:max-w-xl">
+              <ChoiceChips
+                label="First debit"
+                options={START_CHOICES.map((c) => ({ value: c.value, label: c.label }))}
+                value={startChoice}
+                onChange={(v) => setStartChoice(v as StartChoice)}
+              />
+              {startChoice === "pick" && (
+                <label className="grid gap-2">
+                  <span className="text-[13px] font-semibold text-ink-muted">Choose the day</span>
+                  <input
+                    type="date"
+                    value={pickedDay}
+                    min={today}
+                    max={addDays(today, 90)}
+                    onChange={(e) => setPickedDay(e.target.value)}
+                    className="min-h-14 w-full rounded-m border-[1.5px] border-transparent bg-surface-sunken px-4 text-base text-ink focus:border-primary focus:outline-none"
+                  />
+                </label>
               )}
-            </p>
-          )}
-          <Button
-            size="lg"
-            block
-            variant="money"
-            loading={busy}
-            disabled={busy}
-            onClick={() => void start()}
-          >
-            {busy ? "Starting…" : "Start my plan"}
-          </Button>
-        </div>
-      )}
+              <p className="text-[14px] text-ink-muted">
+                That&apos;s <Amount amount={minor} currency={currency} locale={locale} size="s" />{" "}
+                {FREQUENCY_WORD[frequency]}, {count} times, from {dayText(startDate)}.
+              </p>
+            </div>
+            {error && (
+              <p role="alert" className="text-[15px] font-medium text-danger">
+                {error}
+              </p>
+            )}
+            <StepActions>
+              <Button
+                size="lg"
+                className="w-full md:w-auto md:min-w-56"
+                loading={busy}
+                disabled={busy}
+                onClick={() => void toReview()}
+              >
+                {busy ? "One moment…" : "Continue"}
+              </Button>
+              <Button
+                size="lg"
+                variant="quiet"
+                className="hidden md:inline-flex"
+                aria-label="Back to how much, how often"
+                onClick={() => setStep("money")}
+              >
+                Back
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
+
+        {step === "review" && overview && (
+          <StepCard title="Look it over">
+            <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+              <Receipt
+                title="Your plan"
+                rows={[
+                  { label: "Saving for", value: name.trim() },
+                  {
+                    label: "Each time",
+                    value: <Amount amount={minor} currency={currency} locale={locale} size="s" />,
+                  },
+                  { label: "How often", value: FREQUENCY_WORD[frequency] },
+                  { label: "Times", value: String(count) },
+                  { label: "First debit", value: longDayText(overview.dates[0]!) },
+                  { label: "Last debit", value: longDayText(overview.endDate) },
+                ]}
+                total={{
+                  label: "The pot will hold",
+                  value: <Amount {...overview.total} locale={locale} size="m" />,
+                }}
+                stamp={preview ? "Preview" : undefined}
+              />
+              <div className="grid gap-6">
+                <section aria-label="Your debit days" className="grid gap-3">
+                  <p className="text-[13px] font-semibold text-ink-muted">
+                    Each bead is a debit day
+                  </p>
+                  <Beads
+                    debits={overview.dates.map((dueOn, i) => ({
+                      seq: i + 1,
+                      dueOn,
+                      status: "scheduled" as const,
+                    }))}
+                  />
+                </section>
+                <p className="text-[15px] leading-6">
+                  Each time, <Amount amount={minor} currency={currency} locale={locale} size="s" />{" "}
+                  is taken from your wallet at 8am. Keep enough in it on those days.
+                </p>
+                {bankReady ? (
+                  <label className="flex items-start gap-3 text-[15px] leading-6">
+                    <input
+                      type="checkbox"
+                      checked={fromBank}
+                      onChange={(e) => setFromBank(e.target.checked)}
+                      className="mt-1 size-5 shrink-0 accent-[var(--primary)]"
+                    />
+                    <span>
+                      Top up from my bank if my wallet is short
+                      <span className="block text-[13px] leading-5 text-ink-muted">
+                        Uses your auto-debit. It can&apos;t be cancelled while this plan is going.
+                      </span>
+                    </span>
+                  </label>
+                ) : (
+                  <p className="text-[14px] leading-5 text-ink-muted">
+                    Want us to top up from your bank when your wallet is short?{" "}
+                    <Link
+                      href="/wallet/mandate"
+                      className="font-semibold text-primary underline underline-offset-4"
+                    >
+                      Set up auto-debit
+                    </Link>
+                    .
+                  </p>
+                )}
+              </div>
+            </div>
+            {error && (
+              <p role="alert" className="text-[15px] font-medium text-danger">
+                {error}
+                {needsKyc && (
+                  <>
+                    {" "}
+                    <Link href="/verify" className="underline underline-offset-4">
+                      Go to my passport
+                    </Link>
+                  </>
+                )}
+              </p>
+            )}
+            <StepActions>
+              <Button
+                size="lg"
+                variant="money"
+                className="w-full md:w-auto md:min-w-56"
+                loading={busy}
+                disabled={busy}
+                onClick={() => void start()}
+              >
+                {busy ? "Starting…" : "Start my plan"}
+              </Button>
+              <Button
+                size="lg"
+                variant="quiet"
+                className="hidden md:inline-flex"
+                aria-label="Back to the start day"
+                onClick={() => setStep("start")}
+              >
+                Back
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
+      </StepFlow>
     </FormPage>
   );
 }
