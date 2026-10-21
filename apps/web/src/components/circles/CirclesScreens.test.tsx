@@ -332,7 +332,9 @@ describe("making a circle", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("heading", { name: "Look it over" })).toBeInTheDocument();
     expect(sent(mock, "POST /api/groups")).toHaveLength(0);
-    expect(screen.getByText("Sunday circle")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Your circle" })).getByText("Sunday circle"),
+    ).toBeInTheDocument();
     const previewBody = json(sent(mock, "POST /api/groups/preview")[0]!);
     expect(previewBody).toMatchObject({
       name: "Sunday circle",
@@ -394,6 +396,25 @@ describe("making a circle", () => {
     await user.type(screen.getByLabelText("Circle name"), "X");
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  });
+
+  it("lists the steps with what has been answered, sums up what each turn pays, and reopens an earlier step", async () => {
+    api({});
+    const user = userEvent.setup();
+    open(<NewCircle />);
+    await fillIn(user);
+    const steps = screen.getByRole("list", { name: "Steps to start a circle" });
+    expect(within(steps).getAllByRole("listitem")).toHaveLength(4);
+    expect(steps).toHaveTextContent("NameSunday circle");
+    expect(steps).toHaveTextContent(/The money₦5 monthly · 6 people/);
+    expect(within(steps).getByRole("listitem", { current: "step" })).toHaveTextContent(
+      "Turns and who can join",
+    );
+    expect(screen.getByRole("region", { name: "Where this adds up" })).toHaveTextContent(
+      "Each turn pays₦30",
+    );
+    await user.click(within(steps).getByRole("button", { name: /The money/ }));
+    expect(screen.getByRole("heading", { name: "How much, and who with?" })).toBeInTheDocument();
   });
 
   it("shows the reason when the server refuses the plan", async () => {
