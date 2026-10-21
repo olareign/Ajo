@@ -268,6 +268,24 @@ describe("statements", () => {
     ).toHaveLength(2);
   });
 
+  it("pages through the lines, ten at a time, and starts again on the first page after filtering", async () => {
+    const lines = Array.from({ length: 23 }, (_, i) => ({
+      ...statement.lines[i % 2]!,
+      id: `l${i}`,
+    }));
+    api({ "/api/wallet/statement": () => ({ ...statement, lines }) });
+    const user = userEvent.setup();
+    render(<StatementsScreen />);
+    expect(await screen.findByText("Showing 1–10 of 23 lines")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("list", { name: "Statement lines" })).getAllByRole("listitem"),
+    ).toHaveLength(10);
+    await user.click(screen.getByRole("button", { name: "Page 3" }));
+    expect(screen.getByText("Showing 21–23 of 23 lines")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Type"), "out");
+    expect(screen.getByText("Showing 1–10 of 11 lines")).toBeInTheDocument();
+  });
+
   it("changes the range from the chips, and says so when there's nothing", async () => {
     const mock = api({
       "/api/wallet/statement": () => ({ ...statement, balances: [], lines: [] }),
@@ -323,6 +341,23 @@ describe("insights", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Legend" })).toHaveTextContent("Money inMoney out");
     expect(screen.getAllByRole("row")).toHaveLength(3);
+  });
+
+  it("lists the months in the table newest first, a page at a time", async () => {
+    api({
+      "/api/wallet/insights": () => ({
+        months: Array.from({ length: 12 }, (_, i) =>
+          month(`2026-${String(i + 1).padStart(2, "0")}`, { moneyIn: String((i + 1) * 100) }),
+        ),
+      }),
+    });
+    const user = userEvent.setup();
+    render(<InsightsScreen />);
+    await screen.findByRole("region", { name: /This month, Dec 2026/ });
+    await user.click(screen.getByText("See these figures as a table"));
+    expect(screen.getByText("Showing 1–10 of 12 months")).toBeInTheDocument();
+    const rows = screen.getAllByRole("row");
+    expect(rows[1]).toHaveTextContent("Dec 2026");
   });
 
   it("says nothing is saved yet instead of drawing a flat line", async () => {

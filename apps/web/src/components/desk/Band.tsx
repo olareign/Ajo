@@ -12,9 +12,16 @@ export type Figure = Readonly<{ label: string; value: ReactNode; note?: ReactNod
  */
 export function SummaryBand({
   label,
+  heading,
   figures,
   className,
-}: Readonly<{ label: string; figures: readonly Figure[]; className?: string }>) {
+}: Readonly<{
+  label: string;
+  /** A small line over the figures, such as the currency they are in. */
+  heading?: string;
+  figures: readonly Figure[];
+  className?: string;
+}>) {
   return (
     <section
       aria-label={label}
@@ -23,6 +30,11 @@ export function SummaryBand({
         className,
       )}
     >
+      {heading && (
+        <h2 className="mb-4 text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted uppercase">
+          {heading}
+        </h2>
+      )}
       <dl className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
         {figures.map((f) => (
           <div key={f.label} className="grid min-w-0 content-start gap-1">

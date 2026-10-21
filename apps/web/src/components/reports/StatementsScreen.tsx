@@ -26,6 +26,9 @@ import {
 import { type Account, accountLabel, currencyName, describeTransaction } from "@/lib/wallet";
 import { whenText } from "@/lib/when";
 import { PAGE } from "@/lib/page";
+import { SummaryBand } from "@/components/desk/Band";
+import { Pager } from "@/components/ui/Pager";
+import { usePaged } from "@/lib/paging";
 
 export function StatementsScreen() {
   return <MeGate needs="onboarded">{(me) => <Statements me={me} />}</MeGate>;
@@ -96,6 +99,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
   }
 
   const shown = load.phase === "ready" ? filterLines(load.statement.lines, filter) : [];
+  const paged = usePaged(shown);
 
   function download(statement: Statement) {
     const url = URL.createObjectURL(
@@ -206,39 +210,32 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                 No money has moved in your accounts yet.
               </p>
             ) : (
-              <div className="grid gap-4 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,28rem),1fr))]">
+              <div className="grid gap-4">
                 {load.statement.balances.map((b) => (
-                  <section
+                  <SummaryBand
                     key={b.currency}
-                    aria-label={`${currencyName(b.currency)} summary`}
-                    className="grid gap-3 rounded-[var(--radius-l)] bg-surface-raised p-5 shadow-lift"
-                  >
-                    <h2 className="text-[13px] font-semibold tracking-[0.04em] text-ink-muted uppercase">
-                      {currencyName(b.currency)}
-                    </h2>
-                    <dl className="grid grid-cols-2 gap-3 text-[14px] sm:grid-cols-4">
-                      {(
-                        [
-                          ["Opening", b.opening],
-                          ["Money in", b.moneyIn],
-                          ["Money out", b.moneyOut],
-                          ["Closing", b.closing],
-                        ] as const
-                      ).map(([label, amount]) => (
-                        <div key={label} className="grid gap-0.5">
-                          <dt className="text-ink-muted">{label}</dt>
-                          <dd>
-                            <Amount
-                              amount={amount}
-                              currency={b.currency}
-                              locale={locale}
-                              size="s"
-                            />
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </section>
+                    label={`${currencyName(b.currency)} summary`}
+                    heading={currencyName(b.currency)}
+                    figures={(
+                      [
+                        ["Opening", b.opening],
+                        ["Money in", b.moneyIn],
+                        ["Money out", b.moneyOut],
+                        ["Closing", b.closing],
+                      ] as const
+                    ).map(([label, amount]) => ({
+                      label,
+                      value: (
+                        <Amount
+                          amount={amount}
+                          currency={b.currency}
+                          locale={locale}
+                          size="m"
+                          tone="hero"
+                        />
+                      ),
+                    }))}
+                  />
                 ))}
               </div>
             )}
@@ -256,7 +253,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                 lines={load.statement.lines}
                 shown={shown.length}
                 filter={filter}
-                onChange={setFilter}
+                onChange={(next) => (setFilter(next), paged.setPage(1))}
               />
             )}
             {load.statement.lines.length > 0 && shown.length === 0 && (
@@ -285,7 +282,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                     </tr>
                   </thead>
                   <tbody>
-                    {shown.map((l) => (
+                    {paged.slice.map((l) => (
                       <tr key={l.id} className="hover:bg-surface-sunken">
                         <td className="border-b border-line px-4 py-3 whitespace-nowrap text-ink-muted">
                           {whenText(l.at)}
@@ -322,7 +319,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                   </tbody>
                 </table>
                 <ul className="divide-y divide-line md:hidden" aria-label="Statement lines">
-                  {shown.map((l) => (
+                  {paged.slice.map((l) => (
                     <li key={l.id} className="flex items-center gap-3 px-4 py-3">
                       <span
                         className={`grid size-9 shrink-0 place-items-center rounded-full ${l.direction === "in" ? "bg-leaf-tint text-leaf" : "bg-surface-sunken text-ink-muted"}`}
@@ -354,6 +351,7 @@ function Statements({ me }: Readonly<{ me: Me }>) {
                     </li>
                   ))}
                 </ul>
+                <Pager paged={paged} noun={["line", "lines"]} className="border-t border-line" />
               </div>
             )}
           </>
