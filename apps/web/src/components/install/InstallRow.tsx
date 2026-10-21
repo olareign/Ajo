@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useInstall } from "@/lib/install";
 import { InstallSteps } from "./InstallSteps";
 
-/** On Me, always available until the app is installed: the way back when the card was dismissed. */
+/** In Settings, always available until the app is installed: the way back when the card was dismissed. */
 export function InstallRow() {
   const { kind, install } = useInstall();
   const [open, setOpen] = useState(false);

@@ -74,7 +74,7 @@ function Choices() {
       <ScreenHeader
         title="Notifications"
         subtitle="Choose how Àjọ reaches you. Everything still shows in Notifications."
-        backHref="/me"
+        backHref="/settings?tab=notifications"
       />
       <div className="grid gap-5">
         <PushCard />

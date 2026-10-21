@@ -479,15 +479,21 @@ test("the wallet shows the real ledger: balances, a page of activity, then the r
 
   const naira = page.getByRole("region", { name: "Nigerian Naira wallet" });
   await expect(naira).toContainText("₦5,200");
-  await expect(naira.getByText("Locked").locator("xpath=following-sibling::dd")).toHaveText("₦500");
-  await expect(naira.getByText("Savings").locator("xpath=following-sibling::dd")).toHaveText("₦0");
+  await expect(
+    naira.getByText("Locked", { exact: true }).locator("xpath=following-sibling::dd").first(),
+  ).toHaveText("₦500");
+  await expect(
+    naira.getByText("In pots", { exact: true }).locator("xpath=following-sibling::dd").first(),
+  ).toHaveText("₦0");
 
-  // 25 entries come as 20, then 5 more on request, and the button goes away at the end.
-  const rows = page.getByRole("list", { name: "Recent activity" }).getByRole("listitem");
+  // 25 entries come as 20, then 5 more when Next is pressed on the last page loaded, and Next
+  // goes quiet at the end. (Fifty to a page, so all of them can be counted at once.)
+  const rows = page.getByRole("group", { name: "Recent activity" }).getByRole("listitem");
+  await page.getByLabel("Per page").selectOption("50");
   await expect(rows).toHaveCount(20);
-  await page.getByRole("button", { name: "Show more" }).click();
+  await page.getByRole("button", { name: "Next page" }).click();
   await expect(rows).toHaveCount(25);
-  await expect(page.getByRole("button", { name: "Show more" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Next page" })).toBeDisabled();
 
   const withdrawal = rows.filter({ hasText: "Withdrawal" });
   await expect(withdrawal).toContainText("Money out");
@@ -567,6 +573,8 @@ test("Me shows who you are, and signing out of all devices ends the session on e
   expect(await sideways()).toBe(0);
 
   expect((await api("/me", { method: "GET", token: otherDevice })).status).toBe(200);
+  // Signing out lives in Settings, under Security.
+  await page.goto("/settings");
   await page.getByRole("button", { name: "Sign out of all devices" }).click();
   await expect(page.getByText(/signs you out everywhere/i)).toBeVisible();
   await page.screenshot({ path: "e2e/screenshots/me-confirm.png" });
@@ -700,7 +708,7 @@ test("a person turns the authenticator app on from Today, is asked for a code on
   for (const code of recoveryCodes) expect(file).toContain(code);
   await page.getByRole("checkbox", { name: /saved these codes/i }).check();
   await page.getByRole("button", { name: "Done" }).click();
-  await expect(page).toHaveURL(/\/me$/);
+  await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole("link", { name: /Authenticator app/ })).toContainText("On");
 
   // The phone that turned it on is remembered: signing in here again does not ask for a code.
@@ -753,7 +761,7 @@ test("a person turns the authenticator app on from Today, is asked for a code on
 
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Turn off the second lock" }).click();
-  await expect(page).toHaveURL(/\/me$/);
+  await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole("link", { name: /Authenticator app/ })).toContainText("Set up");
   expect(
     sql(
@@ -864,9 +872,8 @@ test("the passport and money screens are reachable but locked until partners con
   await shot("add-money-locked");
   await page.getByRole("link", { name: "Preview the flow" }).click();
   await page.getByRole("radio", { name: /Debit card/ }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("radio", { name: "₦10,000" }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Continue to pay ₦10,000" }).click();
   await shot("add-money-review");
   await page.getByRole("button", { name: "Add money" }).click();
   await expect(page.getByRole("heading", { name: "Money added" })).toBeVisible();
@@ -986,9 +993,8 @@ test("payments: add money through the partner and watch it land, then withdraw a
   );
   await page.goto("/wallet/add");
   await page.getByRole("radio", { name: /Debit card/ }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("radio", { name: "₦5,000" }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Continue to pay ₦5,000" }).click();
   await page.getByRole("button", { name: "Add money" }).click();
   await expect(page).toHaveURL(/fake-pay\.test\/pay\//);
 

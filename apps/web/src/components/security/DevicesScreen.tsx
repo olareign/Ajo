@@ -78,7 +78,7 @@ function Devices() {
       <ScreenHeader
         title="Devices"
         subtitle="Where you're signed in. Sign out anything you don't recognise."
-        backHref="/me"
+        backHref="/settings"
       />
       {sessions === undefined && (
         <p role="status" className="text-ink-muted">
@@ -181,7 +181,7 @@ function Devices() {
             )}
           </section>
           <p className="text-[13px] leading-5 text-ink-muted">
-            Lost a phone? Sign out of all devices from Me, then change your password.
+            Lost a phone? Sign out of all devices from Settings, then change your password.
           </p>
         </div>
       )}

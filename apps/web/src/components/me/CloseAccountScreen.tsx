@@ -81,7 +81,7 @@ function CloseAccount({ me }: Readonly<{ me: Me }>) {
       <ScreenHeader
         title="Close account"
         subtitle="This can't be undone. You won't be able to sign in again."
-        backHref="/me"
+        backHref="/settings"
       />
       <form
         className="grid gap-5"

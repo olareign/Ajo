@@ -18,7 +18,7 @@ export const TERMS: readonly LegalSection[] = [
   {
     heading: "Your account and its safety",
     body: [
-      "Keep your password, transaction PIN and authenticator codes to yourself. We will never ask you for them. Tell us straight away if you think someone else has used your account; you can also sign out of all devices from Me.",
+      "Keep your password, transaction PIN and authenticator codes to yourself. We will never ask you for them. Tell us straight away if you think someone else has used your account; you can also sign out of all devices from Settings.",
       "You are responsible for what happens in your account until you tell us it was used without your permission.",
     ],
   },
@@ -57,7 +57,7 @@ export const TERMS: readonly LegalSection[] = [
   {
     heading: "Closing your account",
     body: [
-      "You can close your account from Me once your wallet, plans and circles are settled. We can close or suspend an account that breaks these terms, and will tell you why unless the law prevents it.",
+      "You can close your account from Settings once your wallet, plans and circles are settled. We can close or suspend an account that breaks these terms, and will tell you why unless the law prevents it.",
     ],
   },
   {
@@ -97,7 +97,7 @@ export const PRIVACY: readonly LegalSection[] = [
   {
     heading: "Emails",
     body: [
-      "Emails about your money and your account's safety always come. Others (reminders, plans, circles, friends) can be turned off under Me, then Notifications.",
+      "Emails about your money and your account's safety always come. Others (reminders, plans, circles, friends) can be turned off under Settings, then Notifications.",
     ],
   },
   {

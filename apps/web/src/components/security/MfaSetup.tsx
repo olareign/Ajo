@@ -132,7 +132,7 @@ export function MfaSetup() {
           title={heading.title}
           subtitle={heading.subtitle}
           onBack={back}
-          backHref={phase.kind === "intro" ? "/me" : undefined}
+          backHref={phase.kind === "intro" ? "/settings" : undefined}
         />
         <div className="flex flex-1 flex-col gap-6">
           {phase.kind !== "saved" && (
@@ -246,7 +246,7 @@ export function MfaSetup() {
               </>
             )}
             {phase.kind === "saved" && (
-              <Button size="lg" block disabled={!saved} onClick={() => router.replace("/me")}>
+              <Button size="lg" block disabled={!saved} onClick={() => router.replace("/settings")}>
                 Done
               </Button>
             )}

@@ -56,7 +56,7 @@ function ChangePassword({ me }: Readonly<{ me: Me }>) {
       <ScreenHeader
         title="Password"
         subtitle="Choose a new password. This phone stays signed in; every other device is signed out."
-        backHref="/me"
+        backHref="/settings"
       />
       {done ? (
         <div className="grid gap-4">
@@ -67,7 +67,7 @@ function ChangePassword({ me }: Readonly<{ me: Me }>) {
             <Check aria-hidden className="size-5 shrink-0" />
             Password changed. Other devices were signed out, and we emailed you.
           </p>
-          <Button variant="quiet" size="lg" block onClick={() => router.push("/me")}>
+          <Button variant="quiet" size="lg" block onClick={() => router.push("/settings")}>
             Back to Me
           </Button>
         </div>

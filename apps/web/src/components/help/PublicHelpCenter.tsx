@@ -70,14 +70,14 @@ const TOPICS: HelpTopic[] = [
     id: "lost-phone",
     category: "security",
     q: "I lost my phone or think someone accessed my account",
-    a: "Sign in immediately on another device, go to Me, tap 'Sign out of all devices', and change your password. Security activity on Me lists every sign-in and change. If you need more help, email us.",
+    a: "Sign in immediately on another device, go to Settings, tap 'Sign out of all devices', and change your password. Security activity in Settings lists every sign-in and change. If you need more help, email us.",
     highlight: "One-tap session revocation from any browser.",
   },
   {
     id: "forgot-pin",
     category: "account",
     q: "I forgot my transaction PIN. How do I reset it?",
-    a: "Go to Me, then Transaction PIN, and select Reset. For your security, you will need your account password, and the code from your authenticator app if it's on.",
+    a: "Go to Settings, then Transaction PIN, and select Reset. For your security, you will need your account password, and the code from your authenticator app if it's on.",
     highlight: "PIN reset protected by your password.",
   },
   {
@@ -105,7 +105,7 @@ const TOPICS: HelpTopic[] = [
     id: "close-account",
     category: "account",
     q: "How do I close my Àjọ account?",
-    a: "Ensure your available wallet balance is withdrawn, any active circles have finished their full cycle, and any solo pots are completed. Then go to Me, tap 'Close account', and confirm with your password (and your authenticator code, if it's on).",
+    a: "Ensure your available wallet balance is withdrawn, any active circles have finished their full cycle, and any solo pots are completed. Then go to Settings, tap 'Close your account', and confirm with your password (and your authenticator code, if it's on).",
     highlight: "No fee to close your account.",
   },
 ];

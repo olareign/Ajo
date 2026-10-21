@@ -3,7 +3,7 @@ import { THEME_KEY } from "./theme-script";
 
 export { THEME_KEY, THEME_SCRIPT } from "./theme-script";
 
-/** What the person picked on Me. "system" (the default) follows the device. */
+/** What the person picked in Settings. "system" (the default) follows the device. */
 export type ThemeChoice = "system" | "light" | "dark";
 
 export function readTheme(): ThemeChoice {
