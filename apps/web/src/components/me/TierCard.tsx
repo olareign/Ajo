@@ -1,9 +1,16 @@
-import { ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Medal } from "lucide-react";
 import Link from "next/link";
 import type { Me } from "@/components/onboarding/MeGate";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { cn } from "@/lib/cn";
 import { limitsFor } from "@/lib/money-flow";
+
+/** The colour of each level's medal: plain for a starter, silver, then gold. */
+export const MEDAL: Readonly<Record<number, string>> = {
+  0: "bg-surface-sunken text-ink-muted",
+  1: "bg-slate-200 text-slate-600 dark:bg-slate-600/40 dark:text-slate-200",
+  2: "bg-oro-tint text-oro-ink",
+};
 
 /**
  * Where the person stands: their verification level and what it lets them do, how far up the ladder
@@ -23,13 +30,25 @@ export function TierCard({ me }: Readonly<{ me: Me }>) {
       className="grid gap-4 rounded-[var(--radius-l)] bg-surface-raised p-5 shadow-lift"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="grid gap-0.5">
-          <p className="text-[11px] font-semibold tracking-[0.08em] text-tertiary">
-            LEVEL {tier} OF {ladder.length - 1}
-          </p>
-          <h2 id="tier" className="font-display text-[20px] leading-6 font-semibold">
-            {rung.title}
-          </h2>
+        <div className="flex items-center gap-3">
+          <span
+            aria-hidden
+            className={cn(
+              "grid size-11 shrink-0 place-items-center rounded-full",
+              MEDAL[tier] ?? MEDAL[0],
+            )}
+          >
+            <Medal className="size-6" />
+          </span>
+          <div className="grid gap-0.5">
+            <p className="text-[11px] font-semibold tracking-[0.08em] text-tertiary uppercase">
+              {tier === 0 ? "Not verified yet" : `Level ${tier} of ${ladder.length - 1}`} ·{" "}
+              {rung.how}
+            </p>
+            <h2 id="tier" className="font-display text-[22px] leading-6 font-bold">
+              {rung.title}
+            </h2>
+          </div>
         </div>
         {me.trust && <TrustBadge level={me.trust.level} className="mt-0.5 shrink-0" />}
       </div>

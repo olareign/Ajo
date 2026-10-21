@@ -37,7 +37,7 @@ export function arrange(found: readonly Person[], show: Show, sort: Sort): reado
 }
 
 const field =
-  "h-14 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal text-ink";
+  "h-14 w-full min-w-0 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal text-ink";
 
 /** Search for a verified person by the start of their username. Nothing is listed until three letters are typed. */
 export function FindPeople() {
@@ -103,7 +103,7 @@ export function FindPeople() {
         <div
           role="search"
           aria-label="Find people"
-          className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift md:grid-cols-[minmax(0,1fr)_220px_200px] md:items-start md:p-6"
+          className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift md:grid-cols-2 md:items-start md:p-6 xl:grid-cols-[minmax(0,1fr)_220px_200px]"
         >
           <TextField
             label="Username"

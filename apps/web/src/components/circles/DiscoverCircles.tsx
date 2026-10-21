@@ -83,7 +83,7 @@ export function filterCircles(
 }
 
 const field =
-  "h-12 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal text-ink";
+  "h-12 w-full min-w-0 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal text-ink";
 
 /** Public circles that are still open, with filters; the ones with your friends in them come first. */
 export function DiscoverCircles() {

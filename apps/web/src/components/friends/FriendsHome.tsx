@@ -290,9 +290,9 @@ function FriendList({
       <div
         role="search"
         aria-label="Search your friends"
-        className="grid grid-cols-2 gap-3 p-4 md:grid-cols-[minmax(0,1fr)_200px_180px_auto] md:items-end md:p-6"
+        className="grid grid-cols-2 gap-3 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:p-6 xl:grid-cols-[minmax(0,1fr)_200px_180px_auto]"
       >
-        <label className="col-span-2 grid gap-1.5 text-[13px] font-semibold md:col-span-1">
+        <label className="col-span-2 grid gap-1.5 text-[13px] font-semibold md:col-span-3 xl:col-span-1">
           Search your friends
           <span className="flex h-12 items-center gap-2 rounded-[14px] border border-line-strong bg-surface px-3 focus-within:border-primary">
             <Search aria-hidden className="size-4 shrink-0 text-ink-muted" />
@@ -305,12 +305,12 @@ function FriendList({
             />
           </span>
         </label>
-        <label className="grid gap-1.5 text-[13px] font-semibold">
+        <label className="grid min-w-0 gap-1.5 text-[13px] font-semibold">
           Show
           <select
             value={show}
             onChange={(e) => (setShow(e.target.value as Show), paged.setPage(1))}
-            className="h-12 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal"
+            className="h-12 w-full min-w-0 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal"
           >
             {Object.entries(SHOW).map(([id, word]) => (
               <option key={id} value={id}>
@@ -319,12 +319,12 @@ function FriendList({
             ))}
           </select>
         </label>
-        <label className="grid gap-1.5 text-[13px] font-semibold">
+        <label className="grid min-w-0 gap-1.5 text-[13px] font-semibold">
           Sort
           <select
             value={sort}
             onChange={(e) => (setSort(e.target.value as Sort), paged.setPage(1))}
-            className="h-12 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal"
+            className="h-12 w-full min-w-0 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal"
           >
             {Object.entries(SORT).map(([id, word]) => (
               <option key={id} value={id}>
@@ -333,7 +333,7 @@ function FriendList({
             ))}
           </select>
         </label>
-        <div className="col-span-2 md:col-span-1">
+        <div className="col-span-2 md:col-span-1 xl:col-span-1">
           <ViewSwitch
             label="Layout"
             value={view}

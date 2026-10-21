@@ -43,7 +43,10 @@ export const QUICK_AMOUNTS: Readonly<Record<Country, readonly number[]>> = {
 
 export type TierLimits = Readonly<{
   tier: 0 | 1 | 2;
+  /** The level's name, as a member knows it. */
   title: string;
+  /** What the person did to get there. */
+  how: string;
   unlocks: string;
   /** In whole naira or pounds. Sample numbers: the real ones are set before launch. */
   perTransaction: number;
@@ -54,21 +57,24 @@ const LADDERS: Readonly<Record<Country, readonly TierLimits[]>> = {
   NG: [
     {
       tier: 0,
-      title: "Not verified",
+      title: "Starter",
+      how: "Not verified yet",
       unlocks: "You can look around, but no money moves",
       perTransaction: 0,
       daily: 0,
     },
     {
       tier: 1,
-      title: "Passport stamped",
+      title: "Silver",
+      how: "Passport stamped",
       unlocks: "Add money, save, join circles and withdraw",
       perTransaction: 100_000,
       daily: 300_000,
     },
     {
       tier: 2,
-      title: "BVN added",
+      title: "Gold",
+      how: "BVN added",
       unlocks: "Much higher limits, for bigger circles",
       perTransaction: 500_000,
       daily: 2_000_000,
@@ -77,14 +83,16 @@ const LADDERS: Readonly<Record<Country, readonly TierLimits[]>> = {
   GB: [
     {
       tier: 0,
-      title: "Not verified",
+      title: "Starter",
+      how: "Not verified yet",
       unlocks: "You can look around, but no money moves",
       perTransaction: 0,
       daily: 0,
     },
     {
       tier: 1,
-      title: "Passport stamped",
+      title: "Silver",
+      how: "Passport stamped",
       unlocks: "Add money, save, join circles and withdraw",
       perTransaction: 500,
       daily: 1_000,

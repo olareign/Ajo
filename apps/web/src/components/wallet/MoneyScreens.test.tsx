@@ -419,7 +419,7 @@ describe("auto-debit", () => {
 describe("limits", () => {
   it("shows the ladder with sample numbers in a preview, and says they are samples", async () => {
     open(<Limits />);
-    expect(await screen.findByText("Passport stamped")).toBeInTheDocument();
+    expect(await screen.findByText("Silver")).toBeInTheDocument();
     expect(screen.getByText("₦100,000")).toBeInTheDocument();
     expect(screen.getByText(/Sample numbers/)).toBeInTheDocument();
     expect(screen.getByText("You are here")).toBeInTheDocument();
@@ -429,21 +429,21 @@ describe("limits", () => {
     query = new URLSearchParams();
     api({ ...me, kycTier: 0 });
     open(<Limits />);
-    expect(await screen.findByText("Passport stamped")).toBeInTheDocument();
+    expect(await screen.findByText("Silver")).toBeInTheDocument();
     expect(screen.queryByText(/₦/)).not.toBeInTheDocument();
     expect(screen.getByText(/Exact amounts appear here/)).toBeInTheDocument();
-    expect(screen.getByText("Not verified").closest("li")).toHaveAttribute("aria-current", "step");
+    expect(screen.getByText("Starter").closest("li")).toHaveAttribute("aria-current", "step");
   });
 
   it("has two rungs in the UK, and three in Nigeria", async () => {
     api({ ...me, country: "GB" });
     const { unmount } = open(<Limits />);
-    await screen.findByText("Passport stamped");
+    await screen.findByText("Silver");
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     unmount();
     api();
     open(<Limits />);
-    await screen.findByText("BVN added");
+    await screen.findByText("Gold");
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 });

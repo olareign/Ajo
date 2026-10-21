@@ -52,8 +52,8 @@ describe("Me: tier, account rows and closing", () => {
   it("shows the level, what it unlocks, the trust standing, and a way to raise it", async () => {
     api({});
     render(<MeScreen />);
-    const card = await screen.findByRole("region", { name: "Passport stamped" });
-    expect(within(card).getByText("LEVEL 1 OF 2")).toBeInTheDocument();
+    const card = await screen.findByRole("region", { name: "Silver" });
+    expect(within(card).getByText("Level 1 of 2 · Passport stamped")).toBeInTheDocument();
     expect(within(card).getByText(/Add money, save, join circles/)).toBeInTheDocument();
     expect(within(card).getByText("Building trust")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: /See your limits/ })).toHaveAttribute(
@@ -69,14 +69,14 @@ describe("Me: tier, account rows and closing", () => {
   it("offers no raise at the top level, and says when a check is under way", async () => {
     api({}, () => me({ kycTier: 2 }));
     const { unmount } = render(<MeScreen />);
-    const top = await screen.findByRole("region", { name: "BVN added" });
+    const top = await screen.findByRole("region", { name: "Gold" });
     expect(within(top).queryByRole("link", { name: /Raise/ })).toBeNull();
     unmount();
     forgetAll();
 
     api({}, () => me({ kycTier: 0, kycStatus: "pending" }));
     render(<MeScreen />);
-    const waiting = await screen.findByRole("region", { name: "Not verified" });
+    const waiting = await screen.findByRole("region", { name: "Starter" });
     expect(within(waiting).getByText("Being checked")).toBeInTheDocument();
     expect(within(waiting).queryByRole("link", { name: /Raise/ })).toBeNull();
   });

@@ -1,11 +1,12 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Medal } from "lucide-react";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Amount } from "@/components/ui/Amount";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { cn } from "@/lib/cn";
 import { limitsFor, toMinor } from "@/lib/money-flow";
+import { MEDAL } from "@/components/me/TierCard";
 import { useMoneyFlow } from "./MoneyFlow";
 import { PAGE } from "@/lib/page";
 
@@ -42,7 +43,21 @@ export function Limits() {
               )}
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="font-display text-[20px] leading-6 font-semibold">{rung.title}</p>
+                <div className="flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "grid size-10 shrink-0 place-items-center rounded-full",
+                      MEDAL[rung.tier],
+                    )}
+                  >
+                    <Medal className="size-5" />
+                  </span>
+                  <div className="grid">
+                    <p className="font-display text-[20px] leading-6 font-semibold">{rung.title}</p>
+                    <p className="text-[13px] text-ink-muted">{rung.how}</p>
+                  </div>
+                </div>
                 {here && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-on-primary">
                     <Check aria-hidden className="size-3.5" />

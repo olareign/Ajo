@@ -258,7 +258,7 @@ describe("account and security", () => {
       "href",
       "/me/devices",
     );
-    expect(screen.getByRole("link", { name: /Identity level.*Passport stamped/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Identity level.*Silver/ })).toHaveAttribute(
       "href",
       "/wallet/limits",
     );

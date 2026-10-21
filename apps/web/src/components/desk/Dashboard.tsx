@@ -505,7 +505,7 @@ export function AccountStrip({ me }: Readonly<{ me: Me }>) {
         Account and security
       </h2>
       <Link href="/wallet/limits" className="flex items-center gap-2.5 text-[15px] hover:underline">
-        Identity level<span className={pill(tier > 0)}>{rung ? rung.title : "Not verified"}</span>
+        Identity level<span className={pill(tier > 0)}>{rung ? rung.title : "Starter"}</span>
       </Link>
       <Link href="/me/security" className="flex items-center gap-2.5 text-[15px] hover:underline">
         Authenticator app
