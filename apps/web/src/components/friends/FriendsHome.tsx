@@ -290,9 +290,9 @@ function FriendList({
       <div
         role="search"
         aria-label="Search your friends"
-        className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_200px_180px_auto] md:items-end md:p-6"
+        className="grid grid-cols-2 gap-3 p-4 md:grid-cols-[minmax(0,1fr)_200px_180px_auto] md:items-end md:p-6"
       >
-        <label className="grid gap-1.5 text-[13px] font-semibold">
+        <label className="col-span-2 grid gap-1.5 text-[13px] font-semibold md:col-span-1">
           Search your friends
           <span className="flex h-12 items-center gap-2 rounded-[14px] border border-line-strong bg-surface px-3 focus-within:border-primary">
             <Search aria-hidden className="size-4 shrink-0 text-ink-muted" />
@@ -333,15 +333,17 @@ function FriendList({
             ))}
           </select>
         </label>
-        <ViewSwitch
-          label="Layout"
-          value={view}
-          onChange={setView}
-          options={[
-            { id: "grid", label: "Grid", icon: <LayoutGrid aria-hidden className="size-5" /> },
-            { id: "list", label: "List", icon: <List aria-hidden className="size-5" /> },
-          ]}
-        />
+        <div className="col-span-2 md:col-span-1">
+          <ViewSwitch
+            label="Layout"
+            value={view}
+            onChange={setView}
+            options={[
+              { id: "grid", label: "Grid", icon: <LayoutGrid aria-hidden className="size-5" /> },
+              { id: "list", label: "List", icon: <List aria-hidden className="size-5" /> },
+            ]}
+          />
+        </div>
       </div>
 
       {paged.total === 0 ? (

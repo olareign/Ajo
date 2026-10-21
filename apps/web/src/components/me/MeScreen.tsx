@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { countryConfig } from "@/lib/kyc-config";
 import { TierCard } from "./TierCard";
+import { cn } from "@/lib/cn";
 import { PAGE } from "@/lib/page";
 
 export function MeScreen() {
@@ -77,13 +78,17 @@ function Detail({
   label,
   children,
   action,
+  className,
 }: Readonly<{
   label: string;
   children: ReactNode;
   action?: Readonly<{ href: string; label: string }>;
+  className?: string;
 }>) {
   return (
-    <div className="grid content-start gap-1 border-t border-line px-5 py-4 md:px-7">
+    <div
+      className={cn("grid content-start gap-1 border-t border-line px-5 py-4 md:px-7", className)}
+    >
       <dt className="text-[13px] text-ink-muted">{label}</dt>
       <dd className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[16px] font-semibold">
         {children}
@@ -187,6 +192,7 @@ function Account({ me }: Readonly<{ me: Me }>) {
               ) : null}
             </Detail>
             <Detail
+              className="sm:col-span-2 lg:col-span-3"
               label="Profile picture"
               action={{
                 href: "/me/photo",
