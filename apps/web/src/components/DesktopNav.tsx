@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PiggyBank,
+  SlidersHorizontal,
   User,
   Users,
   Wallet,
@@ -48,19 +49,36 @@ const GROUPS: readonly {
       { href: "/insights", label: "Insights", Icon: BarChart3 },
     ],
   },
-  { label: "Account", items: [{ href: "/me", label: "Me", Icon: User }] },
 ];
+
+/** At the foot of the sidebar: your profile, everything else about the account, and leaving. */
+const ACCOUNT = [
+  { href: "/me", label: "Me", Icon: User },
+  { href: "/settings", label: "Settings", Icon: SlidersHorizontal },
+] as const;
 
 const HELP = "/me/help";
 
+/** Pages under /me that belong to Settings rather than the profile. */
+const SETTINGS_PAGES = [
+  "/me/security",
+  "/me/password",
+  "/me/pin",
+  "/me/devices",
+  "/me/activity",
+  "/me/notifications",
+  "/me/close",
+];
+
+const under = (path: string, href: string) => path === href || path.startsWith(`${href}/`);
+
 /** The most specific section a path is in, so "/wallet/statements" lights Statements and not Wallet. */
-function activeHref(path: string): string | undefined {
+export function activeHref(path: string): string | undefined {
   // Help sits under Me but has its own link at the foot of the sidebar.
-  if (path === HELP || path.startsWith(`${HELP}/`)) return HELP;
-  const all = GROUPS.flatMap((g) => g.items.map((i) => i.href));
-  return all
-    .filter((href) => path === href || path.startsWith(`${href}/`))
-    .sort((a, b) => b.length - a.length)[0];
+  if (under(path, HELP)) return HELP;
+  if (SETTINGS_PAGES.some((p) => under(path, p))) return "/settings";
+  const all = [...GROUPS.flatMap((g) => g.items.map((i) => i.href)), ...ACCOUNT.map((a) => a.href)];
+  return all.filter((href) => under(path, href)).sort((a, b) => b.length - a.length)[0];
 }
 
 const row = "flex min-h-10 items-center rounded-m text-[15px] transition-colors";
@@ -154,65 +172,74 @@ export function DesktopNav() {
                 </Link>
               );
             })}
-            {group.label === "Account" && (
-              <button
-                type="button"
-                disabled={leaving}
-                title="Sign out"
-                onClick={async () => {
-                  setLeaving(true);
-                  await postJson("/api/auth/sign-out", {});
-                  // The server clears the cookie even if the API could not be reached.
-                  router.replace("/sign-in");
-                }}
-                className={cn(
-                  row,
-                  item,
-                  "text-left font-medium text-ink-muted hover:bg-danger-tint hover:text-danger disabled:opacity-60",
-                )}
-              >
-                {leaving ? (
-                  <Spinner />
-                ) : (
-                  <LogOut aria-hidden className="size-5 shrink-0" strokeWidth={1.75} />
-                )}
-                <span className={name}>{leaving ? "Signing out…" : "Sign out"}</span>
-              </button>
-            )}
           </div>
         ))}
       </nav>
-      {/* The help card at the foot, like a bank's: a person when the answers aren't enough. On a
-          short screen the whole sidebar scrolls, so nothing above it is ever hidden. Folded, it
-          becomes one help button. */}
-      <div aria-hidden className="min-h-8 shrink-0" />
-      <Link
-        href={HELP}
-        aria-current={active === HELP ? "page" : undefined}
-        aria-label="Help Center"
-        title="Help Center"
-        className="mx-3 mt-auto mb-5 hidden min-h-12 shrink-0 place-items-center rounded-m bg-primary-tint text-primary hover:brightness-95 rail:grid"
-      >
-        <HelpCircle aria-hidden className="size-6" />
-      </Link>
-      <div className="hero-card relative mx-4 mt-auto mb-5 grid shrink-0 justify-items-center gap-2 rounded-[22px] px-4 pt-8 pb-4 text-center shadow-lift rail:hidden">
-        <span
-          aria-hidden
-          className="absolute -top-6 grid size-12 place-items-center rounded-full border-4 border-surface-raised bg-surface-raised text-primary shadow-lift"
-        >
-          <HelpCircle className="size-6" />
-        </span>
-        <p className="text-[15px] font-semibold">Help Center</p>
-        <p className="text-[12px] leading-4 text-on-hero-muted">
-          Stuck on something? Find an answer or write to a person.
-        </p>
+      {/* The foot, kept in view on a tall screen and scrolled to on a short one: help, then your
+          profile, settings and signing out. Folded, help becomes one button. */}
+      <div className="mt-auto grid shrink-0 gap-3 px-4 pt-6 pb-5 rail:px-3">
         <Link
           href={HELP}
           aria-current={active === HELP ? "page" : undefined}
-          className="mt-2 flex min-h-10 w-full items-center justify-center rounded-m bg-surface-raised px-3 text-[13px] font-semibold text-ink hover:bg-surface-sunken"
+          title="Help Center"
+          className="hero-card flex min-h-14 items-center gap-3 rounded-[16px] p-3 shadow-lift hover:brightness-110 rail:justify-center rail:p-0"
         >
-          Go to Help Center
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-raised text-primary">
+            <HelpCircle aria-hidden className="size-5" />
+          </span>
+          <span className="grid rail:sr-only">
+            <span className="text-[14px] font-semibold">Help Center</span>
+            <span className="text-[12px] leading-4 text-on-hero-muted">
+              Answers, or write to a person
+            </span>
+          </span>
         </Link>
+        <div role="group" aria-label="Account" className="grid gap-1 border-t border-line pt-3">
+          {ACCOUNT.map(({ href, label, Icon }) => {
+            const on = href === active;
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={on ? "page" : undefined}
+                title={label}
+                className={cn(
+                  row,
+                  item,
+                  on
+                    ? "bg-primary-tint font-semibold text-primary"
+                    : "font-medium text-ink-muted hover:bg-surface-sunken hover:text-ink",
+                )}
+              >
+                <Icon aria-hidden className="size-5 shrink-0" strokeWidth={on ? 2.25 : 1.75} />
+                <span className={name}>{label}</span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            disabled={leaving}
+            title="Sign out"
+            onClick={async () => {
+              setLeaving(true);
+              await postJson("/api/auth/sign-out", {});
+              // The server clears the cookie even if the API could not be reached.
+              router.replace("/sign-in");
+            }}
+            className={cn(
+              row,
+              item,
+              "text-left font-medium text-ink-muted hover:bg-danger-tint hover:text-danger disabled:opacity-60",
+            )}
+          >
+            {leaving ? (
+              <Spinner />
+            ) : (
+              <LogOut aria-hidden className="size-5 shrink-0" strokeWidth={1.75} />
+            )}
+            <span className={name}>{leaving ? "Signing out…" : "Sign out"}</span>
+          </button>
+        </div>
       </div>
     </aside>
   );

@@ -84,49 +84,31 @@ describe("Me: tier, account rows and closing", () => {
   it("shows the phone number as not verified, or offers to add one", async () => {
     api({}, () => me({ phone: "+2348031234567" }));
     const { unmount } = render(<MeScreen />);
-    const row = await screen.findByRole("link", { name: /Phone number/ });
-    expect(row).toHaveAttribute("href", "/me/phone");
+    const row = (await screen.findByText("Phone number")).closest("div")!;
     expect(within(row).getByText("+2348031234567")).toBeInTheDocument();
     expect(within(row).getByText("Not verified")).toBeInTheDocument();
+    expect(within(row).getByRole("link", { name: "Change" })).toHaveAttribute("href", "/me/phone");
     unmount();
     forgetAll();
 
     api({});
     render(<MeScreen />);
-    expect(
-      within(await screen.findByRole("link", { name: /Phone number/ })).getByText("Add"),
-    ).toBeInTheDocument();
+    const empty = (await screen.findByText("Phone number")).closest("div")!;
+    expect(within(empty).getByRole("link", { name: "Add a phone number" })).toHaveAttribute(
+      "href",
+      "/me/phone",
+    );
   });
 
-  it("leads to invites, email choices and closing the account", async () => {
+  it("leads to invites and to Settings", async () => {
     api({});
     render(<MeScreen />);
     expect(await screen.findByRole("link", { name: /Invite friends/ })).toHaveAttribute(
       "href",
       "/friends/invite",
     );
-    expect(screen.getByRole("link", { name: /Notification settings/ })).toHaveAttribute(
-      "href",
-      "/me/notifications",
-    );
-    expect(screen.getByRole("link", { name: "Close account" })).toHaveAttribute(
-      "href",
-      "/me/close",
-    );
+    expect(screen.getByRole("link", { name: /Settings/ })).toHaveAttribute("href", "/settings");
   });
-});
-
-it("leads to help, terms and privacy, and shows which build is running", async () => {
-  api({});
-  render(<MeScreen />);
-  // Help inside the app keeps the app's frame; /help is the public page.
-  expect(await screen.findByRole("link", { name: /Help and support/ })).toHaveAttribute(
-    "href",
-    "/me/help",
-  );
-  expect(screen.getByRole("link", { name: /Terms of use/ })).toHaveAttribute("href", "/terms");
-  expect(screen.getByRole("link", { name: /Privacy notice/ })).toHaveAttribute("href", "/privacy");
-  expect(screen.getByText(/Àjọ · build/)).toBeInTheDocument();
 });
 
 describe("the phone number screen", () => {

@@ -90,7 +90,7 @@ describe("the desk header", () => {
     expect(profile).toHaveAttribute("href", "/me");
     expect(profile).toHaveFocus();
     await user.keyboard("{ArrowDown}");
-    expect(screen.getByRole("link", { name: "Devices and sign-ins" })).toHaveFocus();
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveFocus();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
     expect(button).toHaveAttribute("aria-expanded", "false");

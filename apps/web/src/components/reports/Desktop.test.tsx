@@ -103,7 +103,6 @@ describe("the desktop sidebar", () => {
       "Notifications",
       "Statements",
       "Insights",
-      "Me",
     ]);
     expect(within(nav).getByRole("link", { name: "Statements" })).toHaveAttribute(
       "aria-current",
@@ -115,18 +114,24 @@ describe("the desktop sidebar", () => {
   it("keeps Help inside the app, and lights Help (not Me) while you're there", () => {
     path = "/me/help";
     render(<DesktopNav />);
-    const help = screen.getByRole("link", { name: "Go to Help Center" });
+    const help = screen.getByRole("link", { name: /Help Center/ });
     expect(help).toHaveAttribute("href", "/me/help");
     expect(help).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Me" })).not.toHaveAttribute("aria-current");
   });
 
-  it("groups the menu like a bank's, and ends with a help card", () => {
+  it("ends with help, then Me, Settings and Sign out at the foot", () => {
     path = "/today";
     render(<DesktopNav />);
-    for (const group of ["Menu", "Your money", "Account"])
-      expect(screen.getByText(group)).toBeInTheDocument();
+    for (const group of ["Menu", "Your money"]) expect(screen.getByText(group)).toBeInTheDocument();
     expect(screen.getByText("Help Center")).toBeInTheDocument();
+    const account = screen.getByRole("group", { name: "Account" });
+    expect(within(account).getByRole("link", { name: "Me" })).toHaveAttribute("href", "/me");
+    expect(within(account).getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
+    expect(within(account).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute(
       "href",
       "/notifications",
@@ -153,11 +158,23 @@ describe("the desktop sidebar", () => {
       "title",
       "Statements",
     );
-    expect(screen.getByRole("link", { name: "Help Center" })).toHaveAttribute("href", "/me/help");
+    expect(screen.getByRole("link", { name: /Help Center/ })).toHaveAttribute("href", "/me/help");
     unmount();
     render(<DesktopNav />);
     await user.click(screen.getByRole("button", { name: "Expand the menu" }));
     expect(screen.getByRole("button", { name: "Collapse the menu" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/me", "Me"],
+    ["/me/photo", "Me"],
+    ["/settings", "Settings"],
+    ["/me/security", "Settings"],
+    ["/me/devices", "Settings"],
+  ])("lights the right account item on %s", (where, lit) => {
+    path = where;
+    render(<DesktopNav />);
+    expect(screen.getByRole("link", { name: lit })).toHaveAttribute("aria-current", "page");
   });
 
   it("stays away from sign-in and the landing page", () => {

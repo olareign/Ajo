@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, HelpCircle, LogOut, ShieldCheck, User } from "lucide-react";
+import { ChevronDown, HelpCircle, LogOut, SlidersHorizontal, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
@@ -10,12 +10,12 @@ import { PersonPhoto } from "@/components/ui/PersonPhoto";
 
 const ITEMS = [
   { href: "/me", label: "Your profile", Icon: User },
-  { href: "/me/devices", label: "Devices and sign-ins", Icon: ShieldCheck },
+  { href: "/settings", label: "Settings", Icon: SlidersHorizontal },
   { href: "/me/help", label: "Help and support", Icon: HelpCircle },
 ] as const;
 
 /**
- * Your picture, and behind it a short menu: profile, devices, help, sign out. A disclosure button
+ * Your picture, and behind it a short menu: profile, settings, help, sign out. A disclosure button
  * that opens a list of links: Escape or a click outside closes it (Escape returns focus to the
  * button); the arrow keys move through it.
  */
