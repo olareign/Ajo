@@ -21,7 +21,6 @@ import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
 import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { AutoDebitAside } from "@/components/desk/asides";
 
 type State = "none" | "pending" | "active" | "cancelled" | "failed";
 
@@ -125,7 +124,7 @@ export function Mandate() {
   }
 
   return (
-    <FormPage aside={<AutoDebitAside />}>
+    <FormPage wide>
       {preview && <PreviewRibbon exitHref="/wallet/mandate" />}
       <ScreenHeader
         title="Auto-debit"

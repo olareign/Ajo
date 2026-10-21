@@ -19,7 +19,6 @@ import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
 import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { AddMoneyAside } from "@/components/desk/asides";
 
 type Step = "method" | "details" | "amount" | "review" | "done";
 
@@ -113,7 +112,7 @@ export function AddMoney() {
 
   if (step === "done") {
     return (
-      <FormPage aside={<AddMoneyAside />}>
+      <FormPage wide>
         {preview && <PreviewRibbon exitHref="/wallet" />}
         <div className="grid justify-items-center gap-6 pt-6 text-center">
           <div className="relative w-[256px] pt-6">
@@ -139,7 +138,7 @@ export function AddMoney() {
   }
 
   return (
-    <FormPage aside={<AddMoneyAside />}>
+    <FormPage wide>
       {preview && <PreviewRibbon exitHref="/wallet/add" />}
       <ScreenHeader
         title={

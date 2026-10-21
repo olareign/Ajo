@@ -16,7 +16,6 @@ import { WithdrawLive } from "./WithdrawLive";
 import { WithdrawTicket } from "./WithdrawTicket";
 import { useMoneyFlow } from "./MoneyFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { WithdrawAside } from "@/components/desk/asides";
 
 type Step = "amount" | "review" | "pin" | "sent";
 
@@ -54,7 +53,7 @@ export function Withdraw() {
   if (!preview) return <WithdrawLive />;
 
   return (
-    <FormPage aside={<WithdrawAside />}>
+    <FormPage wide>
       {preview && <PreviewRibbon exitHref="/wallet/withdraw" />}
       <ScreenHeader
         title={

@@ -30,7 +30,6 @@ import { loadWallets } from "@/lib/wallet-client";
 import { useMoneyFlow } from "./MoneyFlow";
 import { WithdrawTicket } from "./WithdrawTicket";
 import { FormPage } from "@/components/desk/FormPage";
-import { WithdrawAside } from "@/components/desk/asides";
 
 type Step = "bank" | "bank-code" | "amount" | "review" | "pin" | "code" | "sent";
 
@@ -206,7 +205,7 @@ export function WithdrawLive() {
 
   if (needsMfa) {
     return (
-      <FormPage aside={<WithdrawAside />}>
+      <FormPage wide>
         <ScreenHeader title="Withdraw" backHref="/wallet" />
         <div className="grid justify-items-center gap-5 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift">
           <span className="grid size-20 place-items-center rounded-full bg-oro-tint text-oro-ink">
@@ -287,7 +286,7 @@ export function WithdrawLive() {
   };
 
   return (
-    <FormPage aside={<WithdrawAside />}>
+    <FormPage wide>
       <ScreenHeader
         title={
           step === "bank"

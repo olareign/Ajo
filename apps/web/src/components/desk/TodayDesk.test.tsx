@@ -2,7 +2,6 @@ import { render, screen, within } from "@testing-library/react";
 import type { GroupDetail, GroupSummary } from "@/lib/groups-client";
 import type { Plan } from "@/lib/savings-client";
 import { forgetAll } from "@/lib/visit-cache";
-import { MonthPanel } from "./MonthPanel";
 import { UpNext, useUpcoming } from "./TodayDesk";
 
 /** Up next as Today uses it: the list worked out from plans and circles, then shown. */
@@ -96,54 +95,5 @@ describe("up next", () => {
     render(<Upcoming plans={[plan({ nextDebit: null })]} groups={[group({ status: "open" })]} />);
     expect(screen.getByText(/Nothing is due/)).toBeInTheDocument();
     expect(asked).not.toHaveBeenCalled();
-  });
-});
-
-describe("this month beside the balance", () => {
-  it("leads with money in and out, and lists only payments in or out of the wallet", async () => {
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
-    );
-    const tx = (id: string, account: string, direction: string, amount: string) => ({
-      id,
-      transactionId: `t-${id}`,
-      type: "lock_deposit",
-      account,
-      direction,
-      amount: naira(amount),
-      currency: "NGN",
-      createdAt: "2026-10-17T02:43:00Z",
-    });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) =>
-        url.startsWith("/api/wallet/insights")
-          ? Response.json({
-              months: [
-                {
-                  month: "2026-10",
-                  currency: "NGN",
-                  moneyIn: "6250000",
-                  moneyOut: "3500000",
-                  savedNet: "0",
-                  endAvailable: "27750000",
-                  endSavings: "0",
-                  endLocked: "0",
-                },
-              ],
-            })
-          : Response.json({
-              items: [tx("a", "available", "out", "10000000"), tx("b", "locked", "in", "10000000")],
-              next: null,
-            }),
-      ),
-    );
-    render(<MonthPanel currency="NGN" recent balance={false} />);
-    expect(await screen.findByText("₦62,500")).toBeInTheDocument();
-    expect(screen.getByText("₦35,000")).toBeInTheDocument();
-    expect(screen.queryByText("In your wallet")).toBeNull();
-    const latest = await screen.findByRole("list", { name: "Latest payments" });
-    expect(within(latest).getAllByRole("listitem")).toHaveLength(1);
   });
 });

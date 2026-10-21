@@ -1,11 +1,9 @@
-import { act, render, renderHook, screen, within } from "@testing-library/react";
+import { act, render, renderHook, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DesktopHeader } from "@/components/DesktopHeader";
 import { TransactionList } from "@/components/wallet/TransactionList";
 import { forgetAll, remember, useRecall } from "@/lib/visit-cache";
 import type { WalletTransaction } from "@/lib/wallet";
-import { MonthPanel } from "./MonthPanel";
-import { PaymentDetails } from "./PaymentDetails";
 
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -46,16 +44,6 @@ const tx = (over: Partial<WalletTransaction>): WalletTransaction => ({
   createdAt: "2026-10-06T13:48:00Z",
   ...over,
 });
-const month = {
-  month: "2026-10",
-  currency: "NGN",
-  moneyIn: "2400000",
-  moneyOut: "532400",
-  savedNet: "0",
-  endAvailable: "11365000",
-  endSavings: "0",
-  endLocked: "0",
-};
 
 describe("the desk header", () => {
   it("greets the person by the time of day and their first name, with today's date", () => {
@@ -111,43 +99,6 @@ describe("the desk header", () => {
   });
 });
 
-describe("this month", () => {
-  it("shows what's in the wallet, money in and out, and the latest payments", async () => {
-    screenIsWide(true);
-    fetches({
-      "/api/wallet/insights": { months: [month] },
-      "/api/wallet/transactions": {
-        items: [tx({}), tx({ id: "e2", type: "withdrawal", direction: "out" })],
-        next: null,
-      },
-    });
-    render(<MonthPanel currency="NGN" recent />);
-    const panel = screen.getByRole("region", { name: "This month" });
-    expect(await within(panel).findByText("₦113,650")).toBeInTheDocument();
-    expect(within(panel).getAllByText("Money in").length).toBeGreaterThan(0);
-    expect(within(panel).getByText("₦24,000")).toBeInTheDocument();
-    expect(within(panel).getByText("₦5,324")).toBeInTheDocument();
-    const latest = await within(panel).findByRole("list", { name: "Latest payments" });
-    expect(within(latest).getAllByRole("listitem")).toHaveLength(2);
-    expect(within(panel).getByRole("link", { name: /See all/ })).toHaveAttribute("href", "/wallet");
-  });
-
-  it("draws nothing and asks for nothing on a phone", () => {
-    screenIsWide(false);
-    const asked = fetches({});
-    const { container } = render(<MonthPanel currency="NGN" recent />);
-    expect(container).toBeEmptyDOMElement();
-    expect(asked).not.toHaveBeenCalled();
-  });
-
-  it("says so when nothing has moved this month", async () => {
-    screenIsWide(true);
-    fetches({ "/api/wallet/insights": { months: [] } });
-    render(<MonthPanel currency="NGN" />);
-    expect(await screen.findByText("Nothing has moved this month yet.")).toBeInTheDocument();
-  });
-});
-
 describe("activity and payment details on a desk", () => {
   it("groups activity by day and opens a payment beside the list", async () => {
     const user = userEvent.setup();
@@ -175,27 +126,6 @@ describe("activity and payment details on a desk", () => {
     render(<TransactionList items={[tx({})]} />);
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByRole("list", { name: "Recent activity" })).toBeInTheDocument();
-  });
-
-  it("shows the payment's amount, part of the money, time and a reference to copy", async () => {
-    const user = userEvent.setup();
-    const writeText = vi.fn(async () => undefined);
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
-    const { rerender } = render(<PaymentDetails item={undefined} />);
-    expect(screen.getByText("Pick a payment to see its details.")).toBeInTheDocument();
-    rerender(<PaymentDetails item={tx({})} />);
-    const panel = screen.getByRole("region", { name: "Payment details" });
-    expect(within(panel).getByText("Money added")).toBeInTheDocument();
-    expect(within(panel).getByText("₦15,500")).toBeInTheDocument();
-    expect(within(panel).getByRole("link", { name: /Statement/ })).toHaveAttribute(
-      "href",
-      "/wallet/statements",
-    );
-    await user.click(within(panel).getByRole("button", { name: "Copy reference" }));
-    expect(writeText).toHaveBeenCalledWith("8d0f6a0e-1111-4c2b-9a77-1234567890ab");
-    expect(
-      await within(panel).findByRole("button", { name: "Reference copied" }),
-    ).toBeInTheDocument();
   });
 });
 
