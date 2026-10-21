@@ -67,25 +67,33 @@ export function WalletShell({ children }: Readonly<{ children: ReactNode }>) {
   const path = usePathname();
   if (!isTaskPage(path)) return <>{children}</>;
   return (
-    <div className="md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:items-start lg:grid-cols-[18rem_minmax(0,1fr)]">
+    <div className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
       <Menu path={path} />
       <div className="min-w-0">{children}</div>
     </div>
   );
 }
 
+/**
+ * A tablet gets the tools as a row of chips above the page (the page keeps its width); a desk gets
+ * them as a column with the balance on top.
+ */
 function Menu({ path }: Readonly<{ path: string }>) {
   const preview = useSearchParams().get("preview") === "1";
   const go = (href: string) => (preview ? `${href}?preview=1` : href);
   return (
     <aside
       aria-label="Wallet"
-      className="hidden gap-4 md:sticky md:top-28 md:grid md:pt-8 md:pl-6 lg:pl-8"
+      className="hidden min-w-0 md:grid md:px-6 md:pt-6 lg:sticky lg:top-28 lg:gap-4 lg:pt-8 lg:pr-0 lg:pl-8"
     >
-      {!preview && <MiniBalance />}
+      {!preview && (
+        <div className="hidden lg:block">
+          <MiniBalance />
+        </div>
+      )}
       <nav
         aria-label="Wallet menu"
-        className="grid gap-0.5 rounded-[20px] bg-surface-raised p-2 shadow-lift"
+        className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:gap-0.5 lg:overflow-visible lg:rounded-[20px] lg:bg-surface-raised lg:p-2 lg:shadow-lift"
       >
         {WALLET_MENU.map(({ href, label, hint, Icon }) => {
           const on = path === href || path.startsWith(`${href}/`);
@@ -95,23 +103,27 @@ function Menu({ path }: Readonly<{ path: string }>) {
               href={go(href)}
               aria-current={on ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-[14px] px-3 py-2.5 transition-colors",
-                on ? "bg-primary-tint text-primary" : "text-ink hover:bg-surface-sunken",
+                "flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 whitespace-nowrap transition-colors lg:gap-3 lg:rounded-[14px] lg:border-0 lg:px-3 lg:py-2.5",
+                on
+                  ? "border-primary bg-primary-tint text-primary"
+                  : "border-line bg-surface-raised text-ink hover:bg-surface-sunken lg:bg-transparent",
               )}
             >
               <span
                 className={cn(
-                  "grid size-9 shrink-0 place-items-center rounded-full",
+                  "hidden size-9 shrink-0 place-items-center rounded-full lg:grid",
                   on ? "bg-primary text-on-primary" : "bg-primary-tint text-primary",
                 )}
               >
                 <Icon aria-hidden className="size-[18px]" />
               </span>
               <span className="grid min-w-0">
-                <span className={cn("text-[15px]", on ? "font-semibold" : "font-medium")}>
+                <span
+                  className={cn("text-[14px] lg:text-[15px]", on ? "font-semibold" : "font-medium")}
+                >
                   {label}
                 </span>
-                <span className="truncate text-[12px] text-ink-muted">{hint}</span>
+                <span className="hidden truncate text-[12px] text-ink-muted lg:block">{hint}</span>
               </span>
             </Link>
           );

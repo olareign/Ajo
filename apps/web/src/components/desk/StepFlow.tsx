@@ -36,8 +36,8 @@ export function StepFlow({
     steps.findIndex((s) => s.id === current),
   );
   return (
-    <div className="md:grid md:grid-cols-[17rem_minmax(0,1fr)] md:items-start md:gap-8 xl:grid-cols-[20rem_minmax(0,1fr)]">
-      <aside className="hidden gap-4 md:sticky md:top-28 md:grid">
+    <div className="lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start lg:gap-8 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <aside className="hidden gap-4 lg:sticky lg:top-28 lg:grid">
         <section
           aria-label="Where this adds up"
           className="hero-card grid gap-1 rounded-[var(--radius-xl)] p-5 shadow-lift"
@@ -102,7 +102,7 @@ export function StepFlow({
         </ol>
       </aside>
       <div className="min-w-0">
-        <p className="mb-3 text-[13px] font-semibold text-ink-muted md:hidden">
+        <p className="mb-3 text-[13px] font-semibold text-ink-muted lg:hidden">
           Step {at + 1} of {steps.length}
         </p>
         {children}

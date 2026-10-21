@@ -231,7 +231,7 @@ export function NewPlan() {
 
         {step === "money" && (
           <StepCard title="How much, and how often?">
-            <div className="grid gap-8 md:grid-cols-2 md:items-start">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2 xl:items-start">
               <AmountPad
                 value={amount}
                 onChange={setAmount}
@@ -301,7 +301,7 @@ export function NewPlan() {
               <Button
                 size="lg"
                 variant="quiet"
-                className="hidden md:inline-flex"
+                className="max-md:hidden"
                 aria-label="Back to what for"
                 onClick={() => setStep("name")}
               >
@@ -356,7 +356,7 @@ export function NewPlan() {
               <Button
                 size="lg"
                 variant="quiet"
-                className="hidden md:inline-flex"
+                className="max-md:hidden"
                 aria-label="Back to how much, how often"
                 onClick={() => setStep("money")}
               >
@@ -368,7 +368,7 @@ export function NewPlan() {
 
         {step === "review" && overview && (
           <StepCard title="Look it over">
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start">
               <Receipt
                 title="Your plan"
                 rows={[
@@ -461,7 +461,7 @@ export function NewPlan() {
               <Button
                 size="lg"
                 variant="quiet"
-                className="hidden md:inline-flex"
+                className="max-md:hidden"
                 aria-label="Back to the start day"
                 onClick={() => setStep("start")}
               >

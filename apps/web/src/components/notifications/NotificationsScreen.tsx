@@ -223,7 +223,7 @@ function Messages() {
               },
             ]}
           />
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="grid gap-3 md:flex md:flex-wrap md:items-center md:justify-between">
             <FilterTabs
               label="Which notifications"
               value={filter}

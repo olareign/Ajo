@@ -247,7 +247,7 @@ export function NewCircle() {
 
         {step === "money" && (
           <StepCard title={stepTitle.money}>
-            <div className="grid gap-8 md:grid-cols-2 md:items-start">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2 xl:items-start">
               <AmountPad
                 value={amount}
                 onChange={setAmount}
@@ -352,7 +352,7 @@ export function NewCircle() {
               <Button
                 size="lg"
                 variant="quiet"
-                className="hidden md:inline-flex"
+                className="max-md:hidden"
                 aria-label="Back to the name"
                 onClick={() => setStep("name")}
               >
@@ -364,7 +364,7 @@ export function NewCircle() {
 
         {step === "rules" && (
           <StepCard title={stepTitle.rules}>
-            <div className="grid gap-8 md:grid-cols-2 md:items-start">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2 xl:items-start">
               <OptionCards
                 label="Who takes which turn"
                 options={ORDERS}
@@ -399,7 +399,7 @@ export function NewCircle() {
               <Button
                 size="lg"
                 variant="quiet"
-                className="hidden md:inline-flex"
+                className="max-md:hidden"
                 aria-label="Back to the money"
                 onClick={() => setStep("money")}
               >
@@ -411,7 +411,7 @@ export function NewCircle() {
 
         {step === "review" && overview && (
           <StepCard title={stepTitle.review}>
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start">
               <Receipt
                 title="Your circle"
                 rows={[
@@ -512,7 +512,7 @@ export function NewCircle() {
               <Button
                 size="lg"
                 variant="quiet"
-                className="hidden md:inline-flex"
+                className="max-md:hidden"
                 aria-label="Back to turns and who can join"
                 onClick={() => setStep("rules")}
               >

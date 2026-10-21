@@ -234,10 +234,7 @@ function Activity({
 /** The wallet's other tools, as cards: auto-debit, limits, bank accounts, statements, insights. */
 function WalletTools() {
   return (
-    <nav
-      aria-label="Wallet tools"
-      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]"
-    >
+    <nav aria-label="Wallet tools" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       {(
         [
           ["/wallet/mandate", "Auto-debit", "Lets your bank top up a short wallet", Landmark],
@@ -250,7 +247,7 @@ function WalletTools() {
         <Link
           key={href}
           href={href}
-          className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift transition-colors hover:bg-surface-sunken"
+          className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift transition-colors hover:bg-surface-sunken xl:grid xl:content-start xl:gap-3 xl:p-5"
         >
           <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
             <Icon aria-hidden className="size-5" />
@@ -259,7 +256,7 @@ function WalletTools() {
             <span className="text-[15px] font-semibold">{label}</span>
             <span className="text-[13px] leading-5 text-ink-muted">{hint}</span>
           </span>
-          <ChevronRight aria-hidden className="ml-auto size-5 shrink-0 text-ink-muted" />
+          <ChevronRight aria-hidden className="ml-auto size-5 shrink-0 text-ink-muted xl:hidden" />
         </Link>
       ))}
     </nav>

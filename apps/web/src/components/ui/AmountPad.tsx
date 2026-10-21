@@ -54,7 +54,7 @@ export function AmountPad({ value, onChange, currency, locale, label, quick = []
             placeholder="0"
             value={value === "" ? "" : new Intl.NumberFormat(locale).format(Number(value))}
             onChange={(e) => onChange(digitsOf(e.target.value))}
-            className="min-w-0 flex-1 bg-transparent font-display text-[34px] leading-10 font-bold outline-none placeholder:text-ink-muted/50"
+            className="w-0 min-w-0 flex-1 bg-transparent font-display text-[34px] leading-10 font-bold outline-none placeholder:text-ink-muted/50"
           />
         </span>
       </div>

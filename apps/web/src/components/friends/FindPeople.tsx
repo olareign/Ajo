@@ -37,7 +37,7 @@ export function arrange(found: readonly Person[], show: Show, sort: Sort): reado
 }
 
 const field =
-  "h-[52px] rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal text-ink";
+  "h-14 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal text-ink";
 
 /** Search for a verified person by the start of their username. Nothing is listed until three letters are typed. */
 export function FindPeople() {
@@ -86,22 +86,24 @@ export function FindPeople() {
         subtitle="Type the start of their username. Only people who have verified their identity can be found."
         backHref={href("/friends")}
         action={
-          <ButtonLink
-            href={href("/friends/invite")}
-            variant="quiet"
-            size="lg"
-            className="hidden whitespace-nowrap md:inline-flex"
-          >
-            <Link2 aria-hidden className="size-5" />
-            Invite instead
-          </ButtonLink>
+          <div className="hidden md:block">
+            <ButtonLink
+              href={href("/friends/invite")}
+              variant="quiet"
+              size="lg"
+              className="whitespace-nowrap"
+            >
+              <Link2 aria-hidden className="size-5" />
+              Invite instead
+            </ButtonLink>
+          </div>
         }
       />
       <div className="grid gap-6">
         <div
           role="search"
           aria-label="Find people"
-          className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift md:grid-cols-[minmax(0,1fr)_220px_200px] md:items-end md:p-6"
+          className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift md:grid-cols-[minmax(0,1fr)_220px_200px] md:items-start md:p-6"
         >
           <TextField
             label="Username"

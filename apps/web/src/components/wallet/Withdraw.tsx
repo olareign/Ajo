@@ -86,7 +86,7 @@ export function Withdraw() {
 
       {step === "amount" && (
         <div className="grid gap-6">
-          <div className="grid gap-6 md:grid-cols-2 md:items-start">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start">
             <section
               aria-labelledby="how-much"
               className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift md:p-7"
