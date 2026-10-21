@@ -136,8 +136,10 @@ describe("the friends home", () => {
       }),
     });
     open(<FriendsHome />);
-    const circle = await screen.findByRole("region", { name: "Your circle" });
-    expect(within(circle).getByText("2 friends")).toBeInTheDocument();
+    const band = await screen.findByRole("region", { name: "Your friends at a glance" });
+    expect(band).toHaveTextContent("Friends2");
+    expect(band).toHaveTextContent("Trusted2");
+    expect(band).toHaveTextContent("Waiting for you1");
     expect(screen.getByRole("link", { name: /1 request is waiting for you/ })).toHaveAttribute(
       "href",
       "/friends/requests",
@@ -146,13 +148,13 @@ describe("the friends home", () => {
     expect(within(may).getByText("2 in common: Chidi, Funmi")).toBeInTheDocument();
     const mine = screen.getByRole("heading", { name: "Your friends" }).closest("section")!;
     expect(within(mine).getAllByRole("link")).toHaveLength(2);
-    expect(within(mine).getByText("Verified +")).toBeInTheDocument();
-    expect(within(mine).getAllByText("Trusted")).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "Find people" })).toHaveAttribute(
-      "href",
-      "/friends/find",
-    );
-    expect(screen.getByRole("link", { name: "Invite" })).toHaveAttribute("href", "/friends/invite");
+    expect(within(mine).getByText("Showing 1–2 of 2 friends")).toBeInTheDocument();
+    expect(within(mine).getByText("Verified +", { selector: "span" })).toBeInTheDocument();
+    expect(within(mine).getAllByText("Trusted", { selector: "span" })).toHaveLength(2);
+    for (const link of screen.getAllByRole("link", { name: "Find people" }))
+      expect(link).toHaveAttribute("href", "/friends/find");
+    for (const link of screen.getAllByRole("link", { name: /Invite someone you trust/ }))
+      expect(link).toHaveAttribute("href", "/friends/invite");
   });
 
   it("invites someone with no friends to find some", async () => {
@@ -162,8 +164,55 @@ describe("the friends home", () => {
       "GET /api/friends/suggestions": () => ({ status: 200, body: [] }),
     });
     open(<FriendsHome />);
-    expect(await screen.findByText(/Your circle is empty/)).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Your friends" })).not.toBeInTheDocument();
+    expect(await screen.findByText(/People you add show up here/)).toBeInTheDocument();
+    expect(screen.queryByRole("search", { name: "Search your friends" })).not.toBeInTheDocument();
+  });
+
+  it("searches, filters and sorts your friends, switches layout, and pages through them", async () => {
+    const user = userEvent.setup();
+    const many = Array.from({ length: 12 }, (_, i) => ({
+      ...friend(`pal_${String(i).padStart(2, "0")}`, i === 3 ? 2 : 1),
+      since: `2026-09-${String(i + 10)}T00:00:00Z`,
+      trust: { level: i < 4 ? "building" : "trusted", score: 10 },
+    }));
+    api({
+      "GET /api/friends": () => ({ status: 200, body: { friends: many } }),
+      "GET /api/friends/requests": () => ({ status: 200, body: { incoming: [], outgoing: [] } }),
+      "GET /api/friends/suggestions": () => ({ status: 200, body: [] }),
+    });
+    open(<FriendsHome />);
+    const mine = (await screen.findByRole("heading", { name: "Your friends" })).closest("section")!;
+    expect(within(mine).getByText("Showing 1–10 of 12 friends")).toBeInTheDocument();
+    // Newest first by default; the last-added friend leads.
+    expect(within(mine).getAllByRole("link")[0]).toHaveAttribute("href", "/friends/pal_11");
+    await user.click(within(mine).getByRole("button", { name: "Next page" }));
+    expect(within(mine).getByText("Showing 11–12 of 12 friends")).toBeInTheDocument();
+
+    await user.selectOptions(within(mine).getByLabelText("Show"), "plus");
+    expect(within(mine).getByText("Showing 1–1 of 1 friend")).toBeInTheDocument();
+    await user.selectOptions(within(mine).getByLabelText("Show"), "building");
+    expect(within(mine).getByText("Showing 1–4 of 4 friends")).toBeInTheDocument();
+    await user.selectOptions(within(mine).getByLabelText("Show"), "all");
+    await user.selectOptions(within(mine).getByLabelText("Sort"), "oldest");
+    expect(within(mine).getAllByRole("link")[0]).toHaveAttribute("href", "/friends/pal_00");
+
+    await user.type(within(mine).getByRole("searchbox"), "@PAL_07");
+    expect(within(mine).getByText("Showing 1–1 of 1 friend")).toBeInTheDocument();
+    await user.clear(within(mine).getByRole("searchbox"));
+    await user.type(within(mine).getByRole("searchbox"), "nobody");
+    expect(within(mine).getByText("No friends match that.")).toBeInTheDocument();
+    await user.click(within(mine).getByRole("button", { name: "Clear the search" }));
+    expect(within(mine).getByText("Showing 1–10 of 12 friends")).toBeInTheDocument();
+
+    expect(within(mine).getByRole("button", { name: "Grid" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.click(within(mine).getByRole("button", { name: "List" }));
+    expect(within(mine).getByRole("button", { name: "List" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("asks for friends, requests and suggestions in one request", async () => {
@@ -173,7 +222,7 @@ describe("the friends home", () => {
       "GET /api/friends/suggestions": () => ({ status: 200, body: [] }),
     });
     open(<FriendsHome />);
-    await screen.findByText(/Your circle is empty/);
+    await screen.findByText(/People you add show up here/);
     expect(sent(mock, "GET /api/screens/friends")).toHaveLength(1);
     expect(sent(mock, "GET /api/friends")).toHaveLength(0);
   });
