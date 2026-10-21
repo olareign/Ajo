@@ -23,8 +23,15 @@ import type { GroupSummary } from "@/lib/groups-client";
 import { countryConfig } from "@/lib/kyc-config";
 import type { Plan } from "@/lib/savings-client";
 import { loadScreen, partData, type ScreenData } from "@/lib/screen-client";
-import { MonthPanel } from "./desk/MonthPanel";
-import { CirclesPanel, SavingsPanel, Todo, UpNext } from "./desk/TodayDesk";
+import {
+  AccountStrip,
+  ActivityChart,
+  Attention,
+  BalanceHero,
+  QuickActions as DeskActions,
+  TransactionHistory,
+} from "./desk/Dashboard";
+import { UpNext, useUpcoming, type Due } from "./desk/TodayDesk";
 import { useWide } from "@/lib/use-wide";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Wallet } from "@/lib/wallet";
@@ -76,7 +83,9 @@ function Today({ me }: Readonly<{ me: Me }>) {
   const router = useRouter();
   // Everything Today shows comes in one request; within a visit the last copy shows at once.
   const [data, setData] = useState<TodayData | undefined>(() => recall<TodayData>("screen:today"));
+  // From a tablet up, Today is a dashboard; a phone reads one column.
   const wide = useWide();
+  const upcoming = useUpcoming(data?.plans, data?.groups);
 
   useEffect(() => {
     let live = true;
@@ -101,11 +110,11 @@ function Today({ me }: Readonly<{ me: Me }>) {
         tab
         title={`Hello, ${me.displayName}`}
         deskTitle="Overview"
-        eyebrow={<TimeOfDay />}
+        eyebrow={wide ? undefined : <TimeOfDay />}
         unread={data ? data.unread : null}
       />
       {wide ? (
-        <TodayDesk me={me} data={data} />
+        <TodayDesk me={me} data={data} upcoming={upcoming} />
       ) : (
         // A phone reads it top to bottom: money, shortcuts, what needs doing, then the rest.
         <div>
@@ -154,7 +163,7 @@ function Today({ me }: Readonly<{ me: Me }>) {
             </Link>
           )}
           <div className="mt-4">
-            <UpNext plans={data?.plans} groups={data?.groups} />
+            <UpNext items={upcoming} />
           </div>
           <TodaySavings plans={data?.plans} />
           <TodayCircles groups={data?.groups} />
@@ -219,60 +228,33 @@ function TimeOfDay() {
 }
 
 /**
- * Today on a desk: the three things that matter, then the detail. Balance; what's due next;
- * this month. Then each pot and each circle, with friends. Only to-dos that need the person show,
- * as slim lines above. No tiles or install prompt: the sidebar and the browser already do that.
+ * Today on a tablet or a desk: the balance (with what is in pots, the next payment and the two
+ * money moves) beside what needs the person; four ways to start something; money in and out over
+ * time; then every payment, to search and narrow; and the account's standing in one line.
+ * Each card asks for its own data, so one slow part never holds up the rest.
  */
-function TodayDesk({ me, data }: Readonly<{ me: Me; data: TodayData | undefined }>) {
+function TodayDesk({
+  me,
+  data,
+  upcoming,
+}: Readonly<{ me: Me; data: TodayData | undefined; upcoming: readonly Due[] }>) {
   const currency = countryConfig(me.country)?.currency;
-  const needsId = me.kycStatus !== undefined && me.kycStatus !== "approved";
   return (
     <div className="grid gap-6">
-      {(needsId || me.mfaEnabled === false) && (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {needsId && (
-            <Todo
-              href="/verify"
-              Icon={BookUser}
-              tone="bg-primary-tint text-ink"
-              title="Get your passport stamped"
-            >
-              {me.kycStatus === "rejected"
-                ? "A stamp needs another try."
-                : me.kycStatus === "pending"
-                  ? "We're checking your details."
-                  : "Five short steps open saving, circles and friends."}
-            </Todo>
-          )}
-          {me.mfaEnabled === false && (
-            <Todo
-              href="/me/security"
-              Icon={ShieldAlert}
-              tone="bg-oro-tint text-oro-ink"
-              title="Add a second lock"
-            >
-              Needed before you can move money. It takes a minute.
-            </Todo>
-          )}
-        </div>
-      )}
-      {/* Three columns that each stack on their own, so a short card leaves no gap: your money
-          and your pots; what's next and your circles; this month and friends. On a narrower desk
-          the third sits under the first two, its two cards side by side. */}
-      <div className="grid items-start gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <div className="grid gap-6 [&>*]:mt-0">
-          <WalletSummary wallets={data?.wallets} currency={currency} fx={data?.fx} />
-          <SavingsPanel plans={data?.plans} />
-        </div>
-        <div className="grid gap-6">
-          <UpNext plans={data?.plans} groups={data?.groups} />
-          <CirclesPanel groups={data?.groups} />
-        </div>
-        <div className="grid items-start gap-6 lg:col-span-2 lg:grid-cols-2 xl:col-span-1 xl:grid-cols-1 [&_a]:mt-0">
-          <MonthPanel currency={currency} recent balance={false} />
-          <TodayFriends state={data?.friends} />
-        </div>
+      <div className="grid items-stretch gap-6 lg:grid-cols-2">
+        <BalanceHero
+          wallets={data?.wallets}
+          currency={currency}
+          fx={data?.fx}
+          plans={data?.plans}
+          upcoming={upcoming}
+        />
+        <Attention me={me} />
       </div>
+      <DeskActions />
+      <ActivityChart currency={currency} locale={countryConfig(me.country)?.locale ?? "en-NG"} />
+      <TransactionHistory />
+      <AccountStrip me={me} />
     </div>
   );
 }

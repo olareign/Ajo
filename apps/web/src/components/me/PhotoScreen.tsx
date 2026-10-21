@@ -20,7 +20,6 @@ import { clampCrop, MAX_ZOOM, MIN_ZOOM, type Crop } from "@/lib/crop";
 import { cropToJpeg } from "@/lib/crop-canvas";
 import { removePhoto, uploadPhoto } from "@/lib/profile-client";
 import { FormPage } from "@/components/desk/FormPage";
-import { PhotoAside } from "@/components/desk/asides";
 
 export function PhotoScreen() {
   return <MeGate needs="onboarded">{(me) => <Photo me={me} />}</MeGate>;
@@ -55,7 +54,7 @@ function Photo({ me }: Readonly<{ me: Me }>) {
 
   if (me.photosEnabled === false) {
     return (
-      <FormPage aside={<PhotoAside />}>
+      <FormPage>
         <ScreenHeader title="Profile picture" backHref="/me" />
         <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-[15px] leading-6 text-ink-muted">
           Profile pictures aren&apos;t switched on yet. Check back soon.
@@ -155,7 +154,7 @@ function Photo({ me }: Readonly<{ me: Me }>) {
     : undefined;
 
   return (
-    <FormPage aside={<PhotoAside />}>
+    <FormPage>
       <ScreenHeader
         title="Profile picture"
         subtitle="Shown to you and the friends you add. Never to anyone else."

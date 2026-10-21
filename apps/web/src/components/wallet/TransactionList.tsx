@@ -60,13 +60,16 @@ export function TransactionList({
   items,
   onSelect,
   selectedId,
+  grouped,
 }: Readonly<{
   items: readonly WalletTransaction[];
   onSelect?: (item: WalletTransaction) => void;
   selectedId?: string;
+  /** Plain rows under a heading for each day (no picking). */
+  grouped?: boolean;
 }>) {
   if (items.length === 0) return <p className="py-4 text-ink-muted">No activity yet.</p>;
-  if (!onSelect) {
+  if (!onSelect && !grouped) {
     return (
       <ul aria-label="Recent activity">
         {items.map((item) => (
@@ -95,17 +98,23 @@ export function TransactionList({
           <ul className="grid gap-1">
             {dayItems.map((item) => (
               <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(item)}
-                  aria-pressed={item.id === selectedId}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-[14px] px-2 py-3 text-left transition-colors",
-                    item.id === selectedId ? "bg-primary-tint" : "hover:bg-surface-sunken",
-                  )}
-                >
-                  <RowBody item={item} />
-                </button>
+                {!onSelect ? (
+                  <div className="flex items-center gap-3 rounded-[14px] px-2 py-3">
+                    <RowBody item={item} />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onSelect?.(item)}
+                    aria-pressed={item.id === selectedId}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-[14px] px-2 py-3 text-left transition-colors",
+                      item.id === selectedId ? "bg-primary-tint" : "hover:bg-surface-sunken",
+                    )}
+                  >
+                    <RowBody item={item} />
+                  </button>
+                )}
               </li>
             ))}
           </ul>

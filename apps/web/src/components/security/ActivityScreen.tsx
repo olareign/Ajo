@@ -106,7 +106,7 @@ function Activity() {
       <ScreenHeader
         title="Security activity"
         subtitle="Sign-ins and changes to your account, newest first."
-        backHref="/me"
+        backHref="/settings"
       />
       {events === undefined && (
         <p role="status" className="text-ink-muted">
@@ -126,12 +126,12 @@ function Activity() {
       {events !== undefined && events !== "failed" && (
         <div className="grid gap-4">
           <Link
-            href="/me"
+            href="/settings"
             className="flex items-center gap-3 rounded-[var(--radius-l)] border border-danger/30 bg-danger-tint p-4 text-[14px] leading-5 text-ink"
           >
             <TriangleAlert aria-hidden className="size-5 shrink-0 text-danger" />
-            Something you don&apos;t recognise? Sign out of all devices from Me, then change your
-            password.
+            Something you don&apos;t recognise? Sign out of all devices from Settings, then change
+            your password.
           </Link>
           {events.length === 0 ? (
             <p className="text-[15px] text-ink-muted">Nothing yet.</p>

@@ -2,8 +2,15 @@ import { render, screen, within } from "@testing-library/react";
 import type { GroupDetail, GroupSummary } from "@/lib/groups-client";
 import type { Plan } from "@/lib/savings-client";
 import { forgetAll } from "@/lib/visit-cache";
-import { MonthPanel } from "./MonthPanel";
-import { CirclesPanel, SavingsPanel, UpNext } from "./TodayDesk";
+import { UpNext, useUpcoming } from "./TodayDesk";
+
+/** Up next as Today uses it: the list worked out from plans and circles, then shown. */
+function Upcoming({
+  plans,
+  groups,
+}: Readonly<{ plans: readonly Plan[]; groups: readonly GroupSummary[] }>) {
+  return <UpNext items={useUpcoming(plans, groups)} />;
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -71,7 +78,7 @@ describe("up next", () => {
       "fetch",
       vi.fn(async () => Response.json(detail)),
     );
-    render(<UpNext plans={[plan()]} groups={[group()]} />);
+    render(<Upcoming plans={[plan()]} groups={[group()]} />);
     const list = await screen.findByRole("list");
     await screen.findByText("Round 2: the pot is yours · Sun");
     const rows = within(list)
@@ -85,85 +92,8 @@ describe("up next", () => {
   it("says plainly when nothing is due, and asks nothing for circles that aren't running", () => {
     const asked = vi.fn();
     vi.stubGlobal("fetch", asked);
-    render(<UpNext plans={[plan({ nextDebit: null })]} groups={[group({ status: "open" })]} />);
+    render(<Upcoming plans={[plan({ nextDebit: null })]} groups={[group({ status: "open" })]} />);
     expect(screen.getByText(/Nothing is due/)).toBeInTheDocument();
     expect(asked).not.toHaveBeenCalled();
-  });
-});
-
-describe("pots and circles on a desk", () => {
-  it("shows each pot with how full it is", () => {
-    render(<SavingsPanel plans={[plan()]} />);
-    expect(screen.getByText("3 of 12 payments")).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Rent for March: 25% saved" })).toHaveAttribute(
-      "aria-valuenow",
-      "25",
-    );
-  });
-
-  it("offers one way to begin when there are no pots or circles", () => {
-    render(<SavingsPanel plans={[]} />);
-    expect(screen.getByRole("link", { name: /Start a plan/ })).toHaveAttribute("href", "/save/new");
-    render(<CirclesPanel groups={[]} />);
-    expect(screen.getByRole("link", { name: /Start a circle/ })).toHaveAttribute(
-      "href",
-      "/circles/new",
-    );
-  });
-
-  it("shows each circle's state, how full it is, your turn and its pot", () => {
-    render(<CirclesPanel groups={[group(), group({ id: "g2", status: "completed" })]} />);
-    expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.getByText(/Running · 3 of 3 people · your turn: 2/)).toBeInTheDocument();
-    expect(screen.getByText("₦150,000")).toBeInTheDocument();
-  });
-});
-
-describe("this month beside the balance", () => {
-  it("leads with money in and out, and lists only payments in or out of the wallet", async () => {
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
-    );
-    const tx = (id: string, account: string, direction: string, amount: string) => ({
-      id,
-      transactionId: `t-${id}`,
-      type: "lock_deposit",
-      account,
-      direction,
-      amount: naira(amount),
-      currency: "NGN",
-      createdAt: "2026-10-17T02:43:00Z",
-    });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) =>
-        url.startsWith("/api/wallet/insights")
-          ? Response.json({
-              months: [
-                {
-                  month: "2026-10",
-                  currency: "NGN",
-                  moneyIn: "6250000",
-                  moneyOut: "3500000",
-                  savedNet: "0",
-                  endAvailable: "27750000",
-                  endSavings: "0",
-                  endLocked: "0",
-                },
-              ],
-            })
-          : Response.json({
-              items: [tx("a", "available", "out", "10000000"), tx("b", "locked", "in", "10000000")],
-              next: null,
-            }),
-      ),
-    );
-    render(<MonthPanel currency="NGN" recent balance={false} />);
-    expect(await screen.findByText("₦62,500")).toBeInTheDocument();
-    expect(screen.getByText("₦35,000")).toBeInTheDocument();
-    expect(screen.queryByText("In your wallet")).toBeNull();
-    const latest = await screen.findByRole("list", { name: "Latest payments" });
-    expect(within(latest).getAllByRole("listitem")).toHaveLength(1);
   });
 });

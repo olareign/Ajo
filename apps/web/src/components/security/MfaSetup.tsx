@@ -10,6 +10,7 @@ import { CodeBoxes } from "@/components/ui/CodeBoxes";
 import { Keypad } from "@/components/ui/Keypad";
 import { QrCode } from "@/components/ui/QrCode";
 import { Stitches } from "@/components/ui/Stitches";
+import { FormColumns } from "@/components/desk/FormPage";
 import { RecoveryTicket } from "./RecoveryTicket";
 
 const CODE_LENGTH = 6;
@@ -123,131 +124,135 @@ export function MfaSetup() {
   }[phase.kind];
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <ScreenHeader
-        title={heading.title}
-        subtitle={heading.subtitle}
-        onBack={back}
-        backHref={phase.kind === "intro" ? "/me" : undefined}
-      />
-      <div className="flex flex-1 flex-col gap-6">
-        {phase.kind !== "saved" && (
-          <Stitches total={3} done={DONE[phase.kind]} label="Setup progress" />
-        )}
+    // A phone: one column the height of the screen, the button by the thumb. From a tablet up: the
+    // steps on the left at a comfortable width, a note on keeping the account safe beside them.
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))] md:block md:min-h-0 md:max-w-none md:px-6 md:pt-8 md:pb-12 lg:px-8">
+      <FormColumns className="flex flex-1 flex-col">
+        <ScreenHeader
+          title={heading.title}
+          subtitle={heading.subtitle}
+          onBack={back}
+          backHref={phase.kind === "intro" ? "/settings" : undefined}
+        />
+        <div className="flex flex-1 flex-col gap-6">
+          {phase.kind !== "saved" && (
+            <Stitches total={3} done={DONE[phase.kind]} label="Setup progress" />
+          )}
 
-        {phase.kind === "intro" && (
-          <ol className="grid grid-cols-1 gap-3">
-            {STEPS.map(({ icon: Icon, title, detail }, i) => (
-              <li
-                key={title}
-                className="pop-in flex items-start gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"
-                style={{ "--pop-delay": `${i * 90}ms` } as React.CSSProperties}
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
-                  <Icon aria-hidden className="size-5" />
-                </span>
-                <span className="grid gap-0.5">
-                  <span className="text-[15px] font-semibold">{title}</span>
-                  <span className="text-[14px] leading-5 text-ink-muted">{detail}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-
-        {phase.kind === "scan" && (
-          <>
-            <div className="relative grid place-items-center rounded-[var(--radius-l)] bg-primary-tint p-6">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-2 rounded-[calc(var(--radius-l)-8px)] border-[1.5px] border-dashed border-primary/35"
-              />
-              <QrCode
-                value={phase.uri}
-                label="QR code for your authenticator app"
-                className="pop-in size-56 max-w-full rounded-m"
-              />
-            </div>
-            <div className="grid gap-2">
-              <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">
-                Can&apos;t scan? Type this key into your app
-              </p>
-              <p className="rounded-m bg-surface-sunken p-4 font-mono text-[15px] leading-6 break-words text-ink">
-                {group(phase.secret)}
-              </p>
-              <Button variant="quiet" onClick={() => void copyKey(phase.secret)}>
-                {copied ? (
-                  <Check aria-hidden className="size-4" />
-                ) : (
-                  <Copy aria-hidden className="size-4" />
-                )}
-                {copied ? "Copied" : "Copy key"}
-              </Button>
-            </div>
-          </>
-        )}
-
-        {phase.kind === "code" && (
-          <CodeBoxes label="Code from your authenticator app" value={code} error={error} />
-        )}
-
-        {phase.kind === "saved" && (
-          <>
-            <RecoveryTicket codes={phase.codes} />
-            <label className="flex items-start gap-3 text-[15px] leading-6">
-              <input
-                type="checkbox"
-                checked={saved}
-                onChange={(e) => setSaved(e.target.checked)}
-                className="mt-1 size-5 shrink-0 accent-[var(--primary)]"
-              />
-              I&apos;ve saved these codes somewhere safe
-            </label>
-          </>
-        )}
-
-        {error && phase.kind !== "code" && (
-          <p role="alert" className="text-center text-[15px] font-medium text-danger">
-            {error}
-          </p>
-        )}
-
-        <div className="mt-auto grid gap-4 pt-2">
           {phase.kind === "intro" && (
-            <Button size="lg" block loading={busy} disabled={busy} onClick={() => void start()}>
-              {busy ? "One moment…" : "Start"}
-            </Button>
+            <ol className="grid grid-cols-1 gap-3">
+              {STEPS.map(({ icon: Icon, title, detail }, i) => (
+                <li
+                  key={title}
+                  className="pop-in flex items-start gap-4 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift"
+                  style={{ "--pop-delay": `${i * 90}ms` } as React.CSSProperties}
+                >
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
+                    <Icon aria-hidden className="size-5" />
+                  </span>
+                  <span className="grid gap-0.5">
+                    <span className="text-[15px] font-semibold">{title}</span>
+                    <span className="text-[14px] leading-5 text-ink-muted">{detail}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
           )}
+
           {phase.kind === "scan" && (
-            <Button
-              size="lg"
-              block
-              onClick={() => setPhase({ kind: "code", secret: phase.secret, uri: phase.uri })}
-            >
-              I&apos;ve added it
-            </Button>
-          )}
-          {phase.kind === "code" && (
             <>
+              <div className="relative grid place-items-center rounded-[var(--radius-l)] bg-primary-tint p-6">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-2 rounded-[calc(var(--radius-l)-8px)] border-[1.5px] border-dashed border-primary/35"
+                />
+                <QrCode
+                  value={phase.uri}
+                  label="QR code for your authenticator app"
+                  className="pop-in size-56 max-w-full rounded-m"
+                />
+              </div>
+              <div className="grid gap-2">
+                <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">
+                  Can&apos;t scan? Type this key into your app
+                </p>
+                <p className="rounded-m bg-surface-sunken p-4 font-mono text-[15px] leading-6 break-words text-ink">
+                  {group(phase.secret)}
+                </p>
+                <Button variant="quiet" onClick={() => void copyKey(phase.secret)}>
+                  {copied ? (
+                    <Check aria-hidden className="size-4" />
+                  ) : (
+                    <Copy aria-hidden className="size-4" />
+                  )}
+                  {copied ? "Copied" : "Copy key"}
+                </Button>
+              </div>
+            </>
+          )}
+
+          {phase.kind === "code" && (
+            <CodeBoxes label="Code from your authenticator app" value={code} error={error} />
+          )}
+
+          {phase.kind === "saved" && (
+            <>
+              <RecoveryTicket codes={phase.codes} />
+              <label className="flex items-start gap-3 text-[15px] leading-6">
+                <input
+                  type="checkbox"
+                  checked={saved}
+                  onChange={(e) => setSaved(e.target.checked)}
+                  className="mt-1 size-5 shrink-0 accent-[var(--primary)]"
+                />
+                I&apos;ve saved these codes somewhere safe
+              </label>
+            </>
+          )}
+
+          {error && phase.kind !== "code" && (
+            <p role="alert" className="text-center text-[15px] font-medium text-danger">
+              {error}
+            </p>
+          )}
+
+          <div className="mt-auto grid gap-4 pt-2">
+            {phase.kind === "intro" && (
+              <Button size="lg" block loading={busy} disabled={busy} onClick={() => void start()}>
+                {busy ? "One moment…" : "Start"}
+              </Button>
+            )}
+            {phase.kind === "scan" && (
               <Button
                 size="lg"
                 block
-                loading={busy}
-                disabled={busy || code.length !== CODE_LENGTH}
-                onClick={() => void confirm()}
+                onClick={() => setPhase({ kind: "code", secret: phase.secret, uri: phase.uri })}
               >
-                {busy ? "One moment…" : "Confirm"}
+                I&apos;ve added it
               </Button>
-              <Keypad value={code} onChange={setCode} length={CODE_LENGTH} label="Number pad" />
-            </>
-          )}
-          {phase.kind === "saved" && (
-            <Button size="lg" block disabled={!saved} onClick={() => router.replace("/me")}>
-              Done
-            </Button>
-          )}
+            )}
+            {phase.kind === "code" && (
+              <>
+                <Button
+                  size="lg"
+                  block
+                  loading={busy}
+                  disabled={busy || code.length !== CODE_LENGTH}
+                  onClick={() => void confirm()}
+                >
+                  {busy ? "One moment…" : "Confirm"}
+                </Button>
+                <Keypad value={code} onChange={setCode} length={CODE_LENGTH} label="Number pad" />
+              </>
+            )}
+            {phase.kind === "saved" && (
+              <Button size="lg" block disabled={!saved} onClick={() => router.replace("/settings")}>
+                Done
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      </FormColumns>
     </main>
   );
 }

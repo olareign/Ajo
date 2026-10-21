@@ -203,7 +203,10 @@ describe("security activity", () => {
     expect(items[0]).toHaveTextContent("Password changed");
     expect(items[0]).toHaveTextContent("Chrome on Android");
     expect(items[1]).toHaveTextContent("Signed in on a new device");
-    expect(screen.getByRole("link", { name: /don.t recognise/ })).toHaveAttribute("href", "/me");
+    expect(screen.getByRole("link", { name: /don.t recognise/ })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
   });
 });
 

@@ -1,9 +1,12 @@
 "use client";
 
-import { MapPin, Smartphone } from "lucide-react";
+import { Link2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { ButtonLink } from "@/components/ui/ButtonLink";
+import { Pager } from "@/components/ui/Pager";
 import { PreviewRibbon } from "@/components/ui/PreviewRibbon";
 import { TextField } from "@/components/ui/TextField";
 import { FlowLocked } from "@/components/wallet/FlowLocked";
@@ -11,10 +14,30 @@ import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { Person } from "@/lib/friends-client";
 import { useFriends, useFriendsLock } from "./FriendsFlow";
 import { PersonRow } from "./PersonRow";
+import { usePaged } from "@/lib/paging";
 import { PAGE } from "@/lib/page";
 
 export const SEARCH_DELAY_MS = 350;
 const USERNAME_START = /^[a-z][a-z0-9_]{2,19}$/;
+
+type Show = "all" | "new" | "common";
+type Sort = "best" | "name";
+
+/** Narrows and orders what the search found. "Best match" is the order the API gave. */
+export function arrange(found: readonly Person[], show: Show, sort: Sort): readonly Person[] {
+  const kept = found.filter(
+    (p) =>
+      show === "all" ||
+      (show === "new" && p.relation === "none") ||
+      (show === "common" && p.mutualFriends > 0),
+  );
+  return sort === "name"
+    ? kept.slice().sort((a, b) => a.displayName.localeCompare(b.displayName))
+    : kept;
+}
+
+const field =
+  "h-14 rounded-[14px] border border-line-strong bg-surface px-3 text-[15px] font-normal text-ink";
 
 /** Search for a verified person by the start of their username. Nothing is listed until three letters are typed. */
 export function FindPeople() {
@@ -23,10 +46,14 @@ export function FindPeople() {
   const router = useRouter();
   const lock = useFriendsLock();
   const [text, setText] = useState("");
+  const [show, setShow] = useState<Show>("all");
+  const [sort, setSort] = useState<Sort>("best");
   const [found, setFound] = useState<readonly Person[]>();
   const [failed, setFailed] = useState<string>();
   const query = text.trim().replace(/^@/, "").toLowerCase();
   const ready = USERNAME_START.test(query);
+  const shown = found ? arrange(found, show, sort) : [];
+  const paged = usePaged(shown);
 
   useEffect(() => {
     if (lock || !ready) return;
@@ -56,24 +83,66 @@ export function FindPeople() {
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader
         title="Find people"
-        subtitle="Type the start of their username."
+        subtitle="Type the start of their username. Only people who have verified their identity can be found."
         backHref={href("/friends")}
+        action={
+          <div className="hidden md:block">
+            <ButtonLink
+              href={href("/friends/invite")}
+              variant="quiet"
+              size="lg"
+              className="whitespace-nowrap"
+            >
+              <Link2 aria-hidden className="size-5" />
+              Invite instead
+            </ButtonLink>
+          </div>
+        }
       />
       <div className="grid gap-6">
-        <TextField
-          label="Username"
-          prefix="@"
-          value={text}
-          onChange={setText}
-          autoComplete="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          hint={
-            preview
-              ? "Try chidi, sade or emeka."
-              : "Only people who have verified their identity can be found."
-          }
-        />
+        <div
+          role="search"
+          aria-label="Find people"
+          className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-4 shadow-lift md:grid-cols-[minmax(0,1fr)_220px_200px] md:items-start md:p-6"
+        >
+          <TextField
+            label="Username"
+            prefix="@"
+            value={text}
+            onChange={(value) => (setText(value), paged.setPage(1))}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            hint={
+              preview
+                ? "Try chidi, sade or emeka."
+                : "Only people who have verified their identity can be found."
+            }
+          />
+          <label className="grid gap-1.5 text-[13px] font-semibold text-ink-muted">
+            Show
+            <select
+              value={show}
+              onChange={(e) => (setShow(e.target.value as Show), paged.setPage(1))}
+              className={field}
+            >
+              <option value="all">Everyone found</option>
+              <option value="new">Not yet friends</option>
+              <option value="common">Friends in common</option>
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-[13px] font-semibold text-ink-muted">
+            Sort
+            <select
+              value={sort}
+              onChange={(e) => (setSort(e.target.value as Sort), paged.setPage(1))}
+              className={field}
+            >
+              <option value="best">Best match</option>
+              <option value="name">Name, A to Z</option>
+            </select>
+          </label>
+        </div>
 
         {failed && (
           <p role="alert" className="text-[15px] text-danger">
@@ -85,47 +154,50 @@ export function FindPeople() {
         )}
         {ready && found && found.length === 0 && (
           <p role="status" className="text-[15px] text-ink-muted">
-            No one found with a username starting &ldquo;{query}&rdquo;. Check the spelling, or send
-            them your invite link.
+            No one found with a username starting &ldquo;{query}&rdquo;. Check the spelling, or{" "}
+            <Link
+              href={href("/friends/invite")}
+              className="font-semibold text-primary underline underline-offset-4"
+            >
+              send them your invite link
+            </Link>
+            .
           </p>
         )}
         {ready && found && found.length > 0 && (
-          <ul aria-label="Results" className="grid gap-3">
-            {found.map((p) => (
-              <PersonRow
-                key={p.username}
-                person={p}
-                href={href(`/friends/${p.username}`)}
-                note={p.mutualFriends > 0 ? `${p.mutualFriends} in common` : undefined}
-                onFail={(f) =>
-                  setFailed(f.kind === "signed-out" ? "Please sign in again." : f.message)
-                }
-              />
-            ))}
-          </ul>
+          <section aria-labelledby="found" className="grid gap-4">
+            <h2 id="found" className="text-[15px] font-semibold text-ink-muted" aria-live="polite">
+              {shown.length} {shown.length === 1 ? "person" : "people"} starting &ldquo;{query}
+              &rdquo;
+            </h2>
+            {shown.length === 0 ? (
+              <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
+                No one fits that filter. Try &ldquo;Everyone found&rdquo;.
+              </p>
+            ) : (
+              <div className="overflow-hidden rounded-[var(--radius-xl)] bg-surface-raised shadow-lift">
+                <ul
+                  aria-label="Results"
+                  className="grid gap-4 p-4 sm:grid-cols-2 md:p-6 xl:grid-cols-3"
+                >
+                  {paged.slice.map((p) => (
+                    <PersonRow
+                      key={p.username}
+                      variant="card"
+                      person={p}
+                      href={href(`/friends/${p.username}`)}
+                      note={p.mutualFriends > 0 ? `${p.mutualFriends} in common` : undefined}
+                      onFail={(f) =>
+                        setFailed(f.kind === "signed-out" ? "Please sign in again." : f.message)
+                      }
+                    />
+                  ))}
+                </ul>
+                <Pager paged={paged} noun={["person", "people"]} className="border-t border-line" />
+              </div>
+            )}
+          </section>
         )}
-
-        <section
-          aria-label="Coming later"
-          className="grid gap-3 border-t-2 border-dashed border-line pt-6"
-        >
-          <p className="text-[13px] font-semibold tracking-[0.04em] text-ink-muted">COMING LATER</p>
-          <div className="flex items-start gap-3 rounded-[var(--radius-l)] bg-surface-sunken p-4 text-[14px] leading-5">
-            <Smartphone aria-hidden className="mt-0.5 size-5 shrink-0 text-ink-muted" />
-            <span>
-              <span className="font-semibold">Find friends in your contacts.</span> It needs a
-              verified phone number, which we can&apos;t check yet. Nothing from your contacts is
-              ever read until then.
-            </span>
-          </div>
-          <div className="flex items-start gap-3 rounded-[var(--radius-l)] bg-surface-sunken p-4 text-[14px] leading-5">
-            <MapPin aria-hidden className="mt-0.5 size-5 shrink-0 text-ink-muted" />
-            <span>
-              <span className="font-semibold">People nearby.</span> It needs your verified location,
-              and will only ever show an area name, never where you are.
-            </span>
-          </div>
-        </section>
       </div>
     </main>
   );

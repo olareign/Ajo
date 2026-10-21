@@ -12,7 +12,6 @@ import { TextField } from "@/components/ui/TextField";
 import { send } from "@/lib/api-send";
 import { removePhone, setPhone } from "@/lib/profile-client";
 import { FormPage } from "@/components/desk/FormPage";
-import { PhoneAside } from "@/components/desk/asides";
 
 export function PhoneScreen() {
   return <MeGate needs="onboarded">{(me) => <PhoneNumber me={me} />}</MeGate>;
@@ -52,7 +51,7 @@ function PhoneNumber({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <FormPage aside={<PhoneAside />}>
+    <FormPage>
       <ScreenHeader
         title="Phone number"
         subtitle="So your circle can reach you, and for account checks later."

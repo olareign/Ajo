@@ -1,6 +1,10 @@
 import {
   cell,
   decimal,
+  filterLines,
+  isFiltered,
+  NO_FILTER,
+  type StatementLine,
   presetRange,
   readStatement,
   statementCsv,
@@ -107,5 +111,43 @@ describe("statement helpers", () => {
     expect(read?.lines).toHaveLength(1);
     expect(read?.balances).toHaveLength(1);
     expect(read?.truncated).toBe(true);
+  });
+});
+
+describe("narrowing a statement", () => {
+  const line = (id: string, over: Partial<StatementLine>): StatementLine => ({
+    id,
+    at: "2026-10-10T09:00:00Z",
+    type: "deposit",
+    account: "available",
+    direction: "in",
+    amount: "500000",
+    currency: "NGN",
+    reference: null,
+    ...over,
+  });
+  const lines = [
+    line("a", {}),
+    line("b", { type: "withdrawal", direction: "out", reference: "WD-77" }),
+    line("c", { type: "lock_deposit", account: "locked", direction: "in" }),
+  ];
+
+  it("keeps every line when nothing is chosen", () => {
+    expect(filterLines(lines, NO_FILTER)).toHaveLength(3);
+    expect(isFiltered(NO_FILTER)).toBe(false);
+    expect(isFiltered({ ...NO_FILTER, text: "   " })).toBe(false);
+  });
+
+  it("narrows by money in or out, and by account, together", () => {
+    expect(filterLines(lines, { ...NO_FILTER, direction: "out" }).map((l) => l.id)).toEqual(["b"]);
+    expect(
+      filterLines(lines, { ...NO_FILTER, direction: "in", account: "locked" }).map((l) => l.id),
+    ).toEqual(["c"]);
+  });
+
+  it("finds words in the description, the account and the reference, in any case", () => {
+    expect(filterLines(lines, { ...NO_FILTER, text: "  wd-77 " }).map((l) => l.id)).toEqual(["b"]);
+    expect(filterLines(lines, { ...NO_FILTER, text: "LOCKED" }).map((l) => l.id)).toEqual(["c"]);
+    expect(filterLines(lines, { ...NO_FILTER, text: "nothing like this" })).toEqual([]);
   });
 });

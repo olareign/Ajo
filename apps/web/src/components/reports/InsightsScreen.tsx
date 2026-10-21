@@ -12,6 +12,9 @@ import { countryConfig } from "@/lib/kyc-config";
 import { currencyName } from "@/lib/wallet";
 import { InOutChart, SavingsLine } from "./Charts";
 import { PAGE } from "@/lib/page";
+import { SummaryBand } from "@/components/desk/Band";
+import { Pager } from "@/components/ui/Pager";
+import { usePaged } from "@/lib/paging";
 
 export function InsightsScreen() {
   return <MeGate needs="onboarded">{(me) => <Insights me={me} />}</MeGate>;
@@ -67,6 +70,8 @@ function Insights({ me }: Readonly<{ me: Me }>) {
   const shown = currency && currencies.includes(currency) ? currency : currencies[0];
   const months = load.phase === "ready" ? load.months.filter((m) => m.currency === shown) : [];
   const now = months[months.length - 1];
+  // Newest month first in the table, a page at a time.
+  const paged = usePaged([...months].reverse());
 
   return (
     <main className={PAGE}>
@@ -77,7 +82,7 @@ function Insights({ me }: Readonly<{ me: Me }>) {
       />
       <div className="grid gap-5">
         {/* The same toolbar as Statements: a card on a desk. */}
-        <div className="flex flex-wrap items-end justify-between gap-4 lg:rounded-[var(--radius-xl)] lg:bg-surface-raised lg:p-5 lg:shadow-lift">
+        <div className="flex flex-wrap items-end justify-between gap-4 md:rounded-[var(--radius-xl)] md:bg-surface-raised md:p-5 md:shadow-lift">
           <ChoiceChips
             label="Period"
             options={RANGES}
@@ -98,7 +103,7 @@ function Insights({ me }: Readonly<{ me: Me }>) {
         </div>
 
         {load.phase === "loading" && (
-          <div role="status" className="grid gap-4 lg:grid-cols-3">
+          <div role="status" className="grid gap-4 md:grid-cols-3">
             <span className="sr-only">Loading…</span>
             {[0, 1, 2].map((i) => (
               <div
@@ -124,26 +129,21 @@ function Insights({ me }: Readonly<{ me: Me }>) {
         )}
         {now && shown && (
           <>
-            <section
-              aria-label={`This month, ${monthLabel(now.month, true)}`}
-              className="grid gap-4 sm:grid-cols-3"
-            >
-              {(
+            <SummaryBand
+              label={`This month, ${monthLabel(now.month, true)}`}
+              figures={(
                 [
                   ["Money in this month", now.moneyIn],
                   ["Money out this month", now.moneyOut],
                   ["Saved this month", now.savedNet],
                 ] as const
-              ).map(([label, amount]) => (
-                <div
-                  key={label}
-                  className="grid gap-1 rounded-[var(--radius-l)] bg-surface-raised p-5 shadow-lift"
-                >
-                  <p className="text-[13px] text-ink-muted">{label}</p>
-                  <Amount amount={amount} currency={shown} locale={locale} size="l" />
-                </div>
-              ))}
-            </section>
+              ).map(([label, amount]) => ({
+                label,
+                value: (
+                  <Amount amount={amount} currency={shown} locale={locale} size="m" tone="hero" />
+                ),
+              }))}
+            />
             <div className="grid gap-5 lg:grid-cols-2">
               <section
                 aria-labelledby="in-out"
@@ -201,7 +201,7 @@ function Insights({ me }: Readonly<{ me: Me }>) {
                     </tr>
                   </thead>
                   <tbody>
-                    {months.map((m) => (
+                    {paged.slice.map((m) => (
                       <tr key={m.month}>
                         <td className="border-b border-line px-3 py-2">
                           {monthLabel(m.month, true)}
@@ -218,6 +218,7 @@ function Insights({ me }: Readonly<{ me: Me }>) {
                   </tbody>
                 </table>
               </div>
+              <Pager paged={paged} noun={["month", "months"]} />
             </details>
           </>
         )}

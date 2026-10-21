@@ -21,7 +21,6 @@ import { PREVIEW_CHECK_MS, pause } from "@/lib/preview";
 import { FlowLocked } from "./FlowLocked";
 import { useMoneyFlow } from "./MoneyFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { AutoDebitAside } from "@/components/desk/asides";
 
 type State = "none" | "pending" | "active" | "cancelled" | "failed";
 
@@ -125,7 +124,7 @@ export function Mandate() {
   }
 
   return (
-    <FormPage aside={<AutoDebitAside />}>
+    <FormPage wide>
       {preview && <PreviewRibbon exitHref="/wallet/mandate" />}
       <ScreenHeader
         title="Auto-debit"
@@ -163,6 +162,27 @@ export function Mandate() {
           {copy.how}
         </p>
 
+        <ol aria-label="How auto-debit works" className="grid gap-3 md:grid-cols-3">
+          {(
+            [
+              ["A payment is due", "A saving or circle payment, on its date."],
+              ["We collect it", `Through ${copy.scheme}, only for amounts you agreed to.`],
+              ["You stay in control", copy.guarantee],
+            ] as const
+          ).map(([title, body], i) => (
+            <li
+              key={title}
+              className="grid content-start gap-2 rounded-[var(--radius-l)] bg-surface-raised p-5 shadow-lift"
+            >
+              <span className="grid size-8 place-items-center rounded-full bg-primary-tint text-[14px] font-bold text-primary">
+                {i + 1}
+              </span>
+              <p className="font-semibold">{title}</p>
+              <p className="text-[14px] leading-5 text-ink-muted">{body}</p>
+            </li>
+          ))}
+        </ol>
+
         {error && (
           <p role="alert" className="text-center text-[15px] font-medium text-danger">
             {error}
@@ -174,7 +194,13 @@ export function Mandate() {
           </p>
         )}
         {state === "none" && (!preview ? real !== undefined : true) && (
-          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void setUp()}>
+          <Button
+            size="lg"
+            className="w-full md:w-auto md:min-w-72 md:justify-self-start"
+            loading={busy}
+            disabled={busy}
+            onClick={() => void setUp()}
+          >
             {busy ? "Taking you to your bank…" : "Set up auto-debit"}
           </Button>
         )}
@@ -197,11 +223,10 @@ export function Mandate() {
         )}
         {state === "active" && (
           <div className="grid gap-3">
-            <p className="text-[14px] leading-5 text-ink-muted">{copy.guarantee}</p>
             <Button
               variant="danger"
               size="lg"
-              block
+              className="w-full md:w-auto md:min-w-72 md:justify-self-start"
               aria-expanded={confirming}
               onClick={() => setConfirming((c) => !c)}
             >
@@ -231,7 +256,13 @@ export function Mandate() {
           </div>
         )}
         {(state === "cancelled" || state === "failed") && (
-          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void setUp()}>
+          <Button
+            size="lg"
+            className="w-full md:w-auto md:min-w-72 md:justify-self-start"
+            loading={busy}
+            disabled={busy}
+            onClick={() => void setUp()}
+          >
             {state === "failed" ? "Try again" : "Set it up again"}
           </Button>
         )}

@@ -5,7 +5,7 @@ import { MoneyFlow } from "@/components/wallet/MoneyFlow";
 import { CircleScreen } from "./CircleScreen";
 import { CirclesProvider } from "./CirclesFlow";
 import { CirclesHome } from "./CirclesHome";
-import { DiscoverCircles } from "./DiscoverCircles";
+import { DiscoverCircles, filterCircles, NO_CIRCLE_FILTER } from "./DiscoverCircles";
 import { JoinCircle } from "./JoinCircle";
 import { NewCircle } from "./NewCircle";
 import { TodayCircles } from "./TodayCircles";
@@ -148,15 +148,20 @@ describe("the circles home", () => {
       }),
     });
     open(<CirclesHome />);
-    const going = await screen
-      .findByRole("list", { name: "" }, { timeout: 3000 })
-      .catch(() => null);
-    expect(going).toBeNull();
     expect(await screen.findByRole("heading", { name: "Your circles" })).toBeInTheDocument();
     expect(screen.getByText(/2 of 4 joined/)).toBeInTheDocument();
     expect(screen.getByText(/your turn is 3 of 4/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Finished" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Under way/ })).toHaveAttribute("href", "/circles/b");
+    // The finished one sits on its own tab.
+    await userEvent.click(screen.getByRole("button", { name: /Finished/ }));
+    expect(screen.getByRole("heading", { name: "Finished" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /All done/ })).toHaveAttribute("href", "/circles/c");
+    // The two still going, at a glance: what you pay in each round and the pots that come back.
+    const glance = screen.getByRole("region", { name: "Your circles at a glance" });
+    expect(glance).toHaveTextContent("Circles you're in2");
+    expect(glance).toHaveTextContent("1 running, 1 getting ready");
+    expect(glance).toHaveTextContent("You pay in₦20,000");
+    expect(glance).toHaveTextContent("Your pots₦80,000");
   });
 
   it("is locked until the passport is approved, says when it cannot load, and signs out the signed out", async () => {
@@ -210,6 +215,110 @@ describe("finding a circle", () => {
     expect(within(list).getByText("1 friend is in this circle")).toBeInTheDocument();
   });
 
+  it("filters by name, amount, rhythm, start and friends, orders them, and pages through the result", async () => {
+    const naira = (n: number) => String(n * 100);
+    const groups = [
+      {
+        ...summary({
+          id: "a",
+          name: "Yaba traders",
+          contribution: naira(20_000),
+          frequency: "weekly",
+          startDate: "2030-02-02",
+          friendsIn: 1,
+        }),
+        score: 9,
+      },
+      {
+        ...summary({
+          id: "b",
+          name: "Ikeja nurses",
+          contribution: naira(50_000),
+          frequency: "monthly",
+          startDate: "2030-03-01",
+          size: 8,
+          memberCount: 7,
+        }),
+        score: 5,
+      },
+      {
+        ...summary({
+          id: "c",
+          name: "Ajah parents",
+          contribution: naira(80_000),
+          frequency: "monthly",
+          startDate: "2030-02-10",
+          size: 10,
+          memberCount: 2,
+        }),
+        score: 4,
+      },
+      ...Array.from({ length: 10 }, (_, i) => ({
+        ...summary({ id: `f${i}`, name: `Filler ${i}`, contribution: naira(30_000) }),
+        score: 0,
+      })),
+    ];
+    api({ "GET /api/groups/discover": () => ({ status: 200, body: { groups } }) });
+    const user = userEvent.setup();
+    open(<DiscoverCircles />);
+    const filters = await screen.findByRole("search", { name: "Filter circles" });
+    expect(screen.getByRole("heading", { name: "13 open circles" })).toBeInTheDocument();
+    expect(screen.getByText("Showing 1–10 of 13 circles")).toBeInTheDocument();
+
+    await user.type(within(filters).getByRole("searchbox"), "@chidi");
+    expect(screen.getByRole("heading", { name: "13 open circles" })).toBeInTheDocument();
+    await user.clear(within(filters).getByRole("searchbox"));
+    await user.type(within(filters).getByRole("searchbox"), "nurses");
+    expect(screen.getByRole("heading", { name: "1 open circle" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See and join" })).toHaveAttribute(
+      "href",
+      "/circles/b",
+    );
+    expect(screen.getByText("1 place left")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    await user.selectOptions(within(filters).getByLabelText("Each pays"), "high");
+    expect(screen.getByRole("heading", { name: "1 open circle" })).toBeInTheDocument();
+    expect(screen.getByText("Ajah parents")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    await user.selectOptions(within(filters).getByLabelText("How often"), "weekly");
+    expect(screen.getByText("Yaba traders")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "1 open circle" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+
+    await user.click(within(filters).getByRole("checkbox", { name: /friend in them/ }));
+    expect(screen.getByRole("heading", { name: "1 open circle" })).toBeInTheDocument();
+    expect(screen.getByText("Yaba traders")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+
+    await user.selectOptions(within(filters).getByLabelText("Sort"), "cheapest");
+    expect(
+      within(screen.getByRole("list", { name: "Open circles" })).getAllByRole("heading")[0],
+    ).toHaveTextContent("Yaba traders");
+    await user.selectOptions(within(filters).getByLabelText("Sort"), "places");
+    expect(
+      within(screen.getByRole("list", { name: "Open circles" })).getAllByRole("heading")[0],
+    ).toHaveTextContent("Ajah parents");
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    expect(screen.getByText("Showing 11–13 of 13 circles")).toBeInTheDocument();
+  });
+
+  it("says so when no circle matches the filters", async () => {
+    api({
+      "GET /api/groups/discover": () => ({
+        status: 200,
+        body: { groups: [{ ...summary({ id: "a" }), score: 0 }] },
+      }),
+    });
+    const user = userEvent.setup();
+    open(<DiscoverCircles />);
+    const filters = await screen.findByRole("search", { name: "Filter circles" });
+    await user.type(within(filters).getByRole("searchbox"), "zzz");
+    expect(screen.getByText("No circles match that. Try fewer filters.")).toBeInTheDocument();
+  });
+
   it("says so when none are open, and can try again after a failure", async () => {
     let n = 0;
     api({
@@ -221,6 +330,23 @@ describe("finding a circle", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn.t load circles/);
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText(/No open circles right now/)).toBeInTheDocument();
+  });
+});
+
+describe("filtering open circles by when they start", () => {
+  const groups = [
+    { ...summary({ id: "dec", startDate: "2030-12-20" }), score: 0 },
+    { ...summary({ id: "jan", startDate: "2031-01-05" }), score: 0 },
+    { ...summary({ id: "feb", startDate: "2031-02-01" }), score: 0 },
+  ] as never;
+  const ids = (starts: "any" | "this-month" | "next-month", today: string) =>
+    filterCircles(groups, { ...NO_CIRCLE_FILTER, starts }, "NGN", today).map((g) => g.id);
+
+  it("knows this month and next month, across the end of a year", () => {
+    expect(ids("this-month", "2030-12-03")).toEqual(["dec"]);
+    expect(ids("next-month", "2030-12-03")).toEqual(["jan"]);
+    expect(ids("next-month", "2031-01-31")).toEqual(["feb"]);
+    expect(ids("any", "2030-12-03")).toEqual(["dec", "jan", "feb"]);
   });
 });
 
@@ -327,7 +453,9 @@ describe("making a circle", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("heading", { name: "Look it over" })).toBeInTheDocument();
     expect(sent(mock, "POST /api/groups")).toHaveLength(0);
-    expect(screen.getByText("Sunday circle")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Your circle" })).getByText("Sunday circle"),
+    ).toBeInTheDocument();
     const previewBody = json(sent(mock, "POST /api/groups/preview")[0]!);
     expect(previewBody).toMatchObject({
       name: "Sunday circle",
@@ -389,6 +517,25 @@ describe("making a circle", () => {
     await user.type(screen.getByLabelText("Circle name"), "X");
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  });
+
+  it("lists the steps with what has been answered, sums up what each turn pays, and reopens an earlier step", async () => {
+    api({});
+    const user = userEvent.setup();
+    open(<NewCircle />);
+    await fillIn(user);
+    const steps = screen.getByRole("list", { name: "Steps to start a circle" });
+    expect(within(steps).getAllByRole("listitem")).toHaveLength(4);
+    expect(steps).toHaveTextContent("NameSunday circle");
+    expect(steps).toHaveTextContent(/The money₦5 monthly · 6 people/);
+    expect(within(steps).getByRole("listitem", { current: "step" })).toHaveTextContent(
+      "Turns and who can join",
+    );
+    expect(screen.getByRole("region", { name: "Where this adds up" })).toHaveTextContent(
+      "Each turn pays₦30",
+    );
+    await user.click(within(steps).getByRole("button", { name: /The money/ }));
+    expect(screen.getByRole("heading", { name: "How much, and who with?" })).toBeInTheDocument();
   });
 
   it("shows the reason when the server refuses the plan", async () => {

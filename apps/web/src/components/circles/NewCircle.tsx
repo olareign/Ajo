@@ -28,7 +28,8 @@ import { newAttemptKey } from "@/lib/payments-client";
 import { addDays, longDayText, todayIn } from "@/lib/schedule";
 import { FREQ_WORDS, ORDER_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { CircleAside } from "@/components/desk/asides";
+import { StepActions, StepCard, StepFlow, type FlowStep } from "@/components/desk/StepFlow";
+import { formatMoney } from "@/lib/money-format";
 
 type Step = "name" | "money" | "rules" | "review";
 
@@ -136,271 +137,391 @@ export function NewCircle() {
   }
 
   const back: Partial<Record<Step, Step>> = { money: "name", rules: "money", review: "rules" };
-  const title: Record<Step, string> = {
+  const STEPS: readonly FlowStep[] = [
+    { id: "name", title: "Name", answer: name.trim() || undefined },
+    {
+      id: "money",
+      title: "The money",
+      answer:
+        BigInt(minor) > 0n
+          ? `${formatMoney({ amount: minor, currency }, locale)} ${frequency} · ${size} people`
+          : undefined,
+    },
+    {
+      id: "rules",
+      title: "Turns and who can join",
+      answer:
+        step === "name" || step === "money"
+          ? undefined
+          : `${ORDER_WORDS[order]} · ${visibility === "public" ? "anyone can find it" : "by invite"}`,
+    },
+    { id: "review", title: "Check and start" },
+  ];
+  const goTo = (id: string) => {
+    setError(undefined);
+    setStep(id as Step);
+  };
+  const stepTitle: Record<Step, string> = {
     name: "Name your circle",
     money: "How much, and who with?",
-    rules: "When, and in what order?",
+    rules: "Turns, and who can join",
     review: "Look it over",
   };
 
   return (
-    <FormPage aside={<CircleAside />}>
+    <FormPage wide>
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
-        title={title[step]}
+        title="Start a circle"
+        subtitle="Everyone pays the same each round, and one person takes the whole pot."
         onBack={back[step] ? () => (setError(undefined), setStep(back[step]!)) : undefined}
         backHref={back[step] ? undefined : href("/circles")}
       />
 
-      {step === "name" && (
-        <div className="grid gap-6">
-          <TextField
-            label="Circle name"
-            value={name}
-            onChange={setName}
-            maxLength={60}
-            autoComplete="off"
-            hint="Something your people will recognise."
-          />
-          <TextField
-            label="Community (optional)"
-            value={community}
-            onChange={setCommunity}
-            maxLength={40}
-            autoComplete="off"
-            hint="A church, a market, an office: helps people find the right circle."
-          />
-          <Button
-            size="lg"
-            block
-            disabled={name.trim().length === 0}
-            onClick={() => setStep("money")}
-          >
-            Continue
-          </Button>
-        </div>
-      )}
-
-      {step === "money" && (
-        <div className="grid gap-6">
-          <AmountPad
-            value={amount}
-            onChange={setAmount}
-            currency={currency}
-            locale={locale}
-            label="Each person pays, each round"
-          />
-          <div className="grid gap-3">
-            <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">
-              How many people
-            </p>
-            <div className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-sunken p-3">
-              <Button
-                variant="quiet"
-                aria-label="Fewer people"
-                disabled={size <= 3}
-                onClick={() => setSize((n) => Math.max(3, n - 1))}
-              >
-                −
-              </Button>
-              <p
-                className="text-center font-display text-[28px] leading-8 font-bold"
-                aria-live="polite"
-              >
-                {size} <span className="text-[15px] font-medium text-ink-muted">people</span>
+      <StepFlow
+        label="Steps to start a circle"
+        steps={STEPS}
+        current={step}
+        onJump={goTo}
+        summary={
+          BigInt(minor) > 0n ? (
+            <>
+              <p className="text-[13px] font-semibold tracking-[0.02em] text-on-hero-muted">
+                Each turn pays
               </p>
-              <Button
-                variant="quiet"
-                aria-label="More people"
-                disabled={size >= 30}
-                onClick={() => setSize((n) => Math.min(30, n + 1))}
-              >
-                +
-              </Button>
+              <p className="font-display text-[28px] leading-9 font-bold">
+                <Amount
+                  amount={pot.toString()}
+                  currency={currency}
+                  locale={locale}
+                  size="l"
+                  tone="hero"
+                />
+              </p>
+              <p className="text-[13px] text-on-hero-muted">
+                {size} people × {formatMoney({ amount: minor, currency }, locale)}, before any fee
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[13px] font-semibold tracking-[0.02em] text-on-hero-muted">
+                {name.trim() || "Your circle"}
+              </p>
+              <p className="text-[15px]">Set the money to see what each turn pays.</p>
+            </>
+          )
+        }
+      >
+        {step === "name" && (
+          <StepCard title={stepTitle.name}>
+            <div className="grid gap-6 md:max-w-xl">
+              <TextField
+                label="Circle name"
+                value={name}
+                onChange={setName}
+                maxLength={60}
+                autoComplete="off"
+                hint="Something your people will recognise."
+              />
+              <TextField
+                label="Community (optional)"
+                value={community}
+                onChange={setCommunity}
+                maxLength={40}
+                autoComplete="off"
+                hint="A church, a market, an office: helps people find the right circle."
+              />
             </div>
-            <ChoiceChips
-              label="Usual sizes"
-              hideLabel
-              options={SIZES.map((n) => ({ value: String(n), label: String(n) }))}
-              value={String(size)}
-              onChange={(v) => setSize(Number(v))}
-            />
-          </div>
-          <ChoiceChips
-            label="How often"
-            options={FREQUENCIES}
-            value={frequency}
-            onChange={(v) => setFrequency(v as GroupFrequency)}
-          />
-          {BigInt(minor) > 0n && (
-            <p className="rounded-[var(--radius-l)] bg-oro-tint p-4 text-[15px] leading-6 text-oro-ink">
-              Each turn pays out{" "}
-              <Amount
-                amount={pot.toString()}
+            <StepActions>
+              <Button
+                size="lg"
+                className="w-full md:w-auto md:min-w-56"
+                disabled={name.trim().length === 0}
+                onClick={() => setStep("money")}
+              >
+                Continue
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
+
+        {step === "money" && (
+          <StepCard title={stepTitle.money}>
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2 xl:items-start">
+              <AmountPad
+                value={amount}
+                onChange={setAmount}
                 currency={currency}
                 locale={locale}
-                size="s"
-                tone="oro"
+                label="Each person pays, each round"
               />
-              , and every one of the {size} people takes a turn.
-            </p>
-          )}
-          <Button size="lg" block disabled={minor === "0"} onClick={() => setStep("rules")}>
-            Continue
-          </Button>
-        </div>
-      )}
-
-      {step === "rules" && (
-        <div className="grid gap-6">
-          <div className="grid gap-3">
-            <ChoiceChips
-              label="First round is collected"
-              options={STARTS.map((s) => ({ value: s.value, label: s.label }))}
-              value={startChoice}
-              onChange={setStartChoice}
-            />
-            {startChoice === "pick" && (
-              <label className="grid gap-2">
-                <span className="text-[13px] font-semibold text-ink-muted">Choose the day</span>
-                <input
-                  type="date"
-                  value={pickedDay}
-                  min={addDays(today, 1)}
-                  max={addDays(today, 90)}
-                  onChange={(e) => setPickedDay(e.target.value)}
-                  className="min-h-14 w-full rounded-m border-[1.5px] border-transparent bg-surface-sunken px-4 text-base text-ink focus:border-primary focus:outline-none"
+              <div className="grid gap-6">
+                <div className="grid gap-3">
+                  <p className="text-[13px] font-semibold tracking-[0.01em] text-ink-muted">
+                    How many people
+                  </p>
+                  <div className="flex items-center justify-between gap-4 rounded-[var(--radius-l)] bg-surface-sunken p-3">
+                    <Button
+                      variant="quiet"
+                      aria-label="Fewer people"
+                      disabled={size <= 3}
+                      onClick={() => setSize((n) => Math.max(3, n - 1))}
+                    >
+                      −
+                    </Button>
+                    <p
+                      className="text-center font-display text-[28px] leading-8 font-bold"
+                      aria-live="polite"
+                    >
+                      {size} <span className="text-[15px] font-medium text-ink-muted">people</span>
+                    </p>
+                    <Button
+                      variant="quiet"
+                      aria-label="More people"
+                      disabled={size >= 30}
+                      onClick={() => setSize((n) => Math.min(30, n + 1))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <ChoiceChips
+                    label="Usual sizes"
+                    hideLabel
+                    options={SIZES.map((n) => ({ value: String(n), label: String(n) }))}
+                    value={String(size)}
+                    onChange={(v) => setSize(Number(v))}
+                  />
+                </div>
+                <ChoiceChips
+                  label="How often"
+                  options={FREQUENCIES}
+                  value={frequency}
+                  onChange={(v) => setFrequency(v as GroupFrequency)}
                 />
-              </label>
+                <div className="grid gap-3">
+                  <ChoiceChips
+                    label="First round is collected"
+                    options={STARTS.map((s) => ({ value: s.value, label: s.label }))}
+                    value={startChoice}
+                    onChange={setStartChoice}
+                  />
+                  {startChoice === "pick" && (
+                    <label className="grid gap-2">
+                      <span className="text-[13px] font-semibold text-ink-muted">
+                        Choose the day
+                      </span>
+                      <input
+                        type="date"
+                        value={pickedDay}
+                        min={addDays(today, 1)}
+                        max={addDays(today, 90)}
+                        onChange={(e) => setPickedDay(e.target.value)}
+                        className="min-h-14 w-full rounded-m border-[1.5px] border-transparent bg-surface-sunken px-4 text-base text-ink focus:border-primary focus:outline-none"
+                      />
+                    </label>
+                  )}
+                  <p className="text-[14px] text-ink-muted">
+                    {longDayText(startDate)}. The circle must be full by then, or it&apos;s called
+                    off and nobody loses anything.
+                  </p>
+                </div>
+              </div>
+            </div>
+            {BigInt(minor) > 0n && (
+              <p className="rounded-[var(--radius-l)] bg-oro-tint p-4 text-[15px] leading-6 text-oro-ink">
+                Each turn pays out{" "}
+                <Amount
+                  amount={pot.toString()}
+                  currency={currency}
+                  locale={locale}
+                  size="s"
+                  tone="oro"
+                />
+                , and every one of the {size} people takes a turn.
+              </p>
             )}
-            <p className="text-[14px] text-ink-muted">
-              {longDayText(startDate)}. The circle must be full by then, or it&apos;s called off and
-              nobody loses anything.
-            </p>
-          </div>
-          <OptionCards
-            label="Who takes which turn"
-            options={ORDERS}
-            value={order}
-            onChange={(v) => setOrder(v as OrderMethod)}
-          />
-          <ChoiceChips
-            label="Who can find it"
-            options={[
-              { value: "private", label: "Only people I invite" },
-              { value: "public", label: "Anyone can find it" },
-            ]}
-            value={visibility}
-            onChange={(v) => setVisibility(v as Visibility)}
-          />
-          {error && (
-            <p role="alert" className="text-center text-[15px] font-medium text-danger">
-              {error}
-            </p>
-          )}
-          <Button size="lg" block loading={busy} disabled={busy} onClick={() => void toReview()}>
-            {busy ? "One moment…" : "Continue"}
-          </Button>
-        </div>
-      )}
+            <StepActions>
+              <Button
+                size="lg"
+                className="w-full md:w-auto md:min-w-56"
+                disabled={minor === "0"}
+                onClick={() => setStep("rules")}
+              >
+                Continue
+              </Button>
+              <Button
+                size="lg"
+                variant="quiet"
+                className="max-md:hidden"
+                aria-label="Back to the name"
+                onClick={() => setStep("name")}
+              >
+                Back
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
 
-      {step === "review" && overview && (
-        <div className="grid gap-6">
-          <Receipt
-            title="Your circle"
-            rows={[
-              { label: "Name", value: name.trim() },
-              ...(community.trim() ? [{ label: "Community", value: community.trim() }] : []),
-              {
-                label: "Each person pays",
-                value: <Amount amount={minor} currency={currency} locale={locale} size="s" />,
-              },
-              { label: "How often", value: FREQ_WORDS[frequency] },
-              { label: "People", value: String(size) },
-              { label: "Turns", value: ORDER_WORDS[order] },
-              { label: "First round", value: longDayText(overview.dates[0]!) },
-              {
-                label: "Last round",
-                value: longDayText(overview.dates[overview.dates.length - 1]!),
-              },
-            ]}
-            total={{
-              label: "Each turn pays out",
-              value: <Amount {...overview.pot} locale={locale} size="m" />,
-            }}
-            stamp={preview ? "Preview" : undefined}
-          />
-          <section aria-label="Every round" className="grid gap-3">
-            <p className="text-[13px] font-semibold text-ink-muted">
-              Each bead is a round, one turn each
-            </p>
-            <Beads
-              debits={overview.dates.map((dueOn, i) => ({
-                seq: i + 1,
-                dueOn,
-                status: "scheduled" as const,
-              }))}
-            />
-          </section>
-          <section
-            aria-label="How it stays safe"
-            className="grid gap-2 rounded-[var(--radius-l)] bg-primary-tint p-4 text-[14px] leading-5"
-          >
-            <p className="font-semibold text-tertiary">How it stays safe</p>
-            <p>
-              People new to circles lock a deposit of{" "}
-              <Amount {...overview.deposit} locale={locale} size="s" /> until it ends, and{" "}
-              <Amount {...overview.earlyDeposit} locale={locale} size="s" /> to take one of the
-              first {overview.earlySpots} turns. Trusted members lock nothing.
-            </p>
-            <p>
-              If someone doesn&apos;t pay, they get {overview.graceDays} days, then their deposit
-              pays for them, so the turn still pays out in full.
-            </p>
-          </section>
-          <p className="text-[14px] leading-5 text-ink-muted">
-            You&apos;ll be the first member. Circles collect each round from your wallet, with your
-            auto-debit as backup, so{" "}
-            <Link
-              href={href("/wallet/mandate")}
-              className="font-semibold text-primary underline underline-offset-4"
-            >
-              set that up
-            </Link>{" "}
-            first if you haven&apos;t.
-          </p>
-          {error && (
-            <p role="alert" className="text-center text-[15px] font-medium text-danger">
-              {error}{" "}
-              {code === "no_mandate" && (
-                <Link href={href("/wallet/mandate")} className="underline underline-offset-4">
-                  Set up auto-debit
-                </Link>
-              )}
-              {code === "deposit_needed" && (
-                <Link href={href("/wallet/add")} className="underline underline-offset-4">
-                  Add money
-                </Link>
-              )}
-              {code === "kyc_required" && (
-                <Link href="/verify" className="underline underline-offset-4">
-                  Go to my passport
-                </Link>
-              )}
-            </p>
-          )}
-          <Button
-            size="lg"
-            block
-            variant="money"
-            loading={busy}
-            disabled={busy}
-            onClick={() => void start()}
-          >
-            {busy ? "Starting…" : "Start my circle"}
-          </Button>
-        </div>
-      )}
+        {step === "rules" && (
+          <StepCard title={stepTitle.rules}>
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2 xl:items-start">
+              <OptionCards
+                label="Who takes which turn"
+                options={ORDERS}
+                value={order}
+                onChange={(v) => setOrder(v as OrderMethod)}
+              />
+              <ChoiceChips
+                label="Who can find it"
+                options={[
+                  { value: "private", label: "Only people I invite" },
+                  { value: "public", label: "Anyone can find it" },
+                ]}
+                value={visibility}
+                onChange={(v) => setVisibility(v as Visibility)}
+              />
+            </div>
+            {error && (
+              <p role="alert" className="text-[15px] font-medium text-danger">
+                {error}
+              </p>
+            )}
+            <StepActions>
+              <Button
+                size="lg"
+                className="w-full md:w-auto md:min-w-56"
+                loading={busy}
+                disabled={busy}
+                onClick={() => void toReview()}
+              >
+                {busy ? "One moment…" : "Continue"}
+              </Button>
+              <Button
+                size="lg"
+                variant="quiet"
+                className="max-md:hidden"
+                aria-label="Back to the money"
+                onClick={() => setStep("money")}
+              >
+                Back
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
+
+        {step === "review" && overview && (
+          <StepCard title={stepTitle.review}>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start">
+              <Receipt
+                title="Your circle"
+                rows={[
+                  { label: "Name", value: name.trim() },
+                  ...(community.trim() ? [{ label: "Community", value: community.trim() }] : []),
+                  {
+                    label: "Each person pays",
+                    value: <Amount amount={minor} currency={currency} locale={locale} size="s" />,
+                  },
+                  { label: "How often", value: FREQ_WORDS[frequency] },
+                  { label: "People", value: String(size) },
+                  { label: "Turns", value: ORDER_WORDS[order] },
+                  { label: "First round", value: longDayText(overview.dates[0]!) },
+                  {
+                    label: "Last round",
+                    value: longDayText(overview.dates[overview.dates.length - 1]!),
+                  },
+                ]}
+                total={{
+                  label: "Each turn pays out",
+                  value: <Amount {...overview.pot} locale={locale} size="m" />,
+                }}
+                stamp={preview ? "Preview" : undefined}
+              />
+              <div className="grid gap-6">
+                <section aria-label="Every round" className="grid gap-3">
+                  <p className="text-[13px] font-semibold text-ink-muted">
+                    Each bead is a round, one turn each
+                  </p>
+                  <Beads
+                    debits={overview.dates.map((dueOn, i) => ({
+                      seq: i + 1,
+                      dueOn,
+                      status: "scheduled" as const,
+                    }))}
+                  />
+                </section>
+                <section
+                  aria-label="How it stays safe"
+                  className="grid gap-2 rounded-[var(--radius-l)] bg-primary-tint p-4 text-[14px] leading-5"
+                >
+                  <p className="font-semibold text-tertiary">How it stays safe</p>
+                  <p>
+                    People new to circles lock a deposit of{" "}
+                    <Amount {...overview.deposit} locale={locale} size="s" /> until it ends, and{" "}
+                    <Amount {...overview.earlyDeposit} locale={locale} size="s" /> to take one of
+                    the first {overview.earlySpots} turns. Trusted members lock nothing.
+                  </p>
+                  <p>
+                    If someone doesn&apos;t pay, they get {overview.graceDays} days, then their
+                    deposit pays for them, so the turn still pays out in full.
+                  </p>
+                </section>
+                <p className="text-[14px] leading-5 text-ink-muted">
+                  You&apos;ll be the first member. Circles collect each round from your wallet, with
+                  your auto-debit as backup, so{" "}
+                  <Link
+                    href={href("/wallet/mandate")}
+                    className="font-semibold text-primary underline underline-offset-4"
+                  >
+                    set that up
+                  </Link>{" "}
+                  first if you haven&apos;t.
+                </p>
+              </div>
+            </div>
+            {error && (
+              <p role="alert" className="text-[15px] font-medium text-danger">
+                {error}{" "}
+                {code === "no_mandate" && (
+                  <Link href={href("/wallet/mandate")} className="underline underline-offset-4">
+                    Set up auto-debit
+                  </Link>
+                )}
+                {code === "deposit_needed" && (
+                  <Link href={href("/wallet/add")} className="underline underline-offset-4">
+                    Add money
+                  </Link>
+                )}
+                {code === "kyc_required" && (
+                  <Link href="/verify" className="underline underline-offset-4">
+                    Go to my passport
+                  </Link>
+                )}
+              </p>
+            )}
+            <StepActions>
+              <Button
+                size="lg"
+                variant="money"
+                className="w-full md:w-auto md:min-w-56"
+                loading={busy}
+                disabled={busy}
+                onClick={() => void start()}
+              >
+                {busy ? "Starting…" : "Start my circle"}
+              </Button>
+              <Button
+                size="lg"
+                variant="quiet"
+                className="max-md:hidden"
+                aria-label="Back to turns and who can join"
+                onClick={() => setStep("rules")}
+              >
+                Back
+              </Button>
+            </StepActions>
+          </StepCard>
+        )}
+      </StepFlow>
     </FormPage>
   );
 }

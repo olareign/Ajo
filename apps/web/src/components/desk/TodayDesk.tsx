@@ -1,19 +1,18 @@
 "use client";
 
-import { CalendarClock, ChevronRight, HandCoins, Orbit, PiggyBank, Plus } from "lucide-react";
+import { CalendarClock, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Amount } from "@/components/ui/Amount";
-import { ratioOf } from "@/components/savings/SavingsHome";
 import { loadGroup, type GroupDetail, type GroupSummary } from "@/lib/groups-client";
 import type { Plan } from "@/lib/savings-client";
 import { dayText } from "@/lib/schedule";
 
-const card =
+export const card =
   "grid content-start gap-5 rounded-[var(--radius-xl)] bg-surface-raised p-6 shadow-lift";
 
 /** A panel's heading: what it is, and one quiet link to where it lives. */
-function PanelHead({
+export function PanelHead({
   id,
   title,
   href,
@@ -35,28 +34,14 @@ function PanelHead({
   );
 }
 
-/** One quiet line and a single way to begin, for a panel with nothing in it yet. */
-function Empty({ text, href, action }: Readonly<{ text: string; href: string; action: string }>) {
-  return (
-    <div className="grid justify-items-start gap-3 rounded-[var(--radius-l)] bg-surface-sunken p-5">
-      <p className="text-[15px] leading-6 text-ink-muted">{text}</p>
-      <Link
-        href={href}
-        className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-primary hover:underline"
-      >
-        <Plus aria-hidden className="size-4" />
-        {action}
-      </Link>
-    </div>
-  );
-}
-
 const going = (groups: readonly GroupSummary[] | null | undefined) =>
   (groups ?? []).filter((g) => ["open", "picking", "running"].includes(g.status));
-const openPlans = (plans: readonly Plan[] | null | undefined) =>
+
+/** Plans still going: what Today counts and shows. */
+export const openPlans = (plans: readonly Plan[] | null | undefined) =>
   (plans ?? []).filter((p) => p.status === "active" || p.status === "paused");
 
-type Due = Readonly<{
+export type Due = Readonly<{
   key: string;
   date: string;
   title: string;
@@ -71,13 +56,10 @@ type Due = Readonly<{
  * a circle pays you. Dates come from the API (a plan's next debit; a running circle's rounds), so
  * nothing here is a guess. A running circle's rounds are asked for here (at most four).
  */
-export function UpNext({
-  plans,
-  groups,
-}: Readonly<{
-  plans: readonly Plan[] | null | undefined;
-  groups: readonly GroupSummary[] | null | undefined;
-}>) {
+export function useUpcoming(
+  plans: readonly Plan[] | null | undefined,
+  groups: readonly GroupSummary[] | null | undefined,
+): readonly Due[] {
   const running = going(groups)
     .filter((g) => g.status === "running")
     .slice(0, 4);
@@ -134,7 +116,11 @@ export function UpNext({
     }
   }
   items.sort((a, b) => a.date.localeCompare(b.date));
+  return items;
+}
 
+/** The upcoming list as a card: soonest first, at most five. */
+export function UpNext({ items }: Readonly<{ items: readonly Due[] }>) {
   return (
     <section aria-labelledby="up-next" className={card}>
       <div className="flex items-center gap-3">
@@ -187,148 +173,5 @@ export function UpNext({
         </ol>
       )}
     </section>
-  );
-}
-
-/** Each pot on its own line with how full it is, instead of one total. */
-export function SavingsPanel({ plans }: Readonly<{ plans: readonly Plan[] | null | undefined }>) {
-  if (!plans) return null;
-  const open = openPlans(plans);
-  return (
-    <section aria-labelledby="desk-savings" className={card}>
-      <PanelHead id="desk-savings" title="Your pots" href="/save" link="All plans" />
-      {open.length === 0 ? (
-        <Empty
-          text="Put money aside for something: rent, school fees, a trip home."
-          href="/save/new"
-          action="Start a plan"
-        />
-      ) : (
-        <ul className="grid gap-4">
-          {open.slice(0, 4).map((p) => {
-            const ratio = ratioOf(p);
-            return (
-              <li key={p.id}>
-                <Link
-                  href={`/save/${p.id}`}
-                  className="grid gap-2 rounded-[14px] p-2 hover:bg-surface-sunken"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-leaf-tint text-leaf">
-                      <PiggyBank aria-hidden className="size-5" />
-                    </span>
-                    <span className="grid min-w-0 grow">
-                      <span className="truncate text-[15px] font-semibold">{p.name}</span>
-                      <span className="text-[13px] text-ink-muted">
-                        {p.status === "paused"
-                          ? "Paused"
-                          : `${p.paidDebits} of ${p.totalDebits} payments`}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-right">
-                      <Amount amount={p.saved.amount} currency={p.saved.currency} size="s" />
-                      <span className="block text-[12px] text-ink-muted">
-                        of <Amount amount={p.target.amount} currency={p.target.currency} size="s" />
-                      </span>
-                    </span>
-                  </span>
-                  <span
-                    role="progressbar"
-                    aria-label={`${p.name}: ${Math.round(ratio * 100)}% saved`}
-                    aria-valuenow={Math.round(ratio * 100)}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    className="h-2 overflow-hidden rounded-full bg-line"
-                  >
-                    <span
-                      className="block h-full rounded-full bg-leaf"
-                      style={{ width: `${Math.max(ratio * 100, ratio > 0 ? 3 : 0)}%` }}
-                    />
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-const STATUS: Record<string, string> = {
-  open: "Filling up",
-  picking: "Picking turns",
-  running: "Running",
-};
-
-/** Each circle you're in: how full it is, its pot, and your turn. */
-export function CirclesPanel({
-  groups,
-}: Readonly<{ groups: readonly GroupSummary[] | null | undefined }>) {
-  if (!groups) return null;
-  const mine = going(groups);
-  return (
-    <section aria-labelledby="desk-circles" className={card}>
-      <PanelHead id="desk-circles" title="Your circles" href="/circles" link="All circles" />
-      {mine.length === 0 ? (
-        <Empty
-          text="Save together with people you trust: everyone pays in, one person takes the pot each round."
-          href="/circles/new"
-          action="Start a circle"
-        />
-      ) : (
-        <ul className="grid gap-2">
-          {mine.slice(0, 4).map((g) => (
-            <li key={g.id}>
-              <Link
-                href={`/circles/${g.id}`}
-                className="flex items-center gap-3 rounded-[14px] p-2 hover:bg-surface-sunken"
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-tertiary-tint text-tertiary">
-                  <Orbit aria-hidden className="size-5" />
-                </span>
-                <span className="grid min-w-0 grow">
-                  <span className="truncate text-[15px] font-semibold">{g.name}</span>
-                  <span className="text-[13px] text-ink-muted">
-                    {STATUS[g.status]} · {g.memberCount} of {g.size} people
-                    {g.mySpot ? ` · your turn: ${g.mySpot}` : ""}
-                  </span>
-                </span>
-                <span className="grid shrink-0 justify-items-end">
-                  <span className="text-[12px] text-ink-muted">Pot</span>
-                  <Amount amount={g.pot} currency={g.currency} size="s" />
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-/** A to-do that needs the person (identity, second lock): one slim line, only when it applies. */
-export function Todo({
-  href,
-  Icon = HandCoins,
-  tone,
-  title,
-  children,
-}: Readonly<{
-  href: string;
-  Icon?: typeof HandCoins;
-  tone: string;
-  title: string;
-  children: ReactNode;
-}>) {
-  return (
-    <Link href={href} className={`flex items-center gap-4 rounded-[var(--radius-l)] p-4 ${tone}`}>
-      <Icon aria-hidden className="size-6 shrink-0" />
-      <span className="grid min-w-0">
-        <span className="text-[15px] font-semibold">{title}</span>
-        <span className="text-[14px] leading-5 opacity-90">{children}</span>
-      </span>
-      <ChevronRight aria-hidden className="ml-auto size-5 shrink-0" />
-    </Link>
   );
 }

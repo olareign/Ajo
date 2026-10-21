@@ -23,6 +23,8 @@ type Props = Readonly<{
   unread?: number | null;
   /** Tab screens: a different title on a desk, where the header above already greets the person. */
   deskTitle?: string;
+  /** Tab screens: the page's one main action. Beside the title from a tablet up, below the subtitle on a phone. */
+  pageAction?: ReactNode;
 }>;
 
 /** Titles longer than this read as a question for the person and stay large below the bar. */
@@ -48,6 +50,7 @@ export function ScreenHeader({
   tab,
   unread,
   deskTitle,
+  pageAction,
 }: Props) {
   const inner = Boolean(onBack || backHref);
   const [scrolled, setScrolled] = useState(false);
@@ -61,7 +64,7 @@ export function ScreenHeader({
 
   if (!inner && tab) {
     return (
-      <header className="mb-5">
+      <header className="mb-5 md:mb-6 md:grid md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-x-6">
         <TopBar
           title={title}
           deskTitle={deskTitle}
@@ -69,7 +72,16 @@ export function ScreenHeader({
           unread={unread}
           scrolled={scrolled}
         />
-        {subtitle && <p className="mt-3 text-[15px] leading-6 text-ink-muted">{subtitle}</p>}
+        {subtitle && (
+          <p className="mt-3 text-[15px] leading-6 text-ink-muted md:col-start-1 md:mt-1">
+            {subtitle}
+          </p>
+        )}
+        {pageAction && (
+          <div className="mt-4 md:col-start-2 md:row-span-2 md:row-start-1 md:mt-0">
+            {pageAction}
+          </div>
+        )}
       </header>
     );
   }
@@ -97,7 +109,7 @@ export function ScreenHeader({
         data-app-bar=""
         data-scrolled={scrolled || undefined}
         style={{ top: "var(--app-bar-top, 0px)" }}
-        className="sticky z-20 -mx-4 -mt-6 grid h-14 grid-cols-[48px_1fr_48px] items-center bg-surface/95 px-1 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] lg:static lg:mx-0 lg:mt-0 lg:h-auto lg:grid-cols-[44px_minmax(0,1fr)_auto] lg:gap-3 lg:bg-transparent lg:px-0 lg:backdrop-blur-none lg:data-[scrolled]:shadow-none"
+        className="sticky z-20 -mx-4 -mt-6 grid h-14 grid-cols-[48px_1fr_48px] items-center bg-surface/95 px-1 backdrop-blur-md transition-shadow data-[scrolled]:shadow-[0_1px_0_var(--line)] md:static md:mx-0 md:mt-0 md:h-auto md:grid-cols-[44px_minmax(0,1fr)_auto] md:gap-3 md:bg-transparent md:px-0 md:backdrop-blur-none md:data-[scrolled]:shadow-none"
       >
         {onBack ? (
           <button type="button" onClick={onBack} aria-label="Back" className={backClass}>
@@ -109,7 +121,7 @@ export function ScreenHeader({
           </Link>
         )}
         {inBar ? (
-          <h1 className="truncate text-center font-display text-[17px] leading-6 font-semibold text-ink lg:overflow-visible lg:whitespace-normal lg:text-left lg:font-display lg:text-[28px] lg:leading-[34px] lg:font-bold lg:tracking-[-0.015em]">
+          <h1 className="truncate text-center font-display text-[17px] leading-6 font-semibold text-ink md:overflow-visible md:whitespace-normal md:text-left md:font-display md:text-[28px] md:leading-[34px] md:font-bold md:tracking-[-0.015em]">
             {title}
           </h1>
         ) : (

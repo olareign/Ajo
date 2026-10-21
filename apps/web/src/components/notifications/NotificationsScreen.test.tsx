@@ -69,7 +69,7 @@ describe("the messages screen", () => {
     render(<NotificationsScreen />);
     await user.click(await screen.findByRole("button", { name: /Title a/ }));
     expect(push).toHaveBeenCalledWith("/save/a");
-    expect(screen.getByText("All read")).toBeInTheDocument();
+    expect(screen.getAllByText("All read").length).toBeGreaterThan(0);
     await waitFor(() => expect(posted(mock, "/api/notifications/a/read")).toHaveLength(1));
   });
 
@@ -82,12 +82,12 @@ describe("the messages screen", () => {
     const user = userEvent.setup();
     render(<NotificationsScreen />);
     await user.click(await screen.findByRole("button", { name: "Mark all as read" }));
-    expect(await screen.findByText("All read")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing waiting")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Unread" })).not.toBeInTheDocument();
     expect(posted(mock, "/api/notifications/read-all")).toHaveLength(1);
   });
 
-  it("loads the next page only when asked", async () => {
+  it("loads the next batch only when Next is pressed on the last page loaded", async () => {
     const pages = [
       { items: [notice("a")], next: "5", unread: 2 },
       { items: [notice("b")], next: null, unread: 2 },
@@ -95,10 +95,46 @@ describe("the messages screen", () => {
     const mock = api({ "GET /api/notifications": () => Response.json(pages.shift()) });
     const user = userEvent.setup();
     render(<NotificationsScreen />);
-    await user.click(await screen.findByRole("button", { name: "Show more" }));
+    expect(await screen.findByText("Showing 1–1 of 1+ notification")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Next page" }));
     expect(await screen.findByText("Title b")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
     expect(String(mock.mock.calls.at(-1)![0])).toContain("before=5");
+  });
+
+  it("filters by what a message is about, or by unread, and counts each", async () => {
+    api({
+      "GET /api/notifications": () =>
+        Response.json({
+          items: [
+            notice("p", { kind: "plan.debit_paid", title: "Plan paid" }),
+            notice("g", {
+              kind: "group.invite",
+              title: "Circle invite",
+              readAt: "2026-10-04T10:00:00Z",
+            }),
+            notice("f", { kind: "friend.request", title: "Friend asked" }),
+            notice("m", { kind: "funding.succeeded", title: "Money arrived" }),
+          ],
+          next: null,
+          unread: 3,
+        }),
+    });
+    const user = userEvent.setup();
+    render(<NotificationsScreen />);
+    await screen.findByText("Plan paid");
+    expect(screen.getByRole("button", { name: /^Circles/ })).toHaveTextContent("Circles1");
+    await user.click(screen.getByRole("button", { name: /^Circles/ }));
+    expect(screen.getByText("Circle invite")).toBeInTheDocument();
+    expect(screen.queryByText("Plan paid")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Money/ }));
+    expect(screen.getByText("Money arrived")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Unread/ }));
+    expect(screen.queryByText("Circle invite")).not.toBeInTheDocument();
+    expect(screen.getByText("Friend asked")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Saving/ }));
+    expect(screen.getByText("Plan paid")).toBeInTheDocument();
+    expect(screen.queryByText("Friend asked")).not.toBeInTheDocument();
   });
 
   it("is calm when there is nothing, and says so when it cannot load", async () => {

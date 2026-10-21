@@ -12,7 +12,6 @@ import { TextField } from "@/components/ui/TextField";
 import { changePin, resetPin } from "@/lib/security-client";
 import { signedOut } from "./MfaSetup";
 import { FormPage } from "@/components/desk/FormPage";
-import { SafetyAside } from "@/components/desk/asides";
 
 export function PinScreen() {
   return <MeGate needs="onboarded">{(me) => <Pin me={me} />}</MeGate>;
@@ -61,7 +60,7 @@ function Pin({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <FormPage aside={<SafetyAside />}>
+    <FormPage>
       <ScreenHeader
         title={mode === "change" ? "Transaction PIN" : "Forgot your PIN"}
         subtitle={
@@ -69,7 +68,7 @@ function Pin({ me }: Readonly<{ me: Me }>) {
             ? "The six digits you enter before money moves."
             : "Set a new PIN with your password and a code from your authenticator app."
         }
-        backHref="/me"
+        backHref="/settings"
       />
       {done ? (
         <div className="grid gap-4">
@@ -80,7 +79,7 @@ function Pin({ me }: Readonly<{ me: Me }>) {
             <Check aria-hidden className="size-5 shrink-0" />
             Your new PIN is set. We emailed you about the change.
           </p>
-          <Button variant="quiet" size="lg" block onClick={() => router.push("/me")}>
+          <Button variant="quiet" size="lg" block onClick={() => router.push("/settings")}>
             Back to Me
           </Button>
         </div>

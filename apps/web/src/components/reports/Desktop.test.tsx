@@ -95,7 +95,7 @@ describe("the desktop sidebar", () => {
         .getAllByRole("link")
         .map((l) => l.textContent),
     ).toEqual([
-      "Home",
+      "Overview",
       "Wallet",
       "Save",
       "Circles",
@@ -103,7 +103,6 @@ describe("the desktop sidebar", () => {
       "Notifications",
       "Statements",
       "Insights",
-      "Me",
     ]);
     expect(within(nav).getByRole("link", { name: "Statements" })).toHaveAttribute(
       "aria-current",
@@ -115,22 +114,67 @@ describe("the desktop sidebar", () => {
   it("keeps Help inside the app, and lights Help (not Me) while you're there", () => {
     path = "/me/help";
     render(<DesktopNav />);
-    const help = screen.getByRole("link", { name: "Go to Help Center" });
+    const help = screen.getByRole("link", { name: /Help Center/ });
     expect(help).toHaveAttribute("href", "/me/help");
     expect(help).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Me" })).not.toHaveAttribute("aria-current");
   });
 
-  it("groups the menu like a bank's, and ends with a help card", () => {
+  it("ends with help, then Me, Settings and Sign out at the foot", () => {
     path = "/today";
     render(<DesktopNav />);
-    for (const group of ["Menu", "Your money", "Account"])
-      expect(screen.getByText(group)).toBeInTheDocument();
+    for (const group of ["Menu", "Your money"]) expect(screen.getByText(group)).toBeInTheDocument();
     expect(screen.getByText("Help Center")).toBeInTheDocument();
+    const account = screen.getByRole("group", { name: "Account" });
+    expect(within(account).getByRole("link", { name: "Me" })).toHaveAttribute("href", "/me");
+    expect(within(account).getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
+    expect(within(account).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute(
       "href",
       "/notifications",
     );
+  });
+
+  it("folds to icons, keeps every name for screen readers, and remembers the choice", async () => {
+    path = "/today";
+    const user = userEvent.setup();
+    const { unmount } = render(<DesktopNav />);
+    const fold = screen.getByRole("button", { name: "Collapse the menu" });
+    expect(fold).toHaveAttribute("aria-expanded", "true");
+    await user.click(fold);
+    const unfold = screen.getByRole("button", { name: "Expand the menu" });
+    expect(unfold).toHaveAttribute("aria-expanded", "false");
+    const nav = screen.getByRole("navigation", { name: "Desktop" });
+    // Folded is drawn by CSS from this mark; every link keeps its name and a tooltip.
+    expect(screen.getByRole("complementary")).toHaveAttribute("data-compact");
+    expect(within(nav).getByRole("link", { name: "Overview" })).toHaveAttribute(
+      "title",
+      "Overview",
+    );
+    expect(within(nav).getByRole("link", { name: "Statements" })).toHaveAttribute(
+      "title",
+      "Statements",
+    );
+    expect(screen.getByRole("link", { name: /Help Center/ })).toHaveAttribute("href", "/me/help");
+    unmount();
+    render(<DesktopNav />);
+    await user.click(screen.getByRole("button", { name: "Expand the menu" }));
+    expect(screen.getByRole("button", { name: "Collapse the menu" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/me", "Me"],
+    ["/me/photo", "Me"],
+    ["/settings", "Settings"],
+    ["/me/security", "Settings"],
+    ["/me/devices", "Settings"],
+  ])("lights the right account item on %s", (where, lit) => {
+    path = where;
+    render(<DesktopNav />);
+    expect(screen.getByRole("link", { name: lit })).toHaveAttribute("aria-current", "page");
   });
 
   it("stays away from sign-in and the landing page", () => {
@@ -200,6 +244,48 @@ describe("statements", () => {
     expect(csv.trim().split("\r\n")).toHaveLength(3);
   });
 
+  it("narrows the lines by type, account and words, says how many are left, and clears", async () => {
+    api({ "/api/wallet/statement": () => statement });
+    const user = userEvent.setup();
+    render(<StatementsScreen />);
+    const list = await screen.findByRole("list", { name: "Statement lines" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+    const filters = screen.getByRole("search", { name: "Filter lines" });
+
+    await user.selectOptions(within(filters).getByLabelText("Type"), "out");
+    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+    expect(list).toHaveTextContent("Withdrawal");
+    expect(within(filters).getByRole("status")).toHaveTextContent("Showing 1 of 2 lines");
+
+    await user.type(within(filters).getByLabelText("Search"), "ajf");
+    expect(await screen.findByText("No lines match these filters.")).toBeInTheDocument();
+
+    await user.click(within(filters).getByRole("button", { name: "Clear filters" }));
+    expect(within(filters).getByLabelText("Type")).toHaveValue("");
+    expect(within(filters).getByLabelText("Search")).toHaveValue("");
+    expect(
+      within(screen.getByRole("list", { name: "Statement lines" })).getAllByRole("listitem"),
+    ).toHaveLength(2);
+  });
+
+  it("pages through the lines, ten at a time, and starts again on the first page after filtering", async () => {
+    const lines = Array.from({ length: 23 }, (_, i) => ({
+      ...statement.lines[i % 2]!,
+      id: `l${i}`,
+    }));
+    api({ "/api/wallet/statement": () => ({ ...statement, lines }) });
+    const user = userEvent.setup();
+    render(<StatementsScreen />);
+    expect(await screen.findByText("Showing 1–10 of 23 lines")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("list", { name: "Statement lines" })).getAllByRole("listitem"),
+    ).toHaveLength(10);
+    await user.click(screen.getByRole("button", { name: "Page 3" }));
+    expect(screen.getByText("Showing 21–23 of 23 lines")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Type"), "out");
+    expect(screen.getByText("Showing 1–10 of 11 lines")).toBeInTheDocument();
+  });
+
   it("changes the range from the chips, and says so when there's nothing", async () => {
     const mock = api({
       "/api/wallet/statement": () => ({ ...statement, balances: [], lines: [] }),
@@ -255,6 +341,23 @@ describe("insights", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Legend" })).toHaveTextContent("Money inMoney out");
     expect(screen.getAllByRole("row")).toHaveLength(3);
+  });
+
+  it("lists the months in the table newest first, a page at a time", async () => {
+    api({
+      "/api/wallet/insights": () => ({
+        months: Array.from({ length: 12 }, (_, i) =>
+          month(`2026-${String(i + 1).padStart(2, "0")}`, { moneyIn: String((i + 1) * 100) }),
+        ),
+      }),
+    });
+    const user = userEvent.setup();
+    render(<InsightsScreen />);
+    await screen.findByRole("region", { name: /This month, Dec 2026/ });
+    await user.click(screen.getByText("See these figures as a table"));
+    expect(screen.getByText("Showing 1–10 of 12 months")).toBeInTheDocument();
+    const rows = screen.getAllByRole("row");
+    expect(rows[1]).toHaveTextContent("Dec 2026");
   });
 
   it("says nothing is saved yet instead of drawing a flat line", async () => {

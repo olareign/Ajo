@@ -81,7 +81,8 @@ describe("WalletScreen", () => {
     const ngn = await screen.findByRole("region", { name: "Nigerian Naira wallet" });
     expect(within(ngn).getByText("Available").nextElementSibling).toHaveTextContent("₦2,500");
     expect(within(ngn).getByText("Locked").nextElementSibling).toHaveTextContent("₦500");
-    expect(within(ngn).getByText("Savings").nextElementSibling).toHaveTextContent("₦10,000");
+    expect(within(ngn).getByText("In pots").nextElementSibling).toHaveTextContent("₦10,000");
+    expect(within(ngn).getByText("All together").nextElementSibling).toHaveTextContent("₦13,000");
 
     const gbp = screen.getByRole("region", { name: "British Pound wallet" });
     expect(within(gbp).getByText("Available").nextElementSibling).toHaveTextContent("£12.50");
@@ -127,14 +128,14 @@ describe("WalletScreen", () => {
     });
     render(<WalletScreen />);
 
-    await user.click(await screen.findByRole("button", { name: "Show more" }));
+    await user.click(await screen.findByRole("button", { name: "Next page" }));
 
     await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(2));
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/api/wallet/transactions?limit=20&before=2",
       expect.anything(),
     );
-    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
   });
 
   it("asks for balances and history in one request", async () => {
@@ -176,11 +177,11 @@ describe("WalletScreen", () => {
     });
     render(<WalletScreen />);
 
-    await user.click(await screen.findByRole("button", { name: "Show more" }));
+    await user.click(await screen.findByRole("button", { name: "Next page" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't load more.");
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "Show more" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled();
   });
 
   it("sends a signed-out person to sign in", async () => {
@@ -208,7 +209,7 @@ describe("WalletScreen", () => {
       "href",
       "/wallet/withdraw",
     );
-    expect(screen.getByRole("link", { name: /Auto-debit/ })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: /Auto-debit/ })).toHaveAttribute(
       "href",
       "/wallet/mandate",
     );
@@ -216,5 +217,11 @@ describe("WalletScreen", () => {
       "href",
       "/wallet/limits",
     );
+    expect(screen.getByRole("link", { name: /Bank accounts/ })).toHaveAttribute(
+      "href",
+      "/wallet/bank",
+    );
+    for (const link of screen.getAllByRole("link", { name: /Statements/ }))
+      expect(link).toHaveAttribute("href", "/wallet/statements");
   });
 });

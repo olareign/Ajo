@@ -8,6 +8,7 @@ const APP_SECTIONS = [
   "/me",
   "/notifications",
   "/insights",
+  "/settings",
   "/verify",
 ] as const;
 

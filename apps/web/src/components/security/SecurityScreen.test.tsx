@@ -110,7 +110,7 @@ describe("turning on the authenticator app", () => {
     await user.click(screen.getByRole("checkbox", { name: /I.ve saved these codes/i }));
     expect(done).toBeEnabled();
     await user.click(done);
-    expect(replace).toHaveBeenCalledWith("/me");
+    expect(replace).toHaveBeenCalledWith("/settings");
   });
 
   it("says when the code is wrong, clears it, and stays on the same step", async () => {
@@ -196,7 +196,7 @@ describe("when the authenticator app is already on", () => {
       password: "correct horse battery staple",
       code: "123456",
     });
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/me"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/settings"));
   });
 
   it("shows a wrong password or code without signing the person out", async () => {

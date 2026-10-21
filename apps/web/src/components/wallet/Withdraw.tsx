@@ -1,5 +1,6 @@
 "use client";
 
+import { Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Amount } from "@/components/ui/Amount";
@@ -16,7 +17,6 @@ import { WithdrawLive } from "./WithdrawLive";
 import { WithdrawTicket } from "./WithdrawTicket";
 import { useMoneyFlow } from "./MoneyFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { WithdrawAside } from "@/components/desk/asides";
 
 type Step = "amount" | "review" | "pin" | "sent";
 
@@ -54,7 +54,7 @@ export function Withdraw() {
   if (!preview) return <WithdrawLive />;
 
   return (
-    <FormPage aside={<WithdrawAside />}>
+    <FormPage wide>
       {preview && <PreviewRibbon exitHref="/wallet/withdraw" />}
       <ScreenHeader
         title={
@@ -86,48 +86,82 @@ export function Withdraw() {
 
       {step === "amount" && (
         <div className="grid gap-6">
-          <p className="text-center text-[14px] text-ink-muted">
-            Available{" "}
-            <Amount
-              amount={toMinor(String(balance))}
-              currency={currency}
-              locale={locale}
-              size="s"
-            />
-            {preview ? " (sample)" : ""}
-          </p>
-          <AmountPad
-            value={amount}
-            onChange={setAmount}
-            currency={currency}
-            locale={locale}
-            label="Amount to withdraw"
-          />
-          {tooMuch && (
-            <p role="alert" className="text-center text-[15px] font-medium text-danger">
-              That&apos;s more than you have available.
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start">
+            <section
+              aria-labelledby="how-much"
+              className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift md:p-7"
+            >
+              <h2 id="how-much" className="font-display text-[20px] leading-7 font-bold">
+                How much?
+              </h2>
+              <p className="text-[14px] text-ink-muted md:text-[15px]">
+                Available{" "}
+                <Amount
+                  amount={toMinor(String(balance))}
+                  currency={currency}
+                  locale={locale}
+                  size="s"
+                />
+                {preview ? " (sample)" : ""}
+              </p>
+              <AmountPad
+                value={amount}
+                onChange={setAmount}
+                currency={currency}
+                locale={locale}
+                label="Amount to withdraw"
+              />
+              {tooMuch && (
+                <p role="alert" className="text-[15px] font-medium text-danger">
+                  That&apos;s more than you have available.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setAmount(String(balance))}
+                className="justify-self-start rounded-s py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                Withdraw everything
+              </button>
+            </section>
+            <section
+              aria-labelledby="withdraw-to"
+              className="grid gap-4 rounded-[var(--radius-xl)] bg-surface-raised p-5 shadow-lift md:p-7"
+            >
+              <h2 id="withdraw-to" className="font-display text-[20px] leading-7 font-bold">
+                To
+              </h2>
+              <div className="flex items-center gap-4">
+                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
+                  <Building2 aria-hidden className="size-6" />
+                </span>
+                <div className="grid min-w-0 flex-1">
+                  <span className="font-semibold">{account.bank}</span>
+                  <span className="text-[14px] text-ink-muted">
+                    {flow.me.displayName.toUpperCase()} · ending {account.last4}
+                  </span>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div className="grid gap-3 md:flex md:items-center md:gap-6">
+            <Button
+              size="lg"
+              className="w-full md:w-auto md:min-w-72"
+              disabled={toMinor(amount) === "0" || tooMuch}
+              onClick={() => setStep("review")}
+            >
+              Continue
+            </Button>
+            <p className="text-[13px] leading-5 text-ink-muted">
+              Next you&apos;ll confirm with your PIN.
             </p>
-          )}
-          <Button
-            size="lg"
-            block
-            disabled={toMinor(amount) === "0" || tooMuch}
-            onClick={() => setStep("review")}
-          >
-            Continue
-          </Button>
-          <button
-            type="button"
-            onClick={() => setAmount(String(balance))}
-            className="justify-self-center rounded-s px-2 py-2 text-[15px] font-semibold text-primary underline-offset-4 hover:underline"
-          >
-            Withdraw everything
-          </button>
+          </div>
         </div>
       )}
 
       {step === "review" && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <Receipt
             title="You're withdrawing"
             rows={[
@@ -148,7 +182,7 @@ export function Withdraw() {
       )}
 
       {step === "pin" && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <PinPad label="Transaction PIN" value={pin} onChange={setPin} />
           <Button
             size="lg"
@@ -168,7 +202,7 @@ export function Withdraw() {
       )}
 
       {step === "sent" && (
-        <div className="grid gap-6">
+        <div className="grid md:max-w-xl gap-6">
           <WithdrawTicket
             bank={account.bank}
             minor={minor}

@@ -1,6 +1,19 @@
 @import "tailwindcss";
 
 /*
+ * The sidebar's folded look ("rail"): always on a tablet (768 to 1023px), and on a desk when the
+ * person folds it ([data-compact] on the sidebar and the app frame).
+ */
+@custom-variant rail {
+  @media (width < 64rem) {
+    @slot;
+  }
+  &:where([data-compact], [data-compact] *) {
+    @slot;
+  }
+}
+
+/*
  * Àjọ design system. Green and white lead; the original indigo is kept as the tertiary accent;
  * gold (aṣọ-òkè) is reserved for money. Values mirror the system's tokens.json; change them there
  * first. Contrast is checked for every text pair (4.5:1 text, 3:1 lines and focus).

@@ -156,9 +156,34 @@ describe("the savings home", () => {
     expect(within(going).getAllByRole("listitem")).toHaveLength(2);
     expect(within(going).getByRole("link", { name: /Rent/ })).toHaveAttribute("href", "/save/p1");
     expect(within(going).getByText("Paused")).toBeInTheDocument();
+    // The plans still going, at a glance; the finished one counts for nothing here.
+    expect(total).toHaveTextContent(/Next payment₦5,000Rent/);
+    expect(total).toHaveTextContent("Payments made2 of 825% of the way");
+    expect(total).toHaveTextContent("Saving towards₦24,000");
+    // The finished plan sits on its own tab.
+    expect(screen.getByRole("button", { name: /Going now/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Finished/ }));
     const finished = screen.getByRole("heading", { name: "Finished" }).closest("section")!;
     expect(within(finished).getByText("Complete")).toBeInTheDocument();
     expect(within(finished).getByText("Paid out to your wallet")).toBeInTheDocument();
+  });
+
+  it("pages through the plans, ten to a page", async () => {
+    api({
+      "GET /api/savings": () => ({
+        status: 200,
+        body: {
+          plans: Array.from({ length: 12 }, (_, i) => planRow({ id: `p${i}`, name: `Plan ${i}` })),
+        },
+      }),
+    });
+    open(<SavingsHome />);
+    expect(await screen.findByText("Showing 1–10 of 12 plans")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(screen.getByText("Showing 11–12 of 12 plans")).toBeInTheDocument();
   });
 
   it("is locked until the passport is approved, with a way to preview", async () => {
@@ -206,11 +231,16 @@ describe("the savings home", () => {
 });
 
 describe("starting a plan", () => {
-  async function toRhythm(user: ReturnType<typeof userEvent.setup>) {
+  /** Name and amount are done; the rhythm (how often, how many) is on screen. */
+  async function toMoney(user: ReturnType<typeof userEvent.setup>) {
     await user.type(await screen.findByRole("textbox", { name: "Name your plan" }), "School fees");
     await user.click(screen.getByRole("button", { name: "Continue" }));
     const pad = await screen.findByRole("group", { name: /number pad/ });
     for (const d of "5000") await user.click(within(pad).getByRole("button", { name: d }));
+  }
+  /** On from the money step to the start day. */
+  async function toRhythm(user: ReturnType<typeof userEvent.setup>) {
+    await toMoney(user);
     await user.click(screen.getByRole("button", { name: "Continue" }));
   }
   const reviewReply = () => ({
@@ -229,8 +259,9 @@ describe("starting a plan", () => {
     });
     const user = userEvent.setup();
     open(<NewPlan />);
-    await toRhythm(user);
+    await toMoney(user);
     await user.click(screen.getByRole("button", { name: "Fewer times" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
 
     const receipt = await screen.findByRole("region", { name: "Your plan" });
@@ -281,7 +312,7 @@ describe("starting a plan", () => {
     expect(keys[0]).toBe(keys[1]);
   });
 
-  it("says why when the server refuses the plan, and stays on the rhythm step", async () => {
+  it("says why when the server refuses the plan, and stays on the start day step", async () => {
     api({
       "POST /api/savings/preview": () => ({
         status: 400,
@@ -297,7 +328,7 @@ describe("starting a plan", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/smallest amount/);
     expect(
-      screen.getByRole("heading", { name: "How often, and how many times?" }),
+      screen.getByRole("heading", { name: "When should the first payment be?" }),
     ).toBeInTheDocument();
   });
 
@@ -363,6 +394,24 @@ describe("starting a plan", () => {
     expect(screen.getByRole("heading", { name: "What are you saving for?" })).toBeInTheDocument();
   });
 
+  it("lists the steps with what has been answered, and reopens an earlier step from the list", async () => {
+    api({});
+    const user = userEvent.setup();
+    open(<NewPlan />);
+    await toRhythm(user);
+    const steps = screen.getByRole("list", { name: "Steps to start a plan" });
+    expect(within(steps).getAllByRole("listitem")).toHaveLength(4);
+    expect(steps).toHaveTextContent("What forSchool fees");
+    expect(steps).toHaveTextContent(/How much, how often₦5,000 weekly · 12 times/);
+    expect(within(steps).getByRole("listitem", { current: "step" })).toHaveTextContent("Start day");
+    const summary = screen.getByRole("region", { name: "Where this adds up" });
+    expect(summary).toHaveTextContent("₦60,000");
+    expect(summary).toHaveTextContent("12 weekly payments of ₦5,000");
+    await user.click(within(steps).getByRole("button", { name: /What for/ }));
+    expect(screen.getByRole("heading", { name: "What are you saving for?" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Name your plan" })).toHaveValue("School fees");
+  });
+
   it("keeps the number of times within what the frequency allows", async () => {
     api({});
     const user = userEvent.setup();
@@ -371,7 +420,6 @@ describe("starting a plan", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
     const pad = await screen.findByRole("group", { name: /number pad/ });
     await user.click(within(pad).getByRole("button", { name: "5" }));
-    await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("radio", { name: "Daily" }));
     await user.click(screen.getByRole("radio", { name: "90" }));
     await user.click(screen.getByRole("radio", { name: "Monthly" }));

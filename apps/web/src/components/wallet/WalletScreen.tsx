@@ -8,6 +8,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   BarChart3,
+  Building2,
   ChevronRight,
   FileText,
   Gauge,
@@ -20,9 +21,9 @@ import { readFx, type FxEquivalents } from "@/lib/fx";
 import { loadScreen, partData } from "@/lib/screen-client";
 import { recall, remember } from "@/lib/visit-cache";
 import { loadTransactions, type TransactionPage } from "@/lib/wallet-client";
-import { useWide } from "@/lib/use-wide";
-import { MonthPanel } from "@/components/desk/MonthPanel";
-import { PaymentDetails } from "@/components/desk/PaymentDetails";
+import { usePaged } from "@/lib/paging";
+import { ButtonLink } from "@/components/ui/ButtonLink";
+import { Pager } from "@/components/ui/Pager";
 import { BalanceCard } from "./BalanceCard";
 import { TransactionList } from "./TransactionList";
 import { PAGE } from "@/lib/page";
@@ -51,9 +52,6 @@ function Wallets() {
   );
   const [attempt, setAttempt] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
-  // On a desk a payment can be picked from the list and read in the panel beside it.
-  const wide = useWide();
-  const [picked, setPicked] = useState<WalletTransaction>();
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -97,28 +95,46 @@ function Wallets() {
     setAttempt((n) => n + 1);
   }
 
-  async function showMore(current: Extract<State, { phase: "ready" }>) {
-    if (!current.next) return;
+  async function showMore() {
+    if (state.phase !== "ready" || !state.next) return;
     setLoadingMore(true);
-    const page = await loadTransactions(current.next);
+    const page = await loadTransactions(state.next);
     if (!mounted.current) return;
     setLoadingMore(false);
     if (page.status === "signed-out") return router.replace("/sign-in");
-    setState(
-      page.status === "ok"
-        ? {
-            ...current,
-            items: [...current.items, ...page.data.items],
-            next: page.data.next,
-            moreFailed: false,
-          }
-        : { ...current, moreFailed: true },
+    setState((s) =>
+      s.phase !== "ready"
+        ? s
+        : page.status === "ok"
+          ? {
+              ...s,
+              items: [...s.items, ...page.data.items],
+              next: page.data.next,
+              moreFailed: false,
+            }
+          : { ...s, moreFailed: true },
     );
   }
 
   return (
     <main className={PAGE}>
-      <ScreenHeader tab title="Wallet" subtitle="Your money, and where it sits." />
+      <ScreenHeader
+        tab
+        title="Wallet"
+        subtitle="Your money, and where it sits."
+        pageAction={
+          <div className="grid grid-cols-2 gap-3">
+            <ButtonLink href="/wallet/withdraw" size="lg" variant="quiet" block>
+              <ArrowUpFromLine aria-hidden className="size-5" />
+              Withdraw
+            </ButtonLink>
+            <ButtonLink href="/wallet/add" size="lg" block>
+              <ArrowDownToLine aria-hidden className="size-5" />
+              Add money
+            </ButtonLink>
+          </div>
+        }
+      />
       {state.phase === "loading" && (
         <div role="status" className="grid gap-4">
           <span className="sr-only">Loading…</span>
@@ -140,116 +156,109 @@ function Wallets() {
           <Button variant="quiet" onClick={retry}>
             Try again
           </Button>
-          <MoneyActions />
+          <WalletTools />
         </div>
       )}
       {state.phase === "ready" && (
-        // On a desk, like a bank's dashboard, three columns fill the width: balance and actions;
-        // the activity; this month's summary and the details of the payment picked from the list.
-        // The outer two stay in view while the activity scrolls. On a narrower desk the activity
-        // goes under the balance. A phone reads balance, actions and activity, as before.
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]">
-          <div className="grid gap-6 xl:sticky xl:top-28">
-            {state.wallets.length === 0 ? (
-              <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
-                No money here yet. When you add or receive money, it shows up here.
-              </p>
-            ) : (
-              <div className="grid gap-4">
-                {state.wallets.map((wallet) => (
-                  <BalanceCard key={wallet.currency} wallet={wallet} fx={state.fx} />
-                ))}
-              </div>
-            )}
-            <MoneyActions />
-          </div>
-          <section
-            aria-labelledby="activity"
-            className="grid gap-2 lg:col-start-1 xl:col-start-2 xl:row-start-1"
-          >
-            <h2 id="activity" className="font-display text-[18px] leading-6 font-semibold">
-              Recent activity
-            </h2>
-            <div className="rounded-[var(--radius-l)] bg-surface-raised px-4 shadow-lift">
-              <TransactionList
-                items={state.items}
-                onSelect={wide ? setPicked : undefined}
-                selectedId={picked?.id}
-              />
-            </div>
-            {state.moreFailed && (
-              <p role="alert" className="text-danger">
-                We couldn&apos;t load more.
-              </p>
-            )}
-            {state.next && (
-              <Button
-                variant="quiet"
-                loading={loadingMore}
-                disabled={loadingMore}
-                onClick={() => void showMore(state)}
-              >
-                Show more
-              </Button>
-            )}
-          </section>
-          {wide && (
-            <div className="grid gap-6 lg:sticky lg:top-28 lg:col-start-2 lg:row-span-2 lg:row-start-1 xl:col-start-3 xl:row-span-1">
-              <MonthPanel currency={state.wallets[0]?.currency} />
-              <PaymentDetails item={picked} />
-            </div>
+        <div className="grid gap-6">
+          {state.wallets.length === 0 ? (
+            <p className="rounded-[var(--radius-l)] bg-surface-sunken p-5 text-ink-muted">
+              No money here yet. When you add or receive money, it shows up here.
+            </p>
+          ) : (
+            state.wallets.map((wallet) => (
+              <BalanceCard key={wallet.currency} wallet={wallet} fx={state.fx} />
+            ))
           )}
+          <WalletTools />
+          <Activity
+            items={state.items}
+            hasMore={Boolean(state.next) && !loadingMore}
+            moreFailed={state.moreFailed}
+            more={showMore}
+          />
         </div>
       )}
     </main>
   );
 }
 
-/** Add money and withdraw as the two big actions under the balance, then auto-debit and limits as rows. */
-function MoneyActions() {
+/** Recent activity, grouped by day, a page at a time; older pages are fetched as Next is pressed. */
+function Activity({
+  items,
+  hasMore,
+  moreFailed,
+  more,
+}: Readonly<{
+  items: readonly WalletTransaction[];
+  hasMore: boolean;
+  moreFailed: boolean;
+  more: () => Promise<void>;
+}>) {
+  const paged = usePaged(items);
   return (
-    <nav aria-label="Money actions" className="grid gap-3">
-      <div className="grid grid-cols-2 gap-3">
+    <section
+      aria-labelledby="activity"
+      className="overflow-hidden rounded-[var(--radius-xl)] bg-surface-raised shadow-lift"
+    >
+      <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-1 md:px-6">
+        <h2 id="activity" className="font-display text-[20px] leading-7 font-bold">
+          Recent activity
+        </h2>
         <Link
-          href="/wallet/add"
-          className="flex min-h-14 items-center justify-center gap-2 rounded-[var(--radius-l)] bg-oro px-4 text-base font-semibold text-on-oro shadow-lift transition-[filter] hover:brightness-95"
+          href="/wallet/statements"
+          className="flex items-center gap-1 text-[14px] font-semibold text-primary hover:underline"
         >
-          <ArrowDownToLine aria-hidden className="size-5" />
-          Add money
-        </Link>
-        <Link
-          href="/wallet/withdraw"
-          className="flex min-h-14 items-center justify-center gap-2 rounded-[var(--radius-l)] bg-surface-raised px-4 text-base font-semibold text-primary shadow-lift"
-        >
-          <ArrowUpFromLine aria-hidden className="size-5" />
-          Withdraw
+          See all in Statements
+          <ChevronRight aria-hidden className="size-4" />
         </Link>
       </div>
-      <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-l)] bg-surface-raised shadow-lift">
-        {(
-          [
-            ["/wallet/mandate", "Auto-debit", "Lets your bank top up a short wallet", Landmark],
-            ["/wallet/limits", "Your limits", "How much can move each day", Gauge],
-            ["/wallet/statements", "Statements", "Every payment, and a copy to download", FileText],
-            ["/insights", "Insights", "Money in, out and saved, month by month", BarChart3],
-          ] as const
-        ).map(([href, label, hint, Icon]) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-sunken"
-          >
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
-              <Icon aria-hidden className="size-5" />
-            </span>
-            <span className="grid min-w-0">
-              <span className="text-[15px] font-semibold">{label}</span>
-              <span className="text-[13px] text-ink-muted">{hint}</span>
-            </span>
-            <ChevronRight aria-hidden className="ml-auto size-5 shrink-0 text-ink-muted" />
-          </Link>
-        ))}
+      <div className="px-2 md:px-4">
+        <TransactionList items={paged.slice} grouped />
       </div>
+      {moreFailed && (
+        <p role="alert" className="border-t border-line p-4 text-danger">
+          We couldn&apos;t load more.
+        </p>
+      )}
+      <Pager
+        paged={paged}
+        noun={["payment", "payments"]}
+        more={{ has: hasMore, load: more }}
+        className="border-t border-line"
+      />
+    </section>
+  );
+}
+
+/** The wallet's other tools, as cards: auto-debit, limits, bank accounts, statements, insights. */
+function WalletTools() {
+  return (
+    <nav aria-label="Wallet tools" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      {(
+        [
+          ["/wallet/mandate", "Auto-debit", "Lets your bank top up a short wallet", Landmark],
+          ["/wallet/limits", "Your limits", "How much can move each day", Gauge],
+          ["/wallet/bank", "Bank accounts", "Where withdrawals go", Building2],
+          ["/wallet/statements", "Statements", "Every payment, and a copy to download", FileText],
+          ["/insights", "Insights", "Money in, out and saved, month by month", BarChart3],
+        ] as const
+      ).map(([href, label, hint, Icon]) => (
+        <Link
+          key={href}
+          href={href}
+          className="flex items-center gap-3 rounded-[var(--radius-l)] bg-surface-raised p-4 shadow-lift transition-colors hover:bg-surface-sunken xl:grid xl:content-start xl:gap-3 xl:p-5"
+        >
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-tint text-primary">
+            <Icon aria-hidden className="size-5" />
+          </span>
+          <span className="grid min-w-0">
+            <span className="text-[15px] font-semibold">{label}</span>
+            <span className="text-[13px] leading-5 text-ink-muted">{hint}</span>
+          </span>
+          <ChevronRight aria-hidden className="ml-auto size-5 shrink-0 text-ink-muted xl:hidden" />
+        </Link>
+      ))}
     </nav>
   );
 }

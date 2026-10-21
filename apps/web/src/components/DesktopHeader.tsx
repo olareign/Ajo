@@ -4,8 +4,8 @@ import { Headset, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import type { Me } from "@/components/onboarding/MeGate";
-import { PersonPhoto } from "@/components/ui/PersonPhoto";
 import { useTheme } from "@/lib/theme";
 import { useUnread } from "@/lib/unread";
 import { useRecall } from "@/lib/visit-cache";
@@ -45,24 +45,58 @@ function ThemeButton() {
   );
 }
 
+const never = () => () => undefined;
+/** "Good morning" and the date, from this device's clock; drawn after load, never guessed on the server. */
+function Greeting() {
+  const hour = useSyncExternalStore(
+    never,
+    () => new Date().getHours(),
+    () => -1,
+  );
+  return (
+    <>
+      {hour < 0
+        ? "Welcome back"
+        : hour < 12
+          ? "Good morning"
+          : hour < 17
+            ? "Good afternoon"
+            : "Good evening"}
+    </>
+  );
+}
+function Today() {
+  const day = useSyncExternalStore(
+    never,
+    () =>
+      new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(
+        new Date(),
+      ),
+    () => "",
+  );
+  return <>{day || "\u00a0"}</>;
+}
+
 /**
- * The top of every app screen on a desk: a welcome on the left; help, notifications and your
- * picture on the right. Hidden on a phone (it has its own top bar), and the unread count is only
- * asked for once the screen is known to be wide, so a phone never makes that request.
+ * The top of every app screen on a desk: a greeting by name and today's date on the left; theme,
+ * help, notifications and your account menu on the right. Hidden on a phone (it has its own top
+ * bar), and the unread count is only asked for once the screen is known to be wide, so a phone
+ * never makes that request.
  */
 export function DesktopHeader({ wide }: Readonly<{ wide: boolean }>) {
   const me = useRecall<Me>("me");
   const count = useUnread(undefined, wide);
   const first = me?.displayName?.split(/\s+/)[0];
   return (
-    <header className="sticky top-0 z-20 hidden border-b border-line bg-surface/90 backdrop-blur-md lg:block">
-      <div className="flex h-[84px] w-full items-center gap-3 px-8">
+    <header className="sticky top-0 z-20 hidden border-b border-line bg-surface/90 backdrop-blur-md md:block">
+      <div className="flex h-[84px] w-full items-center gap-3 px-6 lg:px-8">
         <div className="grid min-w-0 flex-1 gap-0.5">
-          <p className="font-display text-[24px] leading-8 font-bold tracking-[-0.015em] text-ink">
-            Welcome to <span className="text-primary">Àjọ.</span>
+          <p className="truncate font-display text-[22px] leading-8 font-bold tracking-[-0.015em] text-ink">
+            <Greeting />
+            {first ? `, ${first}` : ""}
           </p>
           <p className="truncate text-[14px] text-ink-muted">
-            {first ? `Hello ${first}, welcome back!` : "Welcome back!"}
+            <Today />
           </p>
         </div>
         <ThemeButton />
@@ -70,14 +104,7 @@ export function DesktopHeader({ wide }: Readonly<{ wide: boolean }>) {
           <Headset aria-hidden className="size-5" />
         </Link>
         <NotificationBell count={count} className={square} />
-        <Link href="/me" aria-label="Me" className="ml-1 shrink-0 rounded-full">
-          <PersonPhoto
-            username={me?.username}
-            version={me?.photoVersion}
-            name={me?.displayName ?? ""}
-            size={44}
-          />
-        </Link>
+        <ProfileMenu me={me} />
       </div>
     </header>
   );

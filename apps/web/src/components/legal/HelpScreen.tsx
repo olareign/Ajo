@@ -7,11 +7,11 @@ import { InfoShell } from "./InfoShell";
 const ANSWERS = [
   {
     q: "I lost my phone or think someone got in",
-    a: "Sign in on another device, go to Me, then Sign out of all devices, and change your password. Security activity on Me lists every sign-in and change.",
+    a: "Sign in on another device, go to Settings, then Sign out of all devices, and change your password. Security activity in Settings lists every sign-in and change.",
   },
   {
     q: "I forgot my transaction PIN",
-    a: "Go to Me, then Transaction PIN, and choose Reset. You'll need your password, and the code from your authenticator app if it's on.",
+    a: "Go to Settings, then Transaction PIN, and choose Reset. You'll need your password, and the code from your authenticator app if it's on.",
   },
   {
     q: "How do I move more money?",
@@ -23,7 +23,7 @@ const ANSWERS = [
   },
   {
     q: "How do I close my account?",
-    a: "Empty your wallet, end any saving plans, wait for your circles to finish and cancel auto-debit. Then go to Me, tap Close account, and confirm with your password (and your authenticator code, if it's on).",
+    a: "Empty your wallet, end any saving plans, wait for your circles to finish and cancel auto-debit. Then go to Settings, tap Close your account, and confirm with your password (and your authenticator code, if it's on).",
   },
 ] as const;
 
