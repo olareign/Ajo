@@ -15,8 +15,9 @@ import { cn } from "@/lib/cn";
 import { dayText, FREQUENCY_WORD } from "@/lib/schedule";
 import { recall, remember } from "@/lib/visit-cache";
 import type { Plan } from "@/lib/savings-client";
-import { PlanAside } from "@/components/desk/asides";
-import { Facts, Split } from "@/components/desk/Split";
+import { FilterTabs, SummaryBand } from "@/components/desk/Band";
+import { Pager } from "@/components/ui/Pager";
+import { usePaged } from "@/lib/paging";
 import { Pot } from "./Pot";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
 import { PAGE } from "@/lib/page";
@@ -92,9 +93,6 @@ export function SavingsHome() {
   const finished = Array.isArray(plans)
     ? plans.filter((p) => p.status === "completed" || p.status === "cancelled")
     : [];
-  const totals = new Map<string, bigint>();
-  for (const p of open)
-    totals.set(p.saved.currency, (totals.get(p.saved.currency) ?? 0n) + BigInt(p.saved.amount));
 
   return (
     <main className={PAGE}>
@@ -104,6 +102,12 @@ export function SavingsHome() {
         title="Savings"
         subtitle="Little by little, the pot fills."
         backHref={preview ? href("/today") : undefined}
+        pageAction={
+          <ButtonLink href={href("/save/new")} size="lg" block>
+            <Plus aria-hidden className="size-5" />
+            New plan
+          </ButtonLink>
+        }
       />
 
       {plans === undefined && (
@@ -130,132 +134,119 @@ export function SavingsHome() {
       {Array.isArray(plans) && plans.length === 0 && (
         <section
           aria-label="No plans yet"
-          className="grid justify-items-center gap-5 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift"
+          className="grid justify-items-center gap-5 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift md:p-10"
         >
           <Pot ratio={0} size={132} label="An empty pot" />
           <p className="font-display text-[22px] leading-7 font-semibold">
             Your first pot is empty
           </p>
-          <p className="text-[15px] leading-6 text-ink-muted">
+          <p className="max-w-prose text-[15px] leading-6 text-ink-muted">
             Pick what you&apos;re saving for, how much, and how often. We take it on the day, and it
             comes back to your wallet at the end.
           </p>
-          <ButtonLink href={href("/save/new")} size="lg" block>
+          <ButtonLink href={href("/save/new")} size="lg" className="md:min-w-64">
             Start a plan
           </ButtonLink>
         </section>
       )}
 
       {Array.isArray(plans) && plans.length > 0 && (
-        // From a tablet up: what's in your pots and the figures that matter beside it, then every
-        // plan as a card; how plans work sits at the side.
-        <Split note={<PlanAside />}>
-          {totals.size > 0 && (
-            <div className="grid gap-6 2xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] 2xl:items-stretch">
-              <div className="grid gap-6">
-                {[...totals].map(([currency, total]) => (
-                  <section
-                    key={currency}
-                    aria-label="Saved so far"
-                    className="hero-card grid gap-4 overflow-hidden rounded-[var(--radius-xl)] p-5 shadow-lift"
-                  >
-                    <div className="grid gap-1">
-                      <p className="text-[13px] font-semibold tracking-[0.04em] text-on-hero-muted">
-                        IN YOUR POTS
-                      </p>
-                      <Amount
-                        amount={total.toString()}
-                        currency={currency}
-                        locale={locale}
-                        size="l"
-                        tone="hero"
-                      />
-                      <p className="text-[14px] text-on-hero-muted">
-                        across {open.length} {open.length === 1 ? "plan" : "plans"}
-                      </p>
-                    </div>
-                    <Link
-                      href={href("/save/new")}
-                      className="flex min-h-12 items-center justify-center gap-2 rounded-m bg-oro px-4 text-[15px] font-semibold text-on-oro transition-[filter] hover:brightness-95"
-                    >
-                      <Plus aria-hidden className="size-5" />
-                      New plan
-                    </Link>
-                  </section>
-                ))}
-              </div>
-              <PlanFacts open={open} locale={locale} />
-            </div>
-          )}
-
-          {open.length > 0 && (
-            <section aria-labelledby="going" className="grid gap-3">
-              <h2 id="going" className="font-display text-[18px] leading-6 font-semibold">
-                Going now
-              </h2>
-              <ul className="grid gap-3 xl:grid-cols-2">
-                {open.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    locale={locale}
-                    href={href(`/save/${plan.id}`)}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-          {finished.length > 0 && (
-            <section aria-labelledby="done" className="grid gap-3">
-              <h2 id="done" className="font-display text-[18px] leading-6 font-semibold">
-                Finished
-              </h2>
-              <ul className="grid gap-3 xl:grid-cols-2">
-                {finished.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    locale={locale}
-                    href={href(`/save/${plan.id}`)}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-          {totals.size === 0 && (
-            <ButtonLink href={href("/save/new")} size="lg" block>
-              <Plus aria-hidden className="size-5" />
-              Start a plan
-            </ButtonLink>
-          )}
-        </Split>
+        <PlanList open={open} finished={finished} locale={locale} href={href} />
       )}
     </main>
   );
 }
 
+/** The summary band, then the plans in two tabs (going now, finished) a page at a time. */
+function PlanList({
+  open,
+  finished,
+  locale,
+  href,
+}: Readonly<{
+  open: readonly Plan[];
+  finished: readonly Plan[];
+  locale: string;
+  href: (path: string) => string;
+}>) {
+  const [tab, setTab] = useState<"going" | "finished">(open.length > 0 ? "going" : "finished");
+  const shown = tab === "going" ? open : finished;
+  const paged = usePaged(shown);
+  return (
+    <div className="grid gap-6">
+      {open.length > 0 && <PlanBand open={open} locale={locale} />}
+      {finished.length > 0 && open.length > 0 && (
+        <FilterTabs
+          label="Which plans"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "going", label: "Going now", count: open.length },
+            { id: "finished", label: "Finished", count: finished.length },
+          ]}
+        />
+      )}
+      <section
+        aria-labelledby="plans-title"
+        className="overflow-hidden rounded-[var(--radius-xl)] bg-surface-raised shadow-lift"
+      >
+        <h2
+          id="plans-title"
+          className="px-5 pt-5 pb-1 font-display text-[20px] leading-7 font-bold md:px-6"
+        >
+          {tab === "going" ? "Going now" : "Finished"}
+        </h2>
+        <ul className="grid gap-3 p-4 md:p-6 xl:grid-cols-2">
+          {paged.slice.map((plan) => (
+            <PlanCard key={plan.id} plan={plan} locale={locale} href={href(`/save/${plan.id}`)} />
+          ))}
+        </ul>
+        <Pager paged={paged} noun={["plan", "plans"]} className="border-t border-line" />
+      </section>
+    </div>
+  );
+}
+
 /**
- * The figures behind the pots, for plans still going, in the first pot's currency: the next
- * payment, how many payments are made, and what the plans add up to once every payment is made.
+ * The figures that matter for plans still going, in the first pot's currency: what is in the
+ * pots, the next payment, how many payments are made, and what the plans add up to once every
+ * payment is made.
  */
-function PlanFacts({ open, locale }: Readonly<{ open: readonly Plan[]; locale: string }>) {
+function PlanBand({ open, locale }: Readonly<{ open: readonly Plan[]; locale: string }>) {
   const currency = open[0]?.saved.currency;
   const same = open.filter((p) => p.saved.currency === currency);
   const next = same
     .flatMap((p) => (p.nextDebit ? [{ plan: p, ...p.nextDebit }] : []))
     .sort((a, b) => a.dueOn.localeCompare(b.dueOn))[0];
+  const saved = same.reduce((n, p) => n + BigInt(p.saved.amount), 0n);
   const paid = same.reduce((n, p) => n + p.paidDebits, 0);
   const total = same.reduce((n, p) => n + p.totalDebits, 0);
   const target = same.reduce((n, p) => n + BigInt(p.target.amount), 0n);
   if (!currency) return null;
   return (
-    <Facts
-      label="Your plans at a glance"
-      className="grid content-center"
-      facts={[
+    <SummaryBand
+      label="Saved so far"
+      figures={[
+        {
+          label: "In your pots",
+          value: (
+            <Amount
+              amount={saved.toString()}
+              currency={currency}
+              locale={locale}
+              size="m"
+              tone="hero"
+            />
+          ),
+          note: `across ${open.length} ${open.length === 1 ? "plan" : "plans"}`,
+        },
         {
           label: "Next payment",
-          value: next ? <Amount {...next.amount} locale={locale} size="m" /> : "None due",
+          value: next ? (
+            <Amount {...next.amount} locale={locale} size="m" tone="hero" />
+          ) : (
+            "None due"
+          ),
           note: next ? `${next.plan.name} · ${dayText(next.dueOn)}` : undefined,
         },
         {
@@ -265,7 +256,15 @@ function PlanFacts({ open, locale }: Readonly<{ open: readonly Plan[]; locale: s
         },
         {
           label: "Saving towards",
-          value: <Amount amount={target.toString()} currency={currency} locale={locale} size="m" />,
+          value: (
+            <Amount
+              amount={target.toString()}
+              currency={currency}
+              locale={locale}
+              size="m"
+              tone="hero"
+            />
+          ),
           note: "Once every payment is made",
         },
       ]}

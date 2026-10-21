@@ -23,6 +23,8 @@ type Props = Readonly<{
   unread?: number | null;
   /** Tab screens: a different title on a desk, where the header above already greets the person. */
   deskTitle?: string;
+  /** Tab screens: the page's one main action. Beside the title from a tablet up, below the subtitle on a phone. */
+  pageAction?: ReactNode;
 }>;
 
 /** Titles longer than this read as a question for the person and stay large below the bar. */
@@ -48,6 +50,7 @@ export function ScreenHeader({
   tab,
   unread,
   deskTitle,
+  pageAction,
 }: Props) {
   const inner = Boolean(onBack || backHref);
   const [scrolled, setScrolled] = useState(false);
@@ -61,7 +64,7 @@ export function ScreenHeader({
 
   if (!inner && tab) {
     return (
-      <header className="mb-5">
+      <header className="mb-5 md:mb-6 md:grid md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-x-6">
         <TopBar
           title={title}
           deskTitle={deskTitle}
@@ -69,7 +72,16 @@ export function ScreenHeader({
           unread={unread}
           scrolled={scrolled}
         />
-        {subtitle && <p className="mt-3 text-[15px] leading-6 text-ink-muted">{subtitle}</p>}
+        {subtitle && (
+          <p className="mt-3 text-[15px] leading-6 text-ink-muted md:col-start-1 md:mt-1">
+            {subtitle}
+          </p>
+        )}
+        {pageAction && (
+          <div className="mt-4 md:col-start-2 md:row-span-2 md:row-start-1 md:mt-0">
+            {pageAction}
+          </div>
+        )}
       </header>
     );
   }

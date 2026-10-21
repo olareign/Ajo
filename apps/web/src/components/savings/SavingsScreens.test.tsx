@@ -156,14 +156,34 @@ describe("the savings home", () => {
     expect(within(going).getAllByRole("listitem")).toHaveLength(2);
     expect(within(going).getByRole("link", { name: /Rent/ })).toHaveAttribute("href", "/save/p1");
     expect(within(going).getByText("Paused")).toBeInTheDocument();
+    // The plans still going, at a glance; the finished one counts for nothing here.
+    expect(total).toHaveTextContent(/Next payment₦5,000Rent/);
+    expect(total).toHaveTextContent("Payments made2 of 825% of the way");
+    expect(total).toHaveTextContent("Saving towards₦24,000");
+    // The finished plan sits on its own tab.
+    expect(screen.getByRole("button", { name: /Going now/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Finished/ }));
     const finished = screen.getByRole("heading", { name: "Finished" }).closest("section")!;
     expect(within(finished).getByText("Complete")).toBeInTheDocument();
     expect(within(finished).getByText("Paid out to your wallet")).toBeInTheDocument();
-    // The plans still going, at a glance; the finished one counts for nothing here.
-    const glance = screen.getByRole("region", { name: "Your plans at a glance" });
-    expect(glance).toHaveTextContent(/Next payment₦5,000Rent/);
-    expect(glance).toHaveTextContent("Payments made2 of 825% of the way");
-    expect(glance).toHaveTextContent("Saving towards₦24,000");
+  });
+
+  it("pages through the plans, ten to a page", async () => {
+    api({
+      "GET /api/savings": () => ({
+        status: 200,
+        body: {
+          plans: Array.from({ length: 12 }, (_, i) => planRow({ id: `p${i}`, name: `Plan ${i}` })),
+        },
+      }),
+    });
+    open(<SavingsHome />);
+    expect(await screen.findByText("Showing 1–10 of 12 plans")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(screen.getByText("Showing 11–12 of 12 plans")).toBeInTheDocument();
   });
 
   it("is locked until the passport is approved, with a way to preview", async () => {
