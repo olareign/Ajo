@@ -325,12 +325,49 @@ describe("finding people", () => {
     expect(String(sent(mock, "GET /api/friends/search")[0]![0])).toContain("q=zzz");
   });
 
-  it("is honest about contacts and nearby: not yet, and why", async () => {
+  it("has no coming-later notices, and offers the invite link instead", async () => {
     api({});
     open(<FindPeople />);
-    const later = await screen.findByRole("region", { name: "Coming later" });
-    expect(within(later).getByText(/needs a verified phone number/)).toBeInTheDocument();
-    expect(within(later).getByText(/never where you are/)).toBeInTheDocument();
+    await screen.findByRole("textbox", { name: "Username" });
+    expect(screen.queryByText(/coming later/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Coming later" })).not.toBeInTheDocument();
+    for (const link of screen.getAllByRole("link", { name: /Invite instead/ }))
+      expect(link).toHaveAttribute("href", "/friends/invite");
+  });
+
+  it("shows only who is not yet a friend, or who you share friends with, and sorts by name", async () => {
+    api({
+      "GET /api/friends/search": () => ({
+        status: 200,
+        body: [
+          person("zed_a", { relation: "none", mutualFriends: 0 }),
+          person("bola_a", { relation: "friend", mutualFriends: 2 }),
+          person("amaka_a", { relation: "none", mutualFriends: 1 }),
+        ],
+      }),
+    });
+    const user = userEvent.setup();
+    open(<FindPeople />);
+    await user.type(await screen.findByRole("textbox", { name: "Username" }), "abc");
+    const results = await screen.findByRole("list", { name: "Results" });
+    expect(within(results).getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.getByRole("heading", { name: /3 people starting/ })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Show"), "new");
+    expect(
+      within(screen.getByRole("list", { name: "Results" })).getAllByRole("listitem"),
+    ).toHaveLength(2);
+    await user.selectOptions(screen.getByLabelText("Show"), "common");
+    expect(
+      within(screen.getByRole("list", { name: "Results" })).getAllByRole("listitem"),
+    ).toHaveLength(2);
+    await user.selectOptions(screen.getByLabelText("Show"), "all");
+    await user.selectOptions(screen.getByLabelText("Sort"), "name");
+    const names = within(screen.getByRole("list", { name: "Results" }))
+      .getAllByRole("link")
+      .map((l) => l.getAttribute("href"));
+    expect(names).toEqual(["/friends/amaka_a", "/friends/bola_a", "/friends/zed_a"]);
+    expect(screen.getByText("Showing 1–3 of 3 people")).toBeInTheDocument();
   });
 
   it("shows the API's refusal when searching fails", async () => {
