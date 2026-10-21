@@ -9,7 +9,6 @@ import { countryConfig, STEP_COPY } from "@/lib/kyc-config";
 import { useKycFlow } from "./KycFlow";
 import { Passport } from "./Passport";
 import { FormPage } from "@/components/desk/FormPage";
-import { IdentityAside } from "@/components/desk/asides";
 
 const OUTCOMES: readonly { kind: PreviewKind; label: string }[] = [
   { kind: "fresh", label: "New" },
@@ -24,7 +23,7 @@ export function KycHub() {
   const locked = !preview && !state.connected;
 
   return (
-    <FormPage aside={<IdentityAside />}>
+    <FormPage>
       {preview && (
         <PreviewRibbon exitHref="/verify">
           <div role="group" aria-label="See another outcome" className="flex flex-wrap gap-1.5">

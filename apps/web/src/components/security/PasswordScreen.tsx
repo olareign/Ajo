@@ -11,7 +11,6 @@ import { TextField } from "@/components/ui/TextField";
 import { changePassword } from "@/lib/security-client";
 import { signedOut } from "./MfaSetup";
 import { FormPage } from "@/components/desk/FormPage";
-import { SafetyAside } from "@/components/desk/asides";
 
 export function PasswordScreen() {
   return <MeGate needs="onboarded">{(me) => <ChangePassword me={me} />}</MeGate>;
@@ -53,7 +52,7 @@ function ChangePassword({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <FormPage aside={<SafetyAside />}>
+    <FormPage>
       <ScreenHeader
         title="Password"
         subtitle="Choose a new password. This phone stays signed in; every other device is signed out."

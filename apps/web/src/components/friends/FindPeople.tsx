@@ -11,7 +11,6 @@ import { useMoneyFlow } from "@/components/wallet/MoneyFlow";
 import type { Person } from "@/lib/friends-client";
 import { useFriends, useFriendsLock } from "./FriendsFlow";
 import { PersonRow } from "./PersonRow";
-import { InviteAside } from "@/components/desk/asides";
 import { FormPage } from "@/components/desk/FormPage";
 
 export const SEARCH_DELAY_MS = 350;
@@ -53,7 +52,7 @@ export function FindPeople() {
   if (lock) return <FlowLocked lock={lock} title="Find people" path="/friends/find" />;
 
   return (
-    <FormPage aside={<InviteAside />}>
+    <FormPage>
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader
         title="Find people"

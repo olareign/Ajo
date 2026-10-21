@@ -19,7 +19,6 @@ import { NationalStep } from "./steps/NationalStep";
 import { SelfieStep } from "./steps/SelfieStep";
 import type { Outcome, StepProps } from "./steps/types";
 import { FormPage } from "@/components/desk/FormPage";
-import { IdentityAside } from "@/components/desk/asides";
 
 const STEPS: Record<StepKey, ComponentType<StepProps>> = {
   id: IdStep,
@@ -88,7 +87,7 @@ export function StepScreen({ step: raw }: Readonly<{ step: string }>) {
 
   if (!preview && !state.connected) {
     return (
-      <FormPage aside={<IdentityAside />}>
+      <FormPage>
         <ScreenHeader title={copy.title} subtitle={copy.blurb} backHref={back} />
         <div className="grid justify-items-center gap-5 rounded-[var(--radius-l)] bg-surface-raised p-6 text-center shadow-lift">
           <Stamp label={copy.stamp} title={copy.title} status="not_started" size={120} />
@@ -111,7 +110,7 @@ export function StepScreen({ step: raw }: Readonly<{ step: string }>) {
   if (stamped) {
     const next = nextStep(state);
     return (
-      <FormPage aside={<IdentityAside />}>
+      <FormPage>
         {ribbon}
         <div className="grid justify-items-center gap-6 pt-10 text-center">
           <Stamp label={copy.stamp} title={copy.title} status="approved" fresh size={176} />
@@ -139,7 +138,7 @@ export function StepScreen({ step: raw }: Readonly<{ step: string }>) {
 
   const status = stepOf(state, step);
   return (
-    <FormPage aside={<IdentityAside />}>
+    <FormPage>
       {ribbon}
       <ScreenHeader title={copy.title} subtitle={copy.blurb} backHref={back} />
       {status.status === "rejected" && status.reason && !tried && (

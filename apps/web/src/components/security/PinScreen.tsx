@@ -12,7 +12,6 @@ import { TextField } from "@/components/ui/TextField";
 import { changePin, resetPin } from "@/lib/security-client";
 import { signedOut } from "./MfaSetup";
 import { FormPage } from "@/components/desk/FormPage";
-import { SafetyAside } from "@/components/desk/asides";
 
 export function PinScreen() {
   return <MeGate needs="onboarded">{(me) => <Pin me={me} />}</MeGate>;
@@ -61,7 +60,7 @@ function Pin({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <FormPage aside={<SafetyAside />}>
+    <FormPage>
       <ScreenHeader
         title={mode === "change" ? "Transaction PIN" : "Forgot your PIN"}
         subtitle={

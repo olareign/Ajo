@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { closeAccount } from "@/lib/profile-client";
 import { FormPage } from "@/components/desk/FormPage";
-import { CloseAside } from "@/components/desk/asides";
 
 export function CloseAccountScreen() {
   return <MeGate needs="onboarded">{(me) => <CloseAccount me={me} />}</MeGate>;
@@ -78,7 +77,7 @@ function CloseAccount({ me }: Readonly<{ me: Me }>) {
   }
 
   return (
-    <FormPage aside={<CloseAside />}>
+    <FormPage>
       <ScreenHeader
         title="Close account"
         subtitle="This can't be undone. You won't be able to sign in again."

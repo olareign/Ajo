@@ -10,7 +10,6 @@ import { CodeBoxes } from "@/components/ui/CodeBoxes";
 import { Keypad } from "@/components/ui/Keypad";
 import { QrCode } from "@/components/ui/QrCode";
 import { Stitches } from "@/components/ui/Stitches";
-import { SafetyAside } from "@/components/desk/asides";
 import { FormColumns } from "@/components/desk/FormPage";
 import { RecoveryTicket } from "./RecoveryTicket";
 
@@ -128,7 +127,7 @@ export function MfaSetup() {
     // A phone: one column the height of the screen, the button by the thumb. From a tablet up: the
     // steps on the left at a comfortable width, a note on keeping the account safe beside them.
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))] md:block md:min-h-0 md:max-w-none md:px-6 md:pt-8 md:pb-12 lg:px-8">
-      <FormColumns aside={<SafetyAside />} className="flex flex-1 flex-col">
+      <FormColumns className="flex flex-1 flex-col">
         <ScreenHeader
           title={heading.title}
           subtitle={heading.subtitle}

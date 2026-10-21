@@ -16,7 +16,6 @@ import { whenText } from "@/lib/when";
 import { inviteText, smsUrl, whatsAppUrl } from "@/lib/share";
 import { useFriends, useFriendsLock } from "./FriendsFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { InviteAside } from "@/components/desk/asides";
 
 /** Your own invite link, ready to send. Whoever joins through it is suggested to you as a friend. */
 export function InviteScreen() {
@@ -88,7 +87,7 @@ export function InviteScreen() {
   }
 
   return (
-    <FormPage aside={<InviteAside />}>
+    <FormPage>
       {preview && <PreviewRibbon exitHref="/friends" />}
       <ScreenHeader
         title="Invite someone"

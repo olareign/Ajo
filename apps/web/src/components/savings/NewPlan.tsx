@@ -22,7 +22,6 @@ import { Beads } from "./Beads";
 import { Pot } from "./Pot";
 import { useSavings, useSavingsLock } from "./SavingsFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { PlanAside } from "@/components/desk/asides";
 
 type Step = "name" | "amount" | "rhythm" | "review";
 
@@ -142,7 +141,7 @@ export function NewPlan() {
   };
 
   return (
-    <FormPage aside={<PlanAside />}>
+    <FormPage>
       {preview && <PreviewRibbon exitHref="/save" />}
       <ScreenHeader
         title={title[step]}

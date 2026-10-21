@@ -28,7 +28,6 @@ import { newAttemptKey } from "@/lib/payments-client";
 import { addDays, longDayText, todayIn } from "@/lib/schedule";
 import { FREQ_WORDS, ORDER_WORDS, useCircles, useCirclesLock } from "./CirclesFlow";
 import { FormPage } from "@/components/desk/FormPage";
-import { CircleAside } from "@/components/desk/asides";
 
 type Step = "name" | "money" | "rules" | "review";
 
@@ -144,7 +143,7 @@ export function NewCircle() {
   };
 
   return (
-    <FormPage aside={<CircleAside />}>
+    <FormPage>
       {preview && <PreviewRibbon exitHref="/circles" />}
       <ScreenHeader
         title={title[step]}
